@@ -12,8 +12,8 @@ const CSS = `
   @keyframes rotateSlowR{from{transform:rotate(0deg)}to{transform:rotate(-360deg)}}
   @keyframes glowPulse{0%,100%{opacity:.5}50%{opacity:1}}
   @keyframes scanLine{0%{transform:translateY(-100%)}100%{transform:translateY(1000%)}}
-  @keyframes clickRipple{0%{width:0;height:0;opacity:.85;border-width:3px}40%{opacity:.55}100%{width:720px;height:720px;opacity:0;border-width:.4px}}
-  @keyframes hoverRipple{0%{width:24px;height:24px;opacity:.55;border-width:2px}100%{width:240px;height:240px;opacity:0;border-width:.4px}}
+  @keyframes hoverWave{0%{transform:scale(1) rotate(0deg);opacity:.65}100%{transform:scale(7) rotate(40deg);opacity:0}}
+  @keyframes clickWave{0%{transform:scale(.4) rotate(0deg);opacity:.9}55%{opacity:.6}100%{transform:scale(13) rotate(-30deg);opacity:0}}
   .btn-p{transition:all .2s ease;cursor:pointer;border:none;font-family:inherit}
   .btn-p:hover{opacity:.88;transform:translateY(-2px)}
   .btn-o{transition:all .2s ease;cursor:pointer;font-family:inherit;border:none}
@@ -37,6 +37,27 @@ const CSS = `
 const BG="#020D07";
 const D="#003F2D",M="#006A4D",BR="#1DB87B",PL="#EEF6F2",PLR="#F7FBF9",W="#FFF",MU="#587066",BD="rgba(0,63,45,.1)";
 const ADMIN_USER="admin", ADMIN_PASS="cbre2025";
+
+const wavyPath=(r,freq,amp,phase,seg=128)=>{
+  let d="";
+  for(let i=0;i<=seg;i++){
+    const a=(i/seg)*Math.PI*2;
+    const rr=r+Math.sin(a*freq+phase)*amp+Math.sin(a*(freq*1.7)+phase*1.3)*amp*.35;
+    d+=(i===0?"M":"L")+(Math.cos(a)*rr).toFixed(2)+","+(Math.sin(a)*rr).toFixed(2);
+  }
+  return d+"Z";
+};
+const HOVER_WAVES=[
+  wavyPath(20,10,2.0,0),
+  wavyPath(20,14,1.6,Math.PI/3),
+  wavyPath(20,8,2.4,Math.PI*2/3),
+];
+const CLICK_WAVES=[
+  wavyPath(22,7,3.2,0),
+  wavyPath(22,11,2.4,Math.PI/2),
+  wavyPath(22,15,1.8,Math.PI),
+  wavyPath(22,9,2.8,Math.PI*1.5),
+];
 
 const TERMS=[
   {t:"IRR",x:7,y:15,sx:.14,mx:22},{t:"NPV",x:83,y:21,sx:.2,mx:18},
@@ -507,30 +528,39 @@ function HeroBg({mouse,scrollY,ripples}){
           transform:`translate(${mx*(i%2===0?-6:6)}px,${my*(i<2?-4:4)}px)`,
           transition:"transform .5s ease"}}/>
       ))}
-      {/* Hover water ripples following cursor */}
+      {/* Hover water waves following cursor */}
       <div style={{position:"absolute",left:`${hx}%`,top:`${hy}%`,
-        transform:"translate(-50%,-50%)",pointerEvents:"none",
-        transition:"left .15s ease-out,top .15s ease-out"}}>
-        {[0,1,2].map(i=>(
-          <div key={i} style={{position:"absolute",left:0,top:0,
-            transform:"translate(-50%,-50%)",borderRadius:"50%",
-            border:"1.5px solid rgba(29,184,123,.45)",
-            animation:"hoverRipple 3s ease-out infinite",
-            animationDelay:`${i}s`}}/>
-        ))}
+        marginLeft:-70,marginTop:-70,pointerEvents:"none",
+        transition:"left .14s ease-out,top .14s ease-out"}}>
+        <svg width="140" height="140" viewBox="-70 -70 140 140" style={{overflow:"visible"}}>
+          {HOVER_WAVES.map((d,i)=>(
+            <path key={i} d={d}
+              fill="none"
+              stroke={`rgba(29,184,123,${.55-i*.08})`}
+              strokeWidth="1.2"
+              style={{animation:"hoverWave 3.4s ease-out infinite",
+                animationDelay:`${i*1.13}s`,transformOrigin:"0 0"}}/>
+          ))}
+        </svg>
       </div>
-      {/* Click water ripples */}
-      {ripples?.flatMap(r=>
-        [0,0.18,0.36].map((delay,i)=>(
-          <div key={`${r.id}-${i}`} style={{position:"absolute",
-            left:`${r.x}%`,top:`${r.y}%`,
-            transform:"translate(-50%,-50%)",borderRadius:"50%",
-            border:"2px solid rgba(29,184,123,.7)",
-            boxShadow:"0 0 24px rgba(29,184,123,.3)",
-            animation:"clickRipple 2.4s cubic-bezier(.16,.85,.39,.99) forwards",
-            animationDelay:`${delay}s`,opacity:0,pointerEvents:"none"}}/>
-        ))
-      )}
+      {/* Click water waves */}
+      {ripples?.map(r=>(
+        <div key={r.id} style={{position:"absolute",
+          left:`${r.x}%`,top:`${r.y}%`,
+          marginLeft:-70,marginTop:-70,pointerEvents:"none"}}>
+          <svg width="140" height="140" viewBox="-70 -70 140 140" style={{overflow:"visible"}}>
+            {CLICK_WAVES.map((d,i)=>(
+              <path key={i} d={d}
+                fill="none"
+                stroke={`rgba(29,184,123,${.85-i*.12})`}
+                strokeWidth={2.2-i*.3}
+                style={{animation:"clickWave 2.5s cubic-bezier(.16,.85,.39,.99) forwards",
+                  animationDelay:`${i*.16}s`,transformOrigin:"0 0",opacity:0,
+                  filter:"drop-shadow(0 0 10px rgba(29,184,123,.35))"}}/>
+            ))}
+          </svg>
+        </div>
+      ))}
     </div>
   );
 }
