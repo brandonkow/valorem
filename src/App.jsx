@@ -12,8 +12,8 @@ const CSS = `
   @keyframes rotateSlowR{from{transform:rotate(0deg)}to{transform:rotate(-360deg)}}
   @keyframes glowPulse{0%,100%{opacity:.5}50%{opacity:1}}
   @keyframes scanLine{0%{transform:translateY(-100%)}100%{transform:translateY(1000%)}}
-  @keyframes hoverWave{0%{transform:scale(1);opacity:.65}100%{transform:scale(7);opacity:0}}
-  @keyframes clickWave{0%{transform:scale(.4);opacity:.9}55%{opacity:.6}100%{transform:scale(13);opacity:0}}
+  @keyframes hoverWave{0%{transform:translateZ(0) scale(1);opacity:.65}100%{transform:translateZ(0) scale(7);opacity:0}}
+  @keyframes clickWave{0%{transform:translate3d(0,0,0) scale(.4);opacity:.95}50%{opacity:.55}100%{transform:translate3d(0,0,0) scale(11);opacity:0}}
   .btn-p{transition:all .2s ease;cursor:pointer;border:none;font-family:inherit}
   .btn-p:hover{opacity:.88;transform:translateY(-2px)}
   .btn-o{transition:all .2s ease;cursor:pointer;font-family:inherit;border:none}
@@ -441,7 +441,7 @@ function AdminPanel({onLogout,uploads,setUploads,setStats}){
   );
 }
 
-function HeroBg({mouse,scrollY,ripples}){
+function HeroBg({mouse,scrollY}){
   const mx=mouse.x,my=mouse.y,sy=scrollY;
   const hx=(mx+.5)*100,hy=(my+.5)*100;
   const tiltX=(my*14).toFixed(2);
@@ -537,24 +537,32 @@ function HeroBg({mouse,scrollY,ripples}){
               stroke={`rgba(29,184,123,${.55-i*.08})`}
               strokeWidth="1.2"
               style={{animation:"hoverWave 3.4s ease-out infinite",
-                animationDelay:`${i*1.13}s`,transformOrigin:"0 0"}}/>
+                animationDelay:`${i*1.13}s`,transformOrigin:"0 0",
+                willChange:"transform,opacity"}}/>
           ))}
         </svg>
       </div>
-      {/* Click water waves */}
-      {ripples?.map(r=>(
+    </div>
+  );
+}
+
+function ClickWaves({ripples}){
+  return(
+    <div style={{position:"absolute",inset:0,pointerEvents:"none",overflow:"hidden",zIndex:0}}>
+      {ripples.map(r=>(
         <div key={r.id} style={{position:"absolute",
           left:`${r.x}%`,top:`${r.y}%`,
-          marginLeft:-70,marginTop:-70,pointerEvents:"none"}}>
+          marginLeft:-70,marginTop:-70,pointerEvents:"none",
+          contain:"layout paint"}}>
           <svg width="140" height="140" viewBox="-70 -70 140 140" style={{overflow:"visible"}}>
-            {[0,1,2,3].map(i=>(
+            {[0,1,2].map(i=>(
               <circle key={i} cx="0" cy="0" r="22"
                 fill="none"
-                stroke={`rgba(29,184,123,${.85-i*.12})`}
-                strokeWidth={2.2-i*.3}
-                style={{animation:"clickWave 2.5s cubic-bezier(.16,.85,.39,.99) forwards",
-                  animationDelay:`${i*.16}s`,transformOrigin:"0 0",opacity:0,
-                  filter:"drop-shadow(0 0 10px rgba(29,184,123,.35))"}}/>
+                stroke={`rgba(29,184,123,${.9-i*.18})`}
+                strokeWidth={2.2-i*.45}
+                style={{animation:"clickWave 1.9s cubic-bezier(.16,.85,.39,.99) forwards",
+                  animationDelay:`${i*.11}s`,transformOrigin:"0 0",opacity:0,
+                  willChange:"transform,opacity"}}/>
             ))}
           </svg>
         </div>
@@ -567,19 +575,21 @@ function LandingPage({scrollY,mouse,onEnter}){
   const op=Math.max(0,1-scrollY/480);
   const[ripples,setRipples]=useState([]);
   const secRef=useRef(null);
-  const handleClick=e=>{
-    if(!secRef.current)return;
-    const r=secRef.current.getBoundingClientRect();
+  const handleClick=useCallback(e=>{
+    const el=secRef.current;
+    if(!el)return;
+    const r=el.getBoundingClientRect();
     const x=((e.clientX-r.left)/r.width)*100;
     const y=((e.clientY-r.top)/r.height)*100;
-    const id=Date.now()+Math.random();
-    setRipples(p=>[...p,{x,y,id}]);
-    setTimeout(()=>setRipples(p=>p.filter(rp=>rp.id!==id)),2800);
-  };
+    const id=(typeof performance!=="undefined"?performance.now():Date.now())+Math.random();
+    setRipples(p=>(p.length>5?[...p.slice(-5),{x,y,id}]:[...p,{x,y,id}]));
+    setTimeout(()=>setRipples(p=>p.filter(rp=>rp.id!==id)),2100);
+  },[]);
   return(
     <section ref={secRef} onClick={handleClick} style={{position:"relative",height:"100vh",background:BG,
       display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden",cursor:"pointer"}}>
-      <HeroBg mouse={mouse} scrollY={scrollY} ripples={ripples}/>
+      <HeroBg mouse={mouse} scrollY={scrollY}/>
+      <ClickWaves ripples={ripples}/>
       <div style={{position:"relative",zIndex:1,textAlign:"center",maxWidth:740,padding:"0 28px",
         opacity:op,transform:`translateY(${-scrollY*.22}px)`}}>
         <div style={{display:"inline-flex",background:"rgba(255,255,255,.07)",
