@@ -231,7 +231,7 @@ function AdminPanel({onLogout,uploads,setUploads}){
   const handleFileChange=(catId,typeId,label,e)=>{
     const file=e.target.files[0];if(!file)return;
     const key=`${catId}__${typeId}`;
-    setUploads(prev=>({...prev,[key]:{name:file.name,label,
+    setUploads(prev=>({...prev,[key]:{file,name:file.name,label,
       size:(file.size/1024).toFixed(1)+"KB",
       date:new Date().toLocaleDateString("en-MY",{day:"2-digit",month:"short",year:"numeric"})}}));
     setUT(`"${label}" template uploaded successfully.`);
@@ -480,7 +480,8 @@ function TemplateCard({t,onDownload,downloading,uploads}){
   const[sel,setSel]=useState(null);
   const busy=downloading===t.id+(sel||"");
   const selectedType=t.types.find(x=>x.id===sel);
-  const hasFile=sel&&uploads[`${t.id}__${sel}`];
+  const uploadInfo=sel?uploads[`${t.id}__${sel}`]:null;
+  const hasFile=!!uploadInfo;
 
   return(
     <div ref={ref} className="vf-card"
@@ -548,7 +549,7 @@ function TemplateCard({t,onDownload,downloading,uploads}){
           ))}
         </div>
         <div className="dl-btn"
-          onClick={()=>sel&&hasFile&&!downloading&&onDownload({...t,id:t.id+sel,title:`${t.title} — ${selectedType?.label}`})}
+          onClick={()=>sel&&hasFile&&!downloading&&onDownload({id:t.id+sel,title:`${t.title} — ${selectedType?.label}`,file:uploadInfo.file,filename:uploadInfo.name})}
           style={{background:sel&&hasFile?"#003F2D":sel&&!hasFile?"#92400E":"rgba(0,63,45,.13)",
             color:sel?"#fff":"rgba(0,63,45,.38)",padding:"14px",borderRadius:10,textAlign:"center",
             fontWeight:700,fontSize:13,boxShadow:sel&&hasFile?"0 4px 14px rgba(0,63,45,.28)":"none",
@@ -656,9 +657,16 @@ export default function App(){
     setDL(t.id);
     setTimeout(()=>{
       setDL(null);
-      setToast(`${t.title} DCF Template (.xlsx) is ready for download!`);
+      if(t.file){
+        const url=URL.createObjectURL(t.file);
+        const a=document.createElement("a");
+        a.href=url;a.download=t.filename||t.file.name;
+        document.body.appendChild(a);a.click();document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }
+      setToast(`${t.title} DCF Template downloaded successfully!`);
       setTimeout(()=>setToast(null),3800);
-    },1800);
+    },1200);
   };
 
   return(
