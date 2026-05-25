@@ -233,12 +233,15 @@ function AdminPanel({onLogout,uploads,setUploads}){
     const file=e.target.files[0];if(!file)return;
     const key=`${catId}__${typeId}`;
     e.target.value="";
-    setUploads(prev=>({...prev,[key]:{loading:true,name:file.name,label,size:"...",date:""}}));
+    setUploads(prev=>({...prev,[key]:{loading:true,progress:0,name:file.name,label,size:"...",date:""}}));
     try{
       const blob=await upload(
         `templates/${catId}/${typeId}/${file.name}`,
         file,
-        {access:"public",handleUploadUrl:"/api/upload"}
+        {access:"public",handleUploadUrl:"/api/upload",
+         onUploadProgress:({percentage})=>{
+           setUploads(prev=>prev[key]?({...prev,[key]:{...prev[key],progress:Math.round(percentage)}}):prev);
+         }}
       );
       setUploads(prev=>({...prev,[key]:{
         url:blob.url,name:file.name,label,
@@ -328,10 +331,22 @@ function AdminPanel({onLogout,uploads,setUploads}){
                           <div style={{fontSize:11,color:MU,marginTop:2}}>{pt.note}</div>
                         </div>
                         {uploaded?.loading?(
-                          <div style={{display:"flex",alignItems:"center",gap:8,color:MU,fontSize:12}}>
-                            <div style={{width:13,height:13,borderRadius:"50%",border:`2px solid ${BD}`,
-                              borderTopColor:M,animation:"spin .8s linear infinite"}}/>
-                            Uploading…
+                          <div style={{display:"flex",alignItems:"center",gap:12,minWidth:220,flex:"1 1 auto",justifyContent:"flex-end"}}>
+                            <div style={{flex:"0 1 180px"}}>
+                              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",fontSize:11,color:MU,marginBottom:5}}>
+                                <span style={{display:"flex",alignItems:"center",gap:6}}>
+                                  <div style={{width:11,height:11,borderRadius:"50%",border:`2px solid ${BD}`,
+                                    borderTopColor:M,animation:"spin .8s linear infinite"}}/>
+                                  Uploading
+                                </span>
+                                <span style={{fontWeight:700,color:D}}>{uploaded.progress??0}%</span>
+                              </div>
+                              <div style={{height:5,background:PL,borderRadius:3,overflow:"hidden"}}>
+                                <div style={{height:"100%",width:`${uploaded.progress??0}%`,
+                                  background:`linear-gradient(90deg,${M},${BR})`,
+                                  transition:"width .2s ease",borderRadius:3}}/>
+                              </div>
+                            </div>
                           </div>
                         ):uploaded?(
                           <div style={{display:"flex",alignItems:"center",gap:10,flex:"1 1 auto",justifyContent:"flex-end",flexWrap:"wrap"}}>
