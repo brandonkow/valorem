@@ -227,22 +227,34 @@ function AdminLoginModal({onClose,onSuccess}){
 function AdminPanel({onLogout,uploads,setUploads}){
   const[expandedCat,setExp]=useState(null);
   const[uploadToast,setUT]=useState(null);
-  const totalUploaded=Object.keys(uploads).length;
+  const abortRefs=useRef({});
+  const totalUploaded=Object.keys(uploads).filter(k=>uploads[k]?.url).length;
+
+  const handleCancel=key=>{
+    abortRefs.current[key]?.abort();
+    setUploads(prev=>{const n={...prev};delete n[key];return n;});
+  };
 
   const handleFileChange=async(catId,typeId,label,e)=>{
     const file=e.target.files[0];if(!file)return;
     const key=`${catId}__${typeId}`;
     e.target.value="";
+    const controller=new AbortController();
+    abortRefs.current[key]=controller;
+    const timeoutId=setTimeout(()=>controller.abort(),120000);
     setUploads(prev=>({...prev,[key]:{loading:true,progress:0,name:file.name,label,size:"...",date:""}}));
     try{
       const blob=await upload(
         `templates/${catId}/${typeId}/${file.name}`,
         file,
         {access:"public",handleUploadUrl:"/api/upload",
+         abortSignal:controller.signal,
          onUploadProgress:({percentage})=>{
            setUploads(prev=>prev[key]?({...prev,[key]:{...prev[key],progress:Math.round(percentage)}}):prev);
          }}
       );
+      clearTimeout(timeoutId);
+      delete abortRefs.current[key];
       setUploads(prev=>({...prev,[key]:{
         url:blob.url,name:file.name,label,
         size:(file.size/1024).toFixed(1)+"KB",
@@ -250,9 +262,15 @@ function AdminPanel({onLogout,uploads,setUploads}){
       }}));
       setUT(`"${label}" template uploaded successfully.`);
     }catch(err){
-      console.error("Upload failed:",err);
+      clearTimeout(timeoutId);
+      delete abortRefs.current[key];
       setUploads(prev=>{const n={...prev};delete n[key];return n;});
-      setUT(`Failed to upload "${label}": ${err?.message||"unknown error"}`);
+      if(err?.name==="AbortError"||err?.message?.includes("abort"))
+        setUT(`Upload cancelled.`);
+      else{
+        console.error("Upload failed:",err);
+        setUT(`Failed to upload "${label}": ${err?.message||"unknown error"}`);
+      }
     }
     setTimeout(()=>setUT(null),5000);
   };
@@ -331,7 +349,7 @@ function AdminPanel({onLogout,uploads,setUploads}){
                           <div style={{fontSize:11,color:MU,marginTop:2}}>{pt.note}</div>
                         </div>
                         {uploaded?.loading?(
-                          <div style={{display:"flex",alignItems:"center",gap:12,minWidth:220,flex:"1 1 auto",justifyContent:"flex-end"}}>
+                          <div style={{display:"flex",alignItems:"center",gap:10,minWidth:220,flex:"1 1 auto",justifyContent:"flex-end"}}>
                             <div style={{flex:"0 1 180px"}}>
                               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",fontSize:11,color:MU,marginBottom:5}}>
                                 <span style={{display:"flex",alignItems:"center",gap:6}}>
@@ -346,6 +364,11 @@ function AdminPanel({onLogout,uploads,setUploads}){
                                   background:`linear-gradient(90deg,${M},${BR})`,
                                   transition:"width .2s ease",borderRadius:3}}/>
                               </div>
+                            </div>
+                            <div onClick={()=>handleCancel(key)}
+                              style={{background:"#FEF2F2",border:"1px solid #FCA5A5",borderRadius:8,
+                                padding:"6px 12px",fontSize:11,fontWeight:600,color:"#B91C1C",cursor:"pointer",whiteSpace:"nowrap"}}>
+                              Cancel
                             </div>
                           </div>
                         ):uploaded?(
