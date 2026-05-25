@@ -1,5 +1,33 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { upload } from "@vercel/blob/client";
+import { createClient } from "@supabase/supabase-js";
+
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const BUCKET = "templates";
+const supabase = SUPABASE_URL && SUPABASE_KEY ? createClient(SUPABASE_URL, SUPABASE_KEY) : null;
+
+function uploadWithProgress(path, file, onProgress){
+  return new Promise((resolve,reject)=>{
+    if(!SUPABASE_URL||!SUPABASE_KEY){reject(new Error("Supabase not configured (missing VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY)"));return;}
+    const xhr=new XMLHttpRequest();
+    xhr.upload.addEventListener("progress",e=>{
+      if(e.lengthComputable)onProgress(Math.round((e.loaded/e.total)*100));
+    });
+    xhr.onload=()=>{
+      if(xhr.status>=200&&xhr.status<300)resolve();
+      else{
+        let msg=xhr.responseText;
+        try{msg=JSON.parse(xhr.responseText).message||msg;}catch{}
+        reject(new Error(`HTTP ${xhr.status}: ${msg}`));
+      }
+    };
+    xhr.onerror=()=>reject(new Error("Network error during upload"));
+    xhr.open("POST",`${SUPABASE_URL}/storage/v1/object/${BUCKET}/${path}`);
+    xhr.setRequestHeader("Authorization",`Bearer ${SUPABASE_KEY}`);
+    xhr.setRequestHeader("x-upsert","true");
+    xhr.send(file);
+  });
+}
 
 const CSS = `
   @keyframes toastIn{from{opacity:0;transform:translateX(50px)}to{opacity:1;transform:translateX(0)}}
@@ -233,18 +261,19 @@ function AdminPanel({onLogout,uploads,setUploads}){
     const file=e.target.files[0];if(!file)return;
     const key=`${catId}__${typeId}`;
     e.target.value="";
+    const oldPath=uploads[key]?.path;
     setUploads(prev=>({...prev,[key]:{loading:true,progress:0,name:file.name,label,size:"...",date:""}}));
     try{
-      const blob=await upload(
-        `templates/${catId}/${typeId}/${file.name}`,
-        file,
-        {access:"public",handleUploadUrl:"/api/upload",
-         onUploadProgress:({percentage})=>{
-           setUploads(prev=>prev[key]?({...prev,[key]:{...prev[key],progress:Math.round(percentage)}}):prev);
-         }}
-      );
+      if(oldPath && oldPath !== `${catId}/${typeId}/${file.name}`){
+        await supabase.storage.from(BUCKET).remove([oldPath]).catch(()=>{});
+      }
+      const path=`${catId}/${typeId}/${file.name}`;
+      await uploadWithProgress(path,file,pct=>{
+        setUploads(prev=>prev[key]?({...prev,[key]:{...prev[key],progress:pct}}):prev);
+      });
+      const {data:{publicUrl}}=supabase.storage.from(BUCKET).getPublicUrl(path);
       setUploads(prev=>({...prev,[key]:{
-        url:blob.url,name:file.name,label,
+        url:publicUrl,path,name:file.name,label,
         size:(file.size/1024).toFixed(1)+"KB",
         date:new Date().toLocaleDateString("en-MY",{day:"2-digit",month:"short",year:"numeric"}),
       }}));
@@ -257,10 +286,10 @@ function AdminPanel({onLogout,uploads,setUploads}){
     setTimeout(()=>setUT(null),5000);
   };
   const handleRemove=async key=>{
-    const upload=uploads[key];
+    const u=uploads[key];
     setUploads(prev=>{const n={...prev};delete n[key];return n;});
-    if(upload?.url){
-      await fetch(`/api/delete-template?url=${encodeURIComponent(upload.url)}`,{method:"DELETE"}).catch(()=>{});
+    if(u?.path && supabase){
+      await supabase.storage.from(BUCKET).remove([u.path]).catch(()=>{});
     }
   };
 
@@ -684,7 +713,28 @@ export default function App(){
   const thr=useRef(0);
 
   useEffect(()=>{
-    fetch("/api/templates").then(r=>r.json()).then(setUploads).catch(()=>{});
+    if(!supabase)return;
+    (async()=>{
+      const result={};
+      for(const cat of TMPLS){
+        const {data:typeFolders}=await supabase.storage.from(BUCKET).list(cat.id,{limit:100});
+        if(!typeFolders)continue;
+        for(const tf of typeFolders){
+          if(tf.id!==null)continue;
+          const {data:files}=await supabase.storage.from(BUCKET).list(`${cat.id}/${tf.name}`,{limit:10,sortBy:{column:"created_at",order:"desc"}});
+          if(!files||!files.length)continue;
+          const f=files[0];
+          const path=`${cat.id}/${tf.name}/${f.name}`;
+          const {data:{publicUrl}}=supabase.storage.from(BUCKET).getPublicUrl(path);
+          result[`${cat.id}__${tf.name}`]={
+            url:publicUrl,path,name:f.name,
+            size:f.metadata?.size?(f.metadata.size/1024).toFixed(1)+"KB":"—",
+            date:f.created_at?new Date(f.created_at).toLocaleDateString("en-MY",{day:"2-digit",month:"short",year:"numeric"}):"—",
+          };
+        }
+      }
+      setUploads(result);
+    })().catch(err=>console.error("Failed to load templates:",err));
   },[]);
 
   const onScroll=useCallback(()=>setSY(scrollRef.current?.scrollTop??0),[]);
