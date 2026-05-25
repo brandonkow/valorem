@@ -228,16 +228,36 @@ function AdminPanel({onLogout,uploads,setUploads}){
   const[uploadToast,setUT]=useState(null);
   const totalUploaded=Object.keys(uploads).length;
 
-  const handleFileChange=(catId,typeId,label,e)=>{
+  const handleFileChange=async(catId,typeId,label,e)=>{
     const file=e.target.files[0];if(!file)return;
     const key=`${catId}__${typeId}`;
-    setUploads(prev=>({...prev,[key]:{file,name:file.name,label,
-      size:(file.size/1024).toFixed(1)+"KB",
-      date:new Date().toLocaleDateString("en-MY",{day:"2-digit",month:"short",year:"numeric"})}}));
-    setUT(`"${label}" template uploaded successfully.`);
+    setUploads(prev=>({...prev,[key]:{loading:true,name:file.name,label,size:"...",date:""}}));
+    try{
+      const res=await fetch(
+        `/api/upload?filename=${encodeURIComponent(`templates/${catId}/${typeId}/${file.name}`)}`,
+        {method:"PUT",body:file}
+      );
+      if(!res.ok)throw new Error("Upload failed");
+      const data=await res.json();
+      setUploads(prev=>({...prev,[key]:{
+        url:data.url,name:file.name,label,
+        size:(file.size/1024).toFixed(1)+"KB",
+        date:new Date().toLocaleDateString("en-MY",{day:"2-digit",month:"short",year:"numeric"}),
+      }}));
+      setUT(`"${label}" template uploaded successfully.`);
+    }catch{
+      setUploads(prev=>{const n={...prev};delete n[key];return n;});
+      setUT(`Failed to upload "${label}". Please try again.`);
+    }
     setTimeout(()=>setUT(null),3200);
   };
-  const handleRemove=key=>setUploads(prev=>{const n={...prev};delete n[key];return n;});
+  const handleRemove=async key=>{
+    const upload=uploads[key];
+    setUploads(prev=>{const n={...prev};delete n[key];return n;});
+    if(upload?.url){
+      await fetch(`/api/delete-template?url=${encodeURIComponent(upload.url)}`,{method:"DELETE"}).catch(()=>{});
+    }
+  };
 
   return(
     <div style={{background:PLR,minHeight:"100vh",paddingTop:59}}>
@@ -305,7 +325,13 @@ function AdminPanel({onLogout,uploads,setUploads}){
                           <div style={{fontWeight:700,fontSize:13,color:D}}>{pt.label}</div>
                           <div style={{fontSize:11,color:MU,marginTop:2}}>{pt.note}</div>
                         </div>
-                        {uploaded?(
+                        {uploaded?.loading?(
+                          <div style={{display:"flex",alignItems:"center",gap:8,color:MU,fontSize:12}}>
+                            <div style={{width:13,height:13,borderRadius:"50%",border:`2px solid ${BD}`,
+                              borderTopColor:M,animation:"spin .8s linear infinite"}}/>
+                            Uploading…
+                          </div>
+                        ):uploaded?(
                           <div style={{display:"flex",alignItems:"center",gap:10,flex:"1 1 auto",justifyContent:"flex-end",flexWrap:"wrap"}}>
                             <div style={{background:"#F0FDF4",border:"1px solid #86EFAC",borderRadius:8,padding:"6px 12px",fontSize:11}}>
                               <div style={{color:"#15803D",fontWeight:700}}>{uploaded.name}</div>
@@ -481,7 +507,7 @@ function TemplateCard({t,onDownload,downloading,uploads}){
   const busy=downloading===t.id+(sel||"");
   const selectedType=t.types.find(x=>x.id===sel);
   const uploadInfo=sel?uploads[`${t.id}__${sel}`]:null;
-  const hasFile=!!uploadInfo;
+  const hasFile=!!(uploadInfo?.url);
 
   return(
     <div ref={ref} className="vf-card"
@@ -549,7 +575,7 @@ function TemplateCard({t,onDownload,downloading,uploads}){
           ))}
         </div>
         <div className="dl-btn"
-          onClick={()=>sel&&hasFile&&!downloading&&onDownload({id:t.id+sel,title:`${t.title} — ${selectedType?.label}`,file:uploadInfo.file,filename:uploadInfo.name})}
+          onClick={()=>sel&&hasFile&&!downloading&&onDownload({id:t.id+sel,title:`${t.title} — ${selectedType?.label}`,url:uploadInfo.url,filename:uploadInfo.name})}
           style={{background:sel&&hasFile?"#003F2D":sel&&!hasFile?"#92400E":"rgba(0,63,45,.13)",
             color:sel?"#fff":"rgba(0,63,45,.38)",padding:"14px",borderRadius:10,textAlign:"center",
             fontWeight:700,fontSize:13,boxShadow:sel&&hasFile?"0 4px 14px rgba(0,63,45,.28)":"none",
@@ -640,6 +666,10 @@ export default function App(){
   const[uploads,setUploads]=useState({});
   const thr=useRef(0);
 
+  useEffect(()=>{
+    fetch("/api/templates").then(r=>r.json()).then(setUploads).catch(()=>{});
+  },[]);
+
   const onScroll=useCallback(()=>setSY(scrollRef.current?.scrollTop??0),[]);
   const onMouse=useCallback(e=>{
     const now=Date.now();
@@ -657,12 +687,10 @@ export default function App(){
     setDL(t.id);
     setTimeout(()=>{
       setDL(null);
-      if(t.file){
-        const url=URL.createObjectURL(t.file);
+      if(t.url){
         const a=document.createElement("a");
-        a.href=url;a.download=t.filename||t.file.name;
+        a.href=t.url;a.download=t.filename||"template.xlsx";
         document.body.appendChild(a);a.click();document.body.removeChild(a);
-        URL.revokeObjectURL(url);
       }
       setToast(`${t.title} DCF Template downloaded successfully!`);
       setTimeout(()=>setToast(null),3800);
