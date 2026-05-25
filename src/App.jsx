@@ -36,7 +36,7 @@ const CSS = `
 
 const BG="#020D07";
 const D="#003F2D",M="#006A4D",BR="#1DB87B",PL="#EEF6F2",PLR="#F7FBF9",W="#FFF",MU="#587066",BD="rgba(0,63,45,.1)";
-const ADMIN_USER="admin", ADMIN_PASS="cbre2025";
+const ADMIN_USER="admin", ADMIN_PASS="cbre";
 
 const computeCatStats=(catId,stats)=>{
   const dl=Object.entries(stats?.downloads||{})
