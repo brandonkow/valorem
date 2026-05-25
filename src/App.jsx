@@ -12,6 +12,8 @@ const CSS = `
   @keyframes rotateSlowR{from{transform:rotate(0deg)}to{transform:rotate(-360deg)}}
   @keyframes glowPulse{0%,100%{opacity:.5}50%{opacity:1}}
   @keyframes scanLine{0%{transform:translateY(-100%)}100%{transform:translateY(1000%)}}
+  @keyframes clickRipple{0%{width:0;height:0;opacity:.85;border-width:3px}40%{opacity:.55}100%{width:720px;height:720px;opacity:0;border-width:.4px}}
+  @keyframes hoverRipple{0%{width:24px;height:24px;opacity:.55;border-width:2px}100%{width:240px;height:240px;opacity:0;border-width:.4px}}
   .btn-p{transition:all .2s ease;cursor:pointer;border:none;font-family:inherit}
   .btn-p:hover{opacity:.88;transform:translateY(-2px)}
   .btn-o{transition:all .2s ease;cursor:pointer;font-family:inherit;border:none}
@@ -420,8 +422,9 @@ function AdminPanel({onLogout,uploads,setUploads}){
   );
 }
 
-function HeroBg({mouse,scrollY}){
+function HeroBg({mouse,scrollY,ripples}){
   const mx=mouse.x,my=mouse.y,sy=scrollY;
+  const hx=(mx+.5)*100,hy=(my+.5)*100;
   const tiltX=(my*14).toFixed(2);
   const tiltY=(mx*-14).toFixed(2);
   const archLines=[
@@ -504,16 +507,51 @@ function HeroBg({mouse,scrollY}){
           transform:`translate(${mx*(i%2===0?-6:6)}px,${my*(i<2?-4:4)}px)`,
           transition:"transform .5s ease"}}/>
       ))}
+      {/* Hover water ripples following cursor */}
+      <div style={{position:"absolute",left:`${hx}%`,top:`${hy}%`,
+        transform:"translate(-50%,-50%)",pointerEvents:"none",
+        transition:"left .15s ease-out,top .15s ease-out"}}>
+        {[0,1,2].map(i=>(
+          <div key={i} style={{position:"absolute",left:0,top:0,
+            transform:"translate(-50%,-50%)",borderRadius:"50%",
+            border:"1.5px solid rgba(29,184,123,.45)",
+            animation:"hoverRipple 3s ease-out infinite",
+            animationDelay:`${i}s`}}/>
+        ))}
+      </div>
+      {/* Click water ripples */}
+      {ripples?.flatMap(r=>
+        [0,0.18,0.36].map((delay,i)=>(
+          <div key={`${r.id}-${i}`} style={{position:"absolute",
+            left:`${r.x}%`,top:`${r.y}%`,
+            transform:"translate(-50%,-50%)",borderRadius:"50%",
+            border:"2px solid rgba(29,184,123,.7)",
+            boxShadow:"0 0 24px rgba(29,184,123,.3)",
+            animation:"clickRipple 2.4s cubic-bezier(.16,.85,.39,.99) forwards",
+            animationDelay:`${delay}s`,opacity:0,pointerEvents:"none"}}/>
+        ))
+      )}
     </div>
   );
 }
 
 function LandingPage({scrollY,mouse,onEnter}){
   const op=Math.max(0,1-scrollY/480);
+  const[ripples,setRipples]=useState([]);
+  const secRef=useRef(null);
+  const handleClick=e=>{
+    if(!secRef.current)return;
+    const r=secRef.current.getBoundingClientRect();
+    const x=((e.clientX-r.left)/r.width)*100;
+    const y=((e.clientY-r.top)/r.height)*100;
+    const id=Date.now()+Math.random();
+    setRipples(p=>[...p,{x,y,id}]);
+    setTimeout(()=>setRipples(p=>p.filter(rp=>rp.id!==id)),2800);
+  };
   return(
-    <section style={{position:"relative",height:"100vh",background:BG,
-      display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden"}}>
-      <HeroBg mouse={mouse} scrollY={scrollY}/>
+    <section ref={secRef} onClick={handleClick} style={{position:"relative",height:"100vh",background:BG,
+      display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden",cursor:"pointer"}}>
+      <HeroBg mouse={mouse} scrollY={scrollY} ripples={ripples}/>
       <div style={{position:"relative",zIndex:1,textAlign:"center",maxWidth:740,padding:"0 28px",
         opacity:op,transform:`translateY(${-scrollY*.22}px)`}}>
         <div style={{display:"inline-flex",background:"rgba(255,255,255,.07)",
