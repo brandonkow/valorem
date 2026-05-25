@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { upload } from "@vercel/blob/client";
 
 const CSS = `
   @keyframes toastIn{from{opacity:0;transform:translateX(50px)}to{opacity:1;transform:translateX(0)}}
@@ -231,25 +232,26 @@ function AdminPanel({onLogout,uploads,setUploads}){
   const handleFileChange=async(catId,typeId,label,e)=>{
     const file=e.target.files[0];if(!file)return;
     const key=`${catId}__${typeId}`;
+    e.target.value="";
     setUploads(prev=>({...prev,[key]:{loading:true,name:file.name,label,size:"...",date:""}}));
     try{
-      const res=await fetch(
-        `/api/upload?filename=${encodeURIComponent(`templates/${catId}/${typeId}/${file.name}`)}`,
-        {method:"PUT",body:file}
+      const blob=await upload(
+        `templates/${catId}/${typeId}/${file.name}`,
+        file,
+        {access:"public",handleUploadUrl:"/api/upload"}
       );
-      if(!res.ok)throw new Error("Upload failed");
-      const data=await res.json();
       setUploads(prev=>({...prev,[key]:{
-        url:data.url,name:file.name,label,
+        url:blob.url,name:file.name,label,
         size:(file.size/1024).toFixed(1)+"KB",
         date:new Date().toLocaleDateString("en-MY",{day:"2-digit",month:"short",year:"numeric"}),
       }}));
       setUT(`"${label}" template uploaded successfully.`);
-    }catch{
+    }catch(err){
+      console.error("Upload failed:",err);
       setUploads(prev=>{const n={...prev};delete n[key];return n;});
-      setUT(`Failed to upload "${label}". Please try again.`);
+      setUT(`Failed to upload "${label}": ${err?.message||"unknown error"}`);
     }
-    setTimeout(()=>setUT(null),3200);
+    setTimeout(()=>setUT(null),5000);
   };
   const handleRemove=async key=>{
     const upload=uploads[key];
