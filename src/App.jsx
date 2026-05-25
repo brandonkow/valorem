@@ -38,6 +38,20 @@ const BG="#020D07";
 const D="#003F2D",M="#006A4D",BR="#1DB87B",PL="#EEF6F2",PLR="#F7FBF9",W="#FFF",MU="#587066",BD="rgba(0,63,45,.1)";
 const ADMIN_USER="admin", ADMIN_PASS="cbre2025";
 
+const computeCatStats=(catId,stats)=>{
+  const dl=Object.entries(stats?.downloads||{})
+    .filter(([k])=>k.startsWith(`${catId}__`))
+    .reduce((s,[,v])=>s+(v||0),0);
+  const upCount=stats?.uploads?.[catId]||0;
+  const major=1+Math.floor(upCount/10),minor=upCount%10;
+  const lu=stats?.lastUpdated?.[catId];
+  return{
+    downloads:dl.toLocaleString(),
+    version:`v${major}.${minor}`,
+    updated:lu?new Date(lu).toLocaleDateString("en-MY",{month:"short",year:"numeric"}):"—",
+  };
+};
+
 const TERMS=[
   {t:"IRR",x:7,y:15,sx:.14,mx:22},{t:"NPV",x:83,y:21,sx:.2,mx:18},
   {t:"WACC",x:54,y:7,sx:.09,mx:28},{t:"Cap Rate",x:17,y:71,sx:.24,mx:16},
@@ -226,7 +240,7 @@ function AdminLoginModal({onClose,onSuccess}){
   );
 }
 
-function AdminPanel({onLogout,uploads,setUploads}){
+function AdminPanel({onLogout,uploads,setUploads,setStats}){
   const[expandedCat,setExp]=useState(null);
   const[uploadToast,setUT]=useState(null);
   const abortRefs=useRef({});
@@ -262,6 +276,11 @@ function AdminPanel({onLogout,uploads,setUploads}){
         size:(file.size/1024).toFixed(1)+"KB",
         date:new Date().toLocaleDateString("en-MY",{day:"2-digit",month:"short",year:"numeric"}),
       }}));
+      setStats(prev=>({...prev,
+        uploads:{...(prev.uploads||{}),[catId]:((prev.uploads||{})[catId]||0)+1},
+        lastUpdated:{...(prev.lastUpdated||{}),[catId]:new Date().toISOString()}}));
+      fetch("/api/stats",{method:"POST",headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({action:"upload",catId,typeId})}).catch(()=>{});
       setUT(`"${label}" template uploaded successfully.`);
     }catch(err){
       clearTimeout(timeoutId);
@@ -588,13 +607,14 @@ function LandingPage({scrollY,mouse,onEnter}){
   );
 }
 
-function TemplateCard({t,onDownload,downloading,uploads}){
+function TemplateCard({t,onDownload,downloading,uploads,stats}){
   const[ref,v]=useInView(.04);
   const[sel,setSel]=useState(null);
   const busy=downloading===t.id+(sel||"");
   const selectedType=t.types.find(x=>x.id===sel);
   const uploadInfo=sel?uploads[`${t.id}__${sel}`]:null;
   const hasFile=!!(uploadInfo?.url);
+  const cs=computeCatStats(t.id,stats);
 
   return(
     <div ref={ref} className="vf-card"
@@ -612,8 +632,8 @@ function TemplateCard({t,onDownload,downloading,uploads}){
             <p style={{color:MU,fontSize:12,margin:0}}>{t.sub}</p>
           </div>
           <div style={{textAlign:"right",fontSize:11,color:M,fontWeight:700,flexShrink:0,marginLeft:12}}>
-            <div>{t.ver}</div>
-            <div style={{color:MU,fontWeight:400,marginTop:2}}>{t.updated}</div>
+            <div>{cs.version}</div>
+            <div style={{color:MU,fontWeight:400,marginTop:2}}>{cs.updated}</div>
           </div>
         </div>
       </div>
@@ -655,7 +675,7 @@ function TemplateCard({t,onDownload,downloading,uploads}){
           </div>
         )}
         <div style={{display:"flex",gap:9,marginTop:"auto",marginBottom:16,flexWrap:"wrap"}}>
-          {[["Downloads",t.dl],["Version",t.ver],["Updated",t.updated]].map(([k,v])=>(
+          {[["Downloads",cs.downloads],["Version",cs.version],["Updated",cs.updated]].map(([k,v])=>(
             <div key={k} style={{background:PLR,border:`1px solid ${BD}`,borderRadius:7,padding:"5px 12px"}}>
               <div style={{fontSize:8,color:MU,letterSpacing:".4px"}}>{k.toUpperCase()}</div>
               <div style={{fontSize:11,fontWeight:700,color:D,marginTop:1}}>{v}</div>
@@ -663,7 +683,7 @@ function TemplateCard({t,onDownload,downloading,uploads}){
           ))}
         </div>
         <div className="dl-btn"
-          onClick={()=>sel&&hasFile&&!downloading&&onDownload({id:t.id+sel,title:`${t.title} — ${selectedType?.label}`,url:uploadInfo.url,filename:uploadInfo.name})}
+          onClick={()=>sel&&hasFile&&!downloading&&onDownload({id:t.id+sel,title:`${t.title} — ${selectedType?.label}`,url:uploadInfo.url,filename:uploadInfo.name,catId:t.id,typeId:sel})}
           style={{background:sel&&hasFile?"#003F2D":sel&&!hasFile?"#92400E":"rgba(0,63,45,.13)",
             color:sel?"#fff":"rgba(0,63,45,.38)",padding:"14px",borderRadius:10,textAlign:"center",
             fontWeight:700,fontSize:13,boxShadow:sel&&hasFile?"0 4px 14px rgba(0,63,45,.28)":"none",
@@ -682,7 +702,7 @@ function TemplateCard({t,onDownload,downloading,uploads}){
   );
 }
 
-function Dashboard({onDownload,downloading,uploads}){
+function Dashboard({onDownload,downloading,uploads,stats}){
   const[search,setSrc]=useState("");
   const[filter,setFilter]=useState("all");
   const filters=["all","residential","commercial","industrial","land"];
@@ -690,12 +710,13 @@ function Dashboard({onDownload,downloading,uploads}){
     const ms=t.title.toLowerCase().includes(search.toLowerCase())||t.sub.toLowerCase().includes(search.toLowerCase());
     return ms&&(filter==="all"||t.id===filter);
   });
-  const totalUp=Object.keys(uploads).length;
+  const totalUp=Object.keys(uploads).filter(k=>uploads[k]?.url).length;
+  const totalDl=Object.values(stats?.downloads||{}).reduce((s,v)=>s+(v||0),0).toLocaleString();
   return(
     <div style={{background:PLR,minHeight:"100vh",paddingTop:59}}>
       <div style={{background:D}}>
         <div style={{maxWidth:1200,margin:"0 auto",display:"flex",overflowX:"auto"}}>
-          {[["Templates","4"],["Total Downloads","3,196"],["Property Types","29"],["Available",`${totalUp}/29`]].map(([l,v],i)=>(
+          {[["Templates","4"],["Total Downloads",totalDl],["Property Types","29"],["Available",`${totalUp}/29`]].map(([l,v],i)=>(
             <div key={i} style={{padding:"16px 30px",borderRight:i<3?"1px solid rgba(255,255,255,.1)":"none",whiteSpace:"nowrap"}}>
               <div style={{color:"rgba(255,255,255,.5)",fontSize:10,letterSpacing:".4px",marginBottom:4}}>{l.toUpperCase()}</div>
               <div style={{fontSize:17,fontWeight:800,color:W}}>{v}</div>
@@ -727,7 +748,7 @@ function Dashboard({onDownload,downloading,uploads}){
         </div>
         <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(480px,1fr))",gap:20,alignItems:"stretch"}}>
           {filtered.map(t=>(
-            <TemplateCard key={t.id} t={t} onDownload={onDownload} downloading={downloading} uploads={uploads}/>
+            <TemplateCard key={t.id} t={t} onDownload={onDownload} downloading={downloading} uploads={uploads} stats={stats}/>
           ))}
         </div>
         {filtered.length===0&&(
@@ -752,10 +773,12 @@ export default function App(){
   const[downloading,setDL]=useState(null);
   const[showLogin,setShowLogin]=useState(false);
   const[uploads,setUploads]=useState({});
+  const[stats,setStats]=useState({downloads:{},uploads:{},lastUpdated:{}});
   const thr=useRef(0);
 
   useEffect(()=>{
     fetch("/api/templates").then(r=>r.json()).then(setUploads).catch(()=>{});
+    fetch("/api/stats").then(r=>r.json()).then(setStats).catch(()=>{});
   },[]);
 
   const onScroll=useCallback(()=>setSY(scrollRef.current?.scrollTop??0),[]);
@@ -780,6 +803,13 @@ export default function App(){
         a.href=t.url;a.download=t.filename||"template.xlsx";
         document.body.appendChild(a);a.click();document.body.removeChild(a);
       }
+      if(t.catId&&t.typeId){
+        const k=`${t.catId}__${t.typeId}`;
+        setStats(prev=>({...prev,
+          downloads:{...(prev.downloads||{}),[k]:((prev.downloads||{})[k]||0)+1}}));
+        fetch("/api/stats",{method:"POST",headers:{"Content-Type":"application/json"},
+          body:JSON.stringify({action:"download",catId:t.catId,typeId:t.typeId})}).catch(()=>{});
+      }
       setToast(`${t.title} DCF Template downloaded successfully!`);
       setTimeout(()=>setToast(null),3800);
     },1200);
@@ -794,8 +824,8 @@ export default function App(){
       <ProgressBar scrollRef={scrollRef}/>
       <Nav page={page} onBack={()=>go("landing")} onAdminClick={()=>setShowLogin(true)}/>
       {page==="landing"&&<LandingPage scrollY={scrollY} mouse={mouse} onEnter={()=>go("dashboard")}/>}
-      {page==="dashboard"&&<Dashboard onDownload={handleDL} downloading={downloading} uploads={uploads}/>}
-      {page==="admin"&&<AdminPanel onLogout={()=>go("landing")} uploads={uploads} setUploads={setUploads}/>}
+      {page==="dashboard"&&<Dashboard onDownload={handleDL} downloading={downloading} uploads={uploads} stats={stats}/>}
+      {page==="admin"&&<AdminPanel onLogout={()=>go("landing")} uploads={uploads} setUploads={setUploads} setStats={setStats}/>}
       {showLogin&&(
         <AdminLoginModal onClose={()=>setShowLogin(false)} onSuccess={()=>{setShowLogin(false);go("admin");}}/>
       )}
