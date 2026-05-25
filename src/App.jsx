@@ -602,7 +602,7 @@ function TemplateCard({t,onDownload,downloading,uploads}){
         boxShadow:"0 4px 22px rgba(0,63,45,.07)",
         opacity:v?1:0,transform:v?"translateY(0)":"translateY(24px)",
         transition:"opacity .55s ease,transform .55s cubic-bezier(.22,1,.36,1)",
-        display:"flex",flexDirection:"column"}}>
+        display:"flex",flexDirection:"column",height:"100%"}}>
       <div style={{background:PL,padding:"20px 24px 16px",borderBottom:`1px solid ${BD}`}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
           <div>
@@ -629,7 +629,8 @@ function TemplateCard({t,onDownload,downloading,uploads}){
             return(
               <div key={pt.id} className="prop-card" onClick={()=>setSel(active?null:pt.id)}
                 style={{background:active?D:PLR,border:`1.5px solid ${active?D:BD}`,
-                  borderRadius:10,padding:"10px",position:"relative",
+                  borderRadius:10,padding:"10px",position:"relative",minHeight:76,
+                  display:"flex",flexDirection:"column",justifyContent:"flex-start",
                   boxShadow:active?"0 4px 14px rgba(0,63,45,.22)":"0 1px 4px rgba(0,63,45,.05)"}}>
                 {hasUpload&&<div style={{position:"absolute",top:6,right:6,width:7,height:7,
                   borderRadius:"50%",background:BR}}/>}
@@ -724,7 +725,7 @@ function Dashboard({onDownload,downloading,uploads}){
             ))}
           </div>
         </div>
-        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(480px,1fr))",gap:20,alignItems:"start"}}>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(480px,1fr))",gap:20,alignItems:"stretch"}}>
           {filtered.map(t=>(
             <TemplateCard key={t.id} t={t} onDownload={onDownload} downloading={downloading} uploads={uploads}/>
           ))}
