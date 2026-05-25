@@ -571,6 +571,78 @@ function ClickWaves({ripples}){
   );
 }
 
+function HoldButton({onComplete,label,duration=800,style,className}){
+  const[progress,setProgress]=useState(0);
+  const[holding,setHolding]=useState(false);
+  const rafRef=useRef(0);
+  const startRef=useRef(0);
+  const doneRef=useRef(false);
+
+  useEffect(()=>()=>{
+    if(rafRef.current)cancelAnimationFrame(rafRef.current);
+  },[]);
+
+  const tick=t=>{
+    if(!startRef.current)startRef.current=t;
+    const p=Math.min(1,(t-startRef.current)/duration);
+    setProgress(p);
+    if(p>=1){
+      doneRef.current=true;
+      setHolding(false);
+      rafRef.current=0;
+      onComplete();
+      return;
+    }
+    rafRef.current=requestAnimationFrame(tick);
+  };
+
+  const start=e=>{
+    e.preventDefault();e.stopPropagation();
+    if(doneRef.current)return;
+    setHolding(true);
+    startRef.current=0;
+    rafRef.current=requestAnimationFrame(tick);
+  };
+
+  const stop=e=>{
+    if(e)e.stopPropagation();
+    if(rafRef.current){cancelAnimationFrame(rafRef.current);rafRef.current=0;}
+    setHolding(false);
+    if(!doneRef.current)setProgress(0);
+  };
+
+  const pct=progress*100;
+  const ease=holding?"none":"width .32s cubic-bezier(.4,0,.2,1),clip-path .32s cubic-bezier(.4,0,.2,1),-webkit-clip-path .32s cubic-bezier(.4,0,.2,1)";
+
+  return(
+    <button
+      onPointerDown={start}
+      onPointerUp={stop}
+      onPointerLeave={stop}
+      onPointerCancel={stop}
+      onClick={e=>e.stopPropagation()}
+      onContextMenu={e=>e.preventDefault()}
+      className={className}
+      style={{...style,position:"relative",overflow:"hidden",
+        userSelect:"none",touchAction:"none",
+        display:"inline-flex",alignItems:"center",justifyContent:"center"}}>
+      <span aria-hidden style={{position:"absolute",left:0,top:0,bottom:0,
+        width:`${pct}%`,
+        background:`linear-gradient(90deg,${M},${BR})`,
+        transition:ease,willChange:"width"}}/>
+      <span style={{position:"relative",zIndex:1}}>{label}</span>
+      <span aria-hidden style={{position:"absolute",inset:0,
+        display:"flex",alignItems:"center",justifyContent:"center",
+        color:W,clipPath:`inset(0 ${100-pct}% 0 0)`,
+        WebkitClipPath:`inset(0 ${100-pct}% 0 0)`,
+        transition:ease,pointerEvents:"none",zIndex:2,willChange:"clip-path",
+        font:"inherit",letterSpacing:"inherit"}}>
+        {label}
+      </span>
+    </button>
+  );
+}
+
 function LandingPage({scrollY,mouse,onEnter}){
   const op=Math.max(0,1-scrollY/480);
   const[ripples,setRipples]=useState([]);
@@ -607,11 +679,12 @@ function LandingPage({scrollY,mouse,onEnter}){
         <p style={{fontSize:16,color:"rgba(255,255,255,.55)",lineHeight:1.78,maxWidth:520,margin:"0 auto 36px"}}>
           Pre-built Discounted Cash Flow templates for Residential, Commercial, Industrial and Land properties. Built for Malaysian valuers. Designed for accuracy.
         </p>
-        <button onClick={onEnter} className="btn-p"
+        <HoldButton
+          onComplete={onEnter}
+          label="Hold to Access Templates"
+          className="btn-p"
           style={{background:W,color:D,padding:"14px 34px",borderRadius:10,fontWeight:800,fontSize:15,
-            boxShadow:"0 10px 32px rgba(0,0,0,.4)"}}>
-          Access Free Templates
-        </button>
+            boxShadow:"0 10px 32px rgba(0,0,0,.4)"}}/>
       </div>
     </section>
   );
