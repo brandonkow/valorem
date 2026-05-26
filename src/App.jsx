@@ -790,7 +790,9 @@ function Dashboard({onDownload,downloading,uploads,stats}){
   const[filter,setFilter]=useState("all");
   const filters=["all","residential","commercial","industrial","land"];
   const filtered=TMPLS.filter(t=>{
-    const ms=t.title.toLowerCase().includes(search.toLowerCase())||t.sub.toLowerCase().includes(search.toLowerCase());
+    const q=search.trim().toLowerCase();
+    const ms=q===""||t.types.some(pt=>
+      pt.label.toLowerCase().includes(q)||pt.note.toLowerCase().includes(q));
     return ms&&(filter==="all"||t.id===filter);
   });
   const totalUp=Object.keys(uploads).filter(k=>uploads[k]?.url).length;
@@ -815,7 +817,7 @@ function Dashboard({onDownload,downloading,uploads,stats}){
           Select a property category, then choose your specific property type to download the right DCF template.
         </p>
         <div style={{display:"flex",gap:10,marginBottom:24,flexWrap:"wrap",alignItems:"center"}}>
-          <input value={search} onChange={e=>setSrc(e.target.value)} placeholder="Search categories..."
+          <input value={search} onChange={e=>setSrc(e.target.value)} placeholder="Search property types..."
             style={{flex:"1 1 200px",minWidth:160,background:W,border:`1px solid ${BD}`,borderRadius:8,
               padding:"10px 14px",color:D,fontSize:13,fontFamily:"inherit",boxSizing:"border-box"}}/>
           <div style={{display:"flex",gap:7,flexWrap:"wrap"}}>
