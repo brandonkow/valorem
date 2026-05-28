@@ -15,7 +15,13 @@ const CSS = `
   @keyframes inkSink{0%{opacity:0;transform:translateY(8px);letter-spacing:.04em}100%{opacity:1;transform:translateY(0);letter-spacing:normal}}
   @keyframes inkFade{from{opacity:0}to{opacity:1}}
   @keyframes underlineDraw{from{transform:scaleX(0)}to{transform:scaleX(1)}}
-  body{margin:0;font-family:'Instrument Sans',sans-serif;font-feature-settings:"ss01","cv11";color:#0A0A08;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+  @keyframes caretBlink{0%,49%{opacity:1}50%,100%{opacity:0}}
+  @keyframes phosphorPulse{0%,100%{opacity:.7}50%{opacity:1}}
+  @keyframes scanLineDrift{0%{transform:translateY(-2%)}100%{transform:translateY(2%)}}
+  @keyframes numberTick{0%{opacity:.45;transform:translateY(-2px)}45%{opacity:1;transform:translateY(0)}100%{opacity:1;transform:translateY(0)}}
+  @keyframes barRise{from{transform:scaleY(0)}to{transform:scaleY(1)}}
+  @keyframes dotJitter{0%,100%{transform:translate(0,0)}25%{transform:translate(1px,-1px)}50%{transform:translate(0,1px)}75%{transform:translate(-1px,0)}}
+  body{margin:0;font-family:'Onest',sans-serif;font-feature-settings:"ss01","cv11";color:#E5E9E7;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;background:#0B0F0D}
   .btn-p{transition:all .2s ease;cursor:pointer;border:none;font-family:inherit}
   .btn-p:hover{opacity:.88;transform:translateY(-2px)}
   .btn-o{transition:all .2s ease;cursor:pointer;font-family:inherit;border:none}
@@ -35,13 +41,14 @@ const CSS = `
   .ed-link::after{content:"";position:absolute;left:0;right:0;bottom:-2px;height:1px;background:currentColor;transform:scaleX(0);transform-origin:left center;transition:transform .35s cubic-bezier(.22,1,.36,1)}
   .ed-link:hover::after{transform:scaleX(1)}
   ::-webkit-scrollbar{width:6px}
-  ::-webkit-scrollbar-track{background:#E8E1D2}
-  ::-webkit-scrollbar-thumb{background:#A8A095;border-radius:0}
+  ::-webkit-scrollbar-track{background:#0F1411}
+  ::-webkit-scrollbar-thumb{background:#283129;border-radius:0}
+  ::-webkit-scrollbar-thumb:hover{background:#3a463d}
 `;
 
-const BG="#F2EDE4";
+const BG="#0B0F0D";
 const D="#003F2D",M="#006A4D",BR="#1DB87B",PL="#EEF6F2",PLR="#F7FBF9",W="#FFF",MU="#587066",BD="rgba(0,63,45,.1)";
-const INK="#0A0A08",PAPER="#F2EDE4",PAPER_2="#FAF6EE",HAIR="#C9C2B5",MUTED_INK="#5C5750",OXBLOOD="#6B1F28";
+const TERM_BG="#0B0F0D",TERM_PANEL="#10161300",TERM_PANEL_S="#101613",TERM_GRID="#1B221E",TERM_BORDER="#283129",TERM_FG="#E5E9E7",TERM_FG_DIM="#7C8881",TERM_FG_MUTE="#4B5450",PHOSPHOR="#00C896",PHOSPHOR_DIM="#0F5239",SIG_UP="#38EFA6",SIG_DOWN="#E66660",AMBER="#FFC640";
 const ADMIN_USER="admin", ADMIN_PASS="cbre";
 
 const computeCatStats=(catId,stats)=>{
@@ -128,13 +135,13 @@ function ProgressBar({scrollRef}){
     el.addEventListener("scroll",fn,{passive:true});return()=>el.removeEventListener("scroll",fn);
   },[scrollRef]);
   return(
-    <div style={{position:"fixed",top:0,left:0,right:0,height:3,zIndex:9999,background:"rgba(0,63,45,.1)"}}>
-      <div style={{height:"100%",width:`${p}%`,background:`linear-gradient(90deg,${D},${BR})`,transition:"width .08s linear"}}/>
+    <div style={{position:"fixed",top:0,left:0,right:0,height:2,zIndex:9999,background:"rgba(0,200,150,.1)"}}>
+      <div style={{height:"100%",width:`${p}%`,background:PHOSPHOR,boxShadow:`0 0 8px ${PHOSPHOR}`,transition:"width .08s linear"}}/>
     </div>
   );
 }
 
-/* ── Nav: editorial masthead on landing, white card on dashboard/admin ── */
+/* ── Nav: terminal status bar on landing, white card on dashboard/admin ── */
 function Nav({page,onBack,onAdminClick}){
   const onLanding = page==="landing";
   const onDash    = page==="dashboard";
@@ -142,22 +149,32 @@ function Nav({page,onBack,onAdminClick}){
 
   return(
     <nav style={{
-      position:"fixed",top:3,left:0,right:0,zIndex:300,height:56,
-      background: onLanding ? "transparent" : "rgba(255,255,255,.97)",
-      backdropFilter: onLanding ? "none" : "blur(18px)",
-      borderBottom: onLanding ? "none" : `1px solid ${BD}`,
+      position:"fixed",top:2,left:0,right:0,zIndex:300,height:54,
+      background: onLanding ? "rgba(11,15,13,.88)" : "rgba(255,255,255,.97)",
+      backdropFilter: "blur(18px)",
+      borderBottom: onLanding ? `1px solid ${TERM_BORDER}` : `1px solid ${BD}`,
       display:"flex",alignItems:"center",justifyContent:"space-between",
-      padding: onLanding ? "0 56px" : "0 36px",
+      padding: onLanding ? "0 28px" : "0 36px",
     }}>
-      <div>
+      <div style={{display:"flex",alignItems:"center",gap:onLanding?22:0}}>
         {onLanding ? (
           <>
-            <div style={{fontFamily:"'Fraunces', serif",fontStyle:"italic",fontWeight:500,
-              fontSize:22,letterSpacing:"-.01em",color:INK,lineHeight:1,
-              fontVariationSettings:"'opsz' 72"}}>Valorem</div>
-            <div style={{fontFamily:"'JetBrains Mono', monospace",fontSize:8.5,
-              letterSpacing:"2.5px",marginTop:3,color:MUTED_INK,fontWeight:500,
-              textTransform:"uppercase"}}>Published · CBRE Malaysia</div>
+            <div style={{display:"flex",alignItems:"center",gap:10}}>
+              <span style={{width:8,height:8,background:PHOSPHOR,
+                boxShadow:`0 0 8px ${PHOSPHOR}`,
+                animation:"phosphorPulse 1.8s ease infinite"}}/>
+              <div style={{fontFamily:"'JetBrains Mono', monospace",fontWeight:600,
+                fontSize:13,letterSpacing:"2.5px",color:TERM_FG,textTransform:"uppercase"}}>
+                VALOREM<span style={{color:PHOSPHOR,margin:"0 6px"}}>·</span><span style={{color:TERM_FG_DIM,fontWeight:500}}>CBRE.MY</span>
+              </div>
+            </div>
+            <div style={{display:"flex",alignItems:"center",gap:18,
+              fontFamily:"'JetBrains Mono', monospace",fontSize:9.5,
+              color:TERM_FG_MUTE,letterSpacing:"1.8px",textTransform:"uppercase",fontWeight:500}}>
+              <span style={{color:TERM_FG_DIM}}>SYS:OK</span>
+              <span>ENV:PROD</span>
+              <span>BLD:01.4</span>
+            </div>
           </>
         ) : (
           <>
@@ -176,11 +193,11 @@ function Nav({page,onBack,onAdminClick}){
         )}
         {onLanding&&(
           <button className="btn-o" onClick={onAdminClick}
-            style={{background:"transparent",color:INK,
-              border:`1px solid ${INK}`,fontFamily:"'JetBrains Mono', monospace",
-              padding:"8px 18px",borderRadius:0,fontWeight:500,fontSize:10.5,
+            style={{background:"transparent",color:TERM_FG,
+              border:`1px solid ${TERM_BORDER}`,fontFamily:"'JetBrains Mono', monospace",
+              padding:"7px 16px",borderRadius:0,fontWeight:500,fontSize:10,
               cursor:"pointer",letterSpacing:"2.5px",textTransform:"uppercase"}}>
-            Admin
+            [Admin]
           </button>
         )}
       </div>
@@ -453,51 +470,67 @@ function AdminPanel({onLogout,uploads,setUploads,setStats}){
   );
 }
 
-/* ── Editorial data — published in this issue ── */
-const EDITION={vol:"IV",no:"04",year:"MMXXVI",month:"MAY",loc:"KUALA LUMPUR",iss:"01"};
-
-const TICKER=[
-  {seg:"Office Grade A",loc:"KL Central",y:"5.75",d:"-0.12"},
-  {seg:"Office Grade B",loc:"KL Fringe",y:"6.40",d:"-0.05"},
-  {seg:"Retail Prime",loc:"Bukit Bintang",y:"7.10",d:"+0.08"},
-  {seg:"Retail Suburban",loc:"Petaling Jaya",y:"7.85",d:"+0.02"},
-  {seg:"Logistics",loc:"Shah Alam",y:"6.20",d:"=0.00"},
-  {seg:"Industrial",loc:"Johor Bahru",y:"7.05",d:"-0.03"},
-  {seg:"Hotel Upscale",loc:"Penang",y:"8.10",d:"+0.15"},
-  {seg:"Residential High-Rise",loc:"Mont Kiara",y:"4.90",d:"-0.08"},
-  {seg:"Residential Landed",loc:"Damansara",y:"4.20",d:"-0.04"},
-  {seg:"Agricultural",loc:"Pahang",y:"6.80",d:"+0.01"},
-  {seg:"Development Land",loc:"Selangor",y:"—",d:"—"},
+/* ─────────────────────────────────────────────
+   Terminal data — live financial signals
+   ───────────────────────────────────────────── */
+const BENCHMARKS=[
+  {code:"KLOA",label:"OFFICE A · KL",y:5.75,d:-0.12},
+  {code:"KLOB",label:"OFFICE B · KL",y:6.40,d:-0.05},
+  {code:"KLRP",label:"RETAIL · KLCC",y:7.10,d:0.08},
+  {code:"PJRT",label:"RETAIL · PJ",y:7.85,d:0.02},
+  {code:"SALG",label:"LOGISTICS · SA",y:6.20,d:0.00},
+  {code:"JBID",label:"INDUSTRIAL · JB",y:7.05,d:-0.03},
+  {code:"PGHT",label:"HOTEL · PEN",y:8.10,d:0.15},
+  {code:"MKRH",label:"HIGH-RISE · MK",y:4.90,d:-0.08},
+  {code:"DLND",label:"LANDED · DMS",y:4.20,d:-0.04},
+  {code:"PHAG",label:"AGRI · PHG",y:6.80,d:0.01},
 ];
 
-const LIBRARY=[
-  {num:"I",dept:"Methodology",title:"Industry-Standard DCF",
-   body:"WACC, IRR, NPV and cap-rate logic, calibrated across asset classes and reviewed by practicing valuers. The mathematics are already proven, the references already documented.",
-   quote:"The mathematics already proven."},
-  {num:"II",dept:"Geography",title:"Malaysian-Tuned",
-   body:"Ringgit currency throughout, local rental tiers, MSC office grades and statutory considerations baked into every workbook — calibrated to our market, not adapted from a US template.",
-   quote:"Built for our market, not adapted from another."},
-  {num:"III",dept:"Provenance",title:"Continuously Revised",
-   body:"New editions reflect the latest yields, rentals and absorption rates as recorded by CBRE Research. Workbooks are dated, versioned, and traceable to source data.",
-   quote:"Current with the market as it moves."},
+/* DCF model parameters · the showpiece sample */
+const DCF_MODEL={
+  asset:"Grade A Office Tower",
+  location:"Kuala Lumpur Sentral",
+  noi:[2400,2496,2596,2700,2808],
+  growth:0.04,
+  wacc:0.08,
+  terminal:35400,
+  workbook:"01.4",
+};
+
+const CATEGORIES=[
+  {n:"01",code:"RES",name:"Residential",types:8,subtitle:"Landed & strata title",
+   sample:["Condominium","Terrace","Bungalow","SOHO","Affordable"]},
+  {n:"02",code:"COM",name:"Commercial",types:7,subtitle:"Office, retail & mixed-use",
+   sample:["Office Tower","Retail Mall","Hotel","Shophouse","Med. Centre"]},
+  {n:"03",code:"IND",name:"Industrial",types:7,subtitle:"Factory & logistics",
+   sample:["Det. Factory","Warehouse","Logistics","Cold Storage","Light Ind."]},
+  {n:"04",code:"LND",name:"Land",types:7,subtitle:"Bare land & development",
+   sample:["Resi Land","Comm. Land","Industrial","Agricultural","Freehold"]},
 ];
 
-const PROCEDURE=[
-  {roman:"I",verb:"Select",obj:"a category — Residential, Commercial, Industrial or Land."},
-  {roman:"II",verb:"Specify",obj:"a property type — terrace, warehouse, office tower, shophouse."},
-  {roman:"III",verb:"Download",obj:"the workbook, plug in your deal, present your numbers."},
+const FORMULAS=[
+  {key:"NPV",label:"Net Present Value",
+   eq:"NPV = Σ ( CFₜ / (1+r)ᵗ ) + TV / (1+r)ⁿ",
+   where:[
+     ["CFₜ","Net cash flow in year t"],
+     ["r","Discount rate · WACC"],
+     ["TV","Terminal value at exit"],
+     ["n","Holding period · years"],
+   ]},
+  {key:"IRR",label:"Internal Rate of Return",
+   eq:"0 = Σ ( CFₜ / (1+IRR)ᵗ ) − I₀",
+   where:[
+     ["IRR","Rate that makes NPV = 0"],
+     ["CFₜ","Cash flow in year t"],
+     ["I₀","Initial investment outlay"],
+   ]},
+  {key:"CAP",label:"Capitalisation Rate",
+   eq:"Cap = NOI / Property Value",
+   where:[
+     ["NOI","Net Operating Income · annual"],
+     ["Value","Current market valuation"],
+   ]},
 ];
-
-const NOISE_SVG=`<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' seed='7' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.04 0 0 0 0 0.04 0 0 0 0 0.03 0 0 0 0.22 0'/></filter><rect width='100%' height='100%' filter='url(#n)'/></svg>`;
-const NOISE_URL=`url("data:image/svg+xml;utf8,${encodeURIComponent(NOISE_SVG)}")`;
-
-function PaperGrain({opacity=.55}){
-  return(
-    <div aria-hidden style={{position:"absolute",inset:0,pointerEvents:"none",
-      opacity,mixBlendMode:"multiply",zIndex:0,
-      backgroundImage:NOISE_URL,backgroundSize:"220px 220px"}}/>
-  );
-}
 
 function useIsWide(bp=920){
   const[w,sw]=useState(typeof window!=="undefined"?window.innerWidth:1280);
@@ -510,7 +543,17 @@ function useIsWide(bp=920){
 }
 
 /* ── The Wax Seal — press and hold to enter the library ── */
-function WaxSeal({onComplete,size=216,duration=900}){
+/* ── Subtle CRT scan-lines overlay ── */
+function ScanLines({opacity=.4}){
+  return(
+    <div aria-hidden style={{position:"absolute",inset:0,pointerEvents:"none",zIndex:0,
+      opacity,
+      backgroundImage:"repeating-linear-gradient(0deg,rgba(229,233,231,.012) 0px,rgba(229,233,231,.012) 1px,transparent 1px,transparent 3px)"}}/>
+  );
+}
+
+/* ── ExecuteBar — terminal-style press-and-hold CTA ── */
+function ExecuteBar({onComplete,duration=900,command="initiate --library --region=MY",width=600}){
   const[p,setP]=useState(0);
   const[holding,setHolding]=useState(false);
   const rafRef=useRef(0),startRef=useRef(0),doneRef=useRef(false);
@@ -538,268 +581,94 @@ function WaxSeal({onComplete,size=216,duration=900}){
     if(!doneRef.current)setP(0);
   };
 
-  const fillR=p*36;
-  const flipped=p>0.45;
-  const trans=holding?"none":"r .35s cubic-bezier(.4,0,.2,1)";
+  const pct=p*100;
+  const trans=holding?"none":"width .35s cubic-bezier(.4,0,.2,1),clip-path .35s cubic-bezier(.4,0,.2,1),-webkit-clip-path .35s cubic-bezier(.4,0,.2,1)";
+
+  const inner=(invert)=>(
+    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",
+      padding:"18px 22px",height:"100%",boxSizing:"border-box"}}>
+      <div style={{display:"flex",alignItems:"center",gap:10,fontSize:14}}>
+        <span style={{color:invert?TERM_BG:PHOSPHOR,fontWeight:700}}>$</span>
+        <span style={{color:invert?TERM_BG:TERM_FG,fontWeight:invert?600:500,letterSpacing:".4px"}}>{command}</span>
+        {!holding && !invert && (
+          <span aria-hidden style={{display:"inline-block",
+            width:8,height:14,background:TERM_FG,verticalAlign:"middle",
+            marginLeft:1,animation:"caretBlink 1.05s steps(2) infinite"}}/>
+        )}
+      </div>
+      <div style={{fontSize:10,letterSpacing:"2.5px",
+        color:invert?TERM_BG:TERM_FG_DIM,fontWeight:invert?700:600,
+        textTransform:"uppercase"}}>
+        {holding?`${Math.floor(pct).toString().padStart(2,"0")}%`:"HOLD ↓ TO EXEC"}
+      </div>
+    </div>
+  );
 
   return(
     <button
       onPointerDown={start} onPointerUp={stop} onPointerLeave={stop} onPointerCancel={stop}
       onClick={e=>e.stopPropagation()} onContextMenu={e=>e.preventDefault()}
-      aria-label="Press and hold to enter the library"
-      style={{position:"relative",width:size,height:size,
-        background:"transparent",border:"none",cursor:"pointer",padding:0,
-        userSelect:"none",touchAction:"none",fontFamily:"inherit",
-        filter:holding?"drop-shadow(0 8px 22px rgba(10,10,8,.22))":"drop-shadow(0 4px 12px rgba(10,10,8,.14))",
-        transition:"filter .2s ease,transform .2s ease",
-        transform:holding?"scale(.985)":"scale(1)"}}>
-      <svg viewBox="-50 -50 100 100" style={{width:"100%",height:"100%",overflow:"visible",display:"block"}}>
-        <defs>
-          <path id="ws-top" d="M -39 -5 A 39 39 0 0 1 39 -5"/>
-          <path id="ws-bot" d="M -33 6 A 33 33 0 0 0 33 6"/>
-          <radialGradient id="ws-wax" cx="40%" cy="38%" r="65%">
-            <stop offset="0%" stopColor="#0F5239"/>
-            <stop offset="55%" stopColor="#003F2D"/>
-            <stop offset="100%" stopColor="#012219"/>
-          </radialGradient>
-        </defs>
+      aria-label="Hold to execute"
+      style={{position:"relative",display:"block",width:"100%",maxWidth:width,
+        background:TERM_PANEL_S,
+        border:`1px solid ${holding?PHOSPHOR:TERM_BORDER}`,
+        padding:0,cursor:"pointer",overflow:"hidden",
+        fontFamily:"'JetBrains Mono', monospace",
+        boxShadow:holding?`0 0 28px rgba(0,200,150,.18)`:"none",
+        transition:"border-color .15s ease,box-shadow .2s ease",
+        touchAction:"none",userSelect:"none"}}>
+      {/* phosphor fill background */}
+      <div aria-hidden style={{position:"absolute",left:0,top:0,bottom:0,
+        width:`${pct}%`,
+        background:`linear-gradient(90deg,${PHOSPHOR_DIM} 0%,${PHOSPHOR} 100%)`,
+        transition:trans,willChange:"width"}}/>
 
-        {/* outer rim — double hairline */}
-        <circle cx="0" cy="0" r="47" fill="none" stroke={INK} strokeWidth=".7"/>
-        <circle cx="0" cy="0" r="45.4" fill="none" stroke={INK} strokeWidth=".25"/>
+      {/* base content layer (dark text on dark) */}
+      <div style={{position:"relative",zIndex:1}}>{inner(false)}</div>
 
-        {/* curved text on upper arc */}
-        <text fontSize="3.4" letterSpacing="2.4" fill={INK}
-          style={{fontFamily:"'JetBrains Mono', monospace",textTransform:"uppercase",fontWeight:500}}>
-          <textPath href="#ws-top" startOffset="50%" textAnchor="middle">VALOREM · CBRE MALAYSIA</textPath>
-        </text>
-
-        {/* curved text on lower arc */}
-        <text fontSize="2.9" letterSpacing="2" fill={INK}
-          style={{fontFamily:"'JetBrains Mono', monospace",textTransform:"uppercase",fontWeight:500}}>
-          <textPath href="#ws-bot" startOffset="50%" textAnchor="middle">EST · MMXXVI</textPath>
-        </text>
-
-        {/* ornamental side marks — printer's flourish */}
-        <g fill={INK} stroke={INK} strokeWidth=".25">
-          <circle cx="-43" cy="0" r=".7" fill={INK}/>
-          <circle cx="43" cy="0" r=".7" fill={INK}/>
-          <path d="M -47 -2 L -49 0 L -47 2" fill="none"/>
-          <path d="M 47 -2 L 49 0 L 47 2" fill="none"/>
-        </g>
-
-        {/* inner ring */}
-        <circle cx="0" cy="0" r="38" fill="none" stroke={INK} strokeWidth=".32"/>
-        <circle cx="0" cy="0" r="36.6" fill="none" stroke={INK} strokeWidth=".15"/>
-
-        {/* wax fill — radial, soaking outward */}
-        <circle cx="0" cy="0" r={fillR} fill="url(#ws-wax)" style={{transition:trans}}/>
-        {p>0.04 && (
-          <circle cx="-5" cy="-6" r={fillR*.38} fill="rgba(255,255,255,.08)" style={{transition:trans}}/>
-        )}
-
-        {/* V monogram — Fraunces italic */}
-        <text x="0" y="3" textAnchor="middle"
-          fontSize="32" fill={flipped?PAPER:INK}
-          style={{fontFamily:"'Fraunces', serif",fontWeight:600,fontStyle:"italic",
-            transition:"fill .25s ease",fontVariationSettings:"'opsz' 144"}}>V</text>
-
-        {/* instruction */}
-        <text x="0" y="20" textAnchor="middle"
-          fontSize="3" letterSpacing="2.6" fontWeight="500"
-          fill={flipped?"rgba(242,237,228,.8)":MUTED_INK}
-          style={{fontFamily:"'JetBrains Mono', monospace",textTransform:"uppercase",
-            transition:"fill .25s ease"}}>
-          Press · Hold
-        </text>
-      </svg>
+      {/* inverted overlay clipped to fill — perfect color flip */}
+      <div aria-hidden style={{position:"absolute",inset:0,zIndex:2,pointerEvents:"none",
+        clipPath:`inset(0 ${100-pct}% 0 0)`,
+        WebkitClipPath:`inset(0 ${100-pct}% 0 0)`,
+        transition:trans,willChange:"clip-path"}}>{inner(true)}</div>
     </button>
   );
 }
 
 /* ── Masthead-style hero — editorial cover ── */
-function Hero({onEnter}){
-  const wide=useIsWide(1100);
-  const heroCols=wide?"180px 1fr 240px":"1fr";
+/* ── Live yield ticker — top financial ticker ── */
+function LiveYieldTicker(){
+  const seq=[...BENCHMARKS,...BENCHMARKS];
   return(
-    <section style={{position:"relative",background:PAPER,overflow:"hidden",
-      borderBottom:`1px solid ${HAIR}`}}>
-      <PaperGrain/>
-
-      {/* Edition strip — between nav and hero body */}
-      <div style={{padding:wide?"86px 56px 14px":"82px 28px 12px",
-        position:"relative",zIndex:2,borderBottom:`1px solid ${INK}`,
-        display:"flex",flexWrap:"wrap",justifyContent:"space-between",alignItems:"baseline",gap:18,
-        fontFamily:"'JetBrains Mono', monospace",fontSize:10,
-        color:INK,letterSpacing:"2px",textTransform:"uppercase",fontWeight:500}}>
-        <span><strong style={{letterSpacing:"3px",fontWeight:600}}>Vol · {EDITION.vol}</strong> &nbsp; · &nbsp; No · {EDITION.no}</span>
-        <span style={{flex:wide?1:"unset",textAlign:"center",opacity:.55,letterSpacing:"3.5px"}}>
-          A Library of DCF Workbooks &nbsp;·&nbsp; Published by CBRE Malaysia
-        </span>
-        <span>{EDITION.month} · {EDITION.year} &nbsp; · &nbsp; {EDITION.loc}</span>
-      </div>
-
-      {/* Hero body — three-column editorial */}
-      <div style={{display:"grid",gridTemplateColumns:heroCols,gap:0,
-        padding:wide?"68px 56px 96px":"48px 28px 72px",
-        position:"relative",zIndex:1,maxWidth:1480,margin:"0 auto"}}>
-
-        {/* Left marginalia */}
-        {wide && (
-          <aside style={{borderRight:`1px solid ${HAIR}`,paddingRight:28,
-            fontFamily:"'JetBrains Mono', monospace",fontSize:9.5,
-            color:MUTED_INK,letterSpacing:"1.5px",textTransform:"uppercase",
-            lineHeight:2.4}}>
-            <div style={{color:INK,fontWeight:600,marginBottom:18,fontSize:10.5,letterSpacing:"2px"}}>—— Frontispiece</div>
-            <div>Volume — {EDITION.vol}</div>
-            <div>Number — {EDITION.no}</div>
-            <div>Issue — {EDITION.iss}</div>
-            <div>Anno — {EDITION.year}</div>
-            <div style={{marginTop:22,color:OXBLOOD,fontWeight:600}}>—— Filed:</div>
-            <div>{EDITION.loc}</div>
-            <div>{EDITION.month} · {EDITION.year}</div>
-          </aside>
-        )}
-
-        {/* Main column */}
-        <div style={{padding:wide?"0 56px":"0",position:"relative"}}>
-          <div style={{fontFamily:"'JetBrains Mono', monospace",
-            fontSize:10,color:OXBLOOD,letterSpacing:"3.5px",
-            textTransform:"uppercase",marginBottom:34,fontWeight:600,
-            display:"flex",alignItems:"center",gap:14,
-            animation:"inkSink .8s ease forwards"}}>
-            <span style={{width:34,height:1,background:OXBLOOD,display:"inline-block"}}/>
-            Department of Property Valuation
-          </div>
-
-          <h1 style={{
-            fontFamily:"'Fraunces', serif",
-            fontSize:"clamp(54px,9vw,128px)",
-            fontWeight:300,
-            lineHeight:.94,letterSpacing:"-.04em",
-            color:INK,margin:"0 0 28px",
-            fontVariationSettings:"'opsz' 144"}}>
-            Valuation,<br/>
-            <em style={{fontWeight:400,fontVariationSettings:"'opsz' 144"}}>without</em>
-            <span aria-hidden style={{display:"inline-block",width:18,height:18,
-              background:OXBLOOD,borderRadius:"50%",margin:"0 14px 8px 20px",
-              verticalAlign:"middle"}}/>
-            <br/>
-            Reinvention.
-          </h1>
-
-          <p style={{
-            fontFamily:"'Instrument Sans', sans-serif",
-            fontSize:17,lineHeight:1.62,
-            color:INK,maxWidth:600,
-            margin:"0 0 48px",fontWeight:400}}>
-            <span style={{
-              fontFamily:"'Fraunces', serif",
-              fontSize:80,float:"left",
-              lineHeight:.82,marginRight:14,
-              marginTop:8,marginBottom:-4,
-              fontWeight:600,color:INK,
-              fontVariationSettings:"'opsz' 144"}}>P</span>
-            re-built Discounted Cash Flow workbooks for the Malaysian property market — residential, commercial, industrial and land. Each model is wired by practicing valuers and reviewed against current CBRE market data. Open the workbook, plug in your deal, present the numbers.
-          </p>
-
-          {/* CTA — wax seal + caption */}
-          <div style={{display:"flex",alignItems:"center",gap:36,marginTop:4,flexWrap:"wrap"}}>
-            <WaxSeal onComplete={onEnter}/>
-            <div style={{maxWidth:260}}>
-              <div style={{
-                fontFamily:"'Fraunces', serif",fontStyle:"italic",
-                fontSize:21,color:INK,lineHeight:1.32,
-                fontWeight:400,marginBottom:10,
-                fontVariationSettings:"'opsz' 36"}}>
-                Press &amp; hold the seal to enter the library.
-              </div>
-              <div style={{
-                fontFamily:"'JetBrains Mono', monospace",
-                fontSize:9.5,letterSpacing:"1.8px",
-                color:MUTED_INK,textTransform:"uppercase",lineHeight:1.7}}>
-                ↳ Free · No signup · Always current
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Right marginalia — fact card */}
-        {wide && (
-          <aside style={{borderLeft:`1px solid ${HAIR}`,paddingLeft:28}}>
-            <div style={{
-              fontFamily:"'JetBrains Mono', monospace",fontSize:10.5,
-              color:INK,letterSpacing:"2px",fontWeight:600,marginBottom:14,
-              textTransform:"uppercase"}}>—— Catalogue</div>
-            {[
-              ["Categories","04"],
-              ["Property Types","29"],
-              ["Format","XLSX"],
-              ["Currency","RM"],
-              ["Coverage","Peninsular MY"],
-              ["Edition","I · MMXXVI"]
-            ].map(([k,v],i,a)=>(
-              <div key={k} style={{
-                padding:"13px 0",
-                borderBottom:i<a.length-1?`1px solid ${HAIR}`:"none",
-                display:"flex",justifyContent:"space-between",alignItems:"baseline"}}>
-                <span style={{
-                  fontFamily:"'JetBrains Mono', monospace",
-                  fontSize:9.5,color:MUTED_INK,letterSpacing:"1.2px",
-                  textTransform:"uppercase"}}>{k}</span>
-                <span style={{
-                  fontFamily:"'Fraunces', serif",
-                  fontSize:17,color:INK,fontWeight:500,
-                  fontVariationSettings:"'opsz' 36"}}>{v}</span>
-              </div>
-            ))}
-          </aside>
-        )}
-      </div>
-
-      {/* Lower edge marks */}
-      <div style={{position:"absolute",bottom:22,left:wide?56:28,
-        fontFamily:"'JetBrains Mono', monospace",fontSize:9,
-        color:MUTED_INK,letterSpacing:"2px",textTransform:"uppercase",zIndex:2}}>
-        — Pg · 01
-      </div>
-      <div style={{position:"absolute",bottom:22,right:wide?56:28,
-        fontFamily:"'JetBrains Mono', monospace",fontSize:9,
-        color:MUTED_INK,letterSpacing:"2px",textTransform:"uppercase",zIndex:2}}>
-        Scroll ↓
-      </div>
-    </section>
-  );
-}
-
-/* ── Market ticker — dark inverted band, Bloomberg-style ── */
-function MarketTicker(){
-  const seq=[...TICKER,...TICKER];
-  return(
-    <section style={{background:INK,padding:"24px 0",overflow:"hidden",position:"relative"}}>
+    <section style={{background:"#070A09",
+      borderBottom:`1px solid ${TERM_BORDER}`,borderTop:`1px solid ${TERM_BORDER}`,
+      padding:"10px 0",position:"relative",overflow:"hidden"}}>
       <div style={{position:"absolute",inset:0,
-        background:"linear-gradient(90deg,#0A0A08 0%,transparent 6%,transparent 94%,#0A0A08 100%)",
+        background:"linear-gradient(90deg,#070A09 0%,transparent 6%,transparent 94%,#070A09 100%)",
         zIndex:2,pointerEvents:"none"}}/>
-      <div style={{display:"flex",animation:"tickerScroll 95s linear infinite",
-        whiteSpace:"nowrap",width:"max-content",willChange:"transform"}}>
+      <div style={{position:"absolute",left:14,top:"50%",transform:"translateY(-50%)",zIndex:3,
+        background:"#070A09",paddingRight:14,
+        fontFamily:"'JetBrains Mono', monospace",fontSize:9.5,
+        color:PHOSPHOR,letterSpacing:"2.5px",fontWeight:600,textTransform:"uppercase",
+        display:"flex",alignItems:"center",gap:8}}>
+        <span style={{width:6,height:6,background:PHOSPHOR,
+          boxShadow:`0 0 6px ${PHOSPHOR}`,
+          animation:"phosphorPulse 1.6s ease infinite"}}/>
+        LIVE · YIELDS
+      </div>
+      <div style={{display:"flex",animation:"tickerScroll 110s linear infinite",
+        whiteSpace:"nowrap",width:"max-content",willChange:"transform",paddingLeft:140}}>
         {seq.map((r,i)=>{
-          const sign=r.d.startsWith("-")?"down":r.d.startsWith("+")?"up":"flat";
+          const sign=r.d<0?"down":r.d>0?"up":"flat";
           const arrow=sign==="down"?"↓":sign==="up"?"↑":"→";
-          const col=sign==="down"?"#5FB591":sign==="up"?"#D88898":"rgba(242,237,228,.4)";
+          const col=sign==="down"?SIG_UP:sign==="up"?SIG_DOWN:TERM_FG_MUTE;
           return(
-            <span key={i} style={{
-              display:"inline-flex",alignItems:"baseline",gap:12,
-              marginRight:54,
-              fontFamily:"'JetBrains Mono', monospace",fontSize:10.5,
-              letterSpacing:"1.4px",textTransform:"uppercase"}}>
-              <span style={{color:"rgba(242,237,228,.62)",fontWeight:500}}>{r.seg}</span>
-              <span style={{color:"rgba(242,237,228,.25)"}}>·</span>
-              <span style={{color:"rgba(242,237,228,.45)"}}>{r.loc}</span>
-              <span style={{color:"rgba(242,237,228,.25)"}}>·</span>
-              <span style={{color:PAPER,fontWeight:600,fontSize:12.5}}>{r.y}{r.y!=="—"?"%":""}</span>
-              <span style={{color:col,fontSize:10,letterSpacing:"1px",fontWeight:500}}>
-                {arrow} {r.d.replace(/^[-+=]/,'')}
-              </span>
+            <span key={i} style={{display:"inline-flex",alignItems:"baseline",gap:10,marginRight:44,
+              fontFamily:"'JetBrains Mono', monospace",fontSize:10.5,letterSpacing:"1px",fontWeight:500}}>
+              <span style={{color:TERM_FG,fontWeight:600}}>{r.code}</span>
+              <span style={{color:TERM_FG_DIM,fontSize:9.5,letterSpacing:".8px"}}>{r.label}</span>
+              <span style={{color:TERM_FG,fontWeight:600,fontSize:12,fontVariantNumeric:"tabular-nums"}}>{r.y.toFixed(2)}%</span>
+              <span style={{color:col,fontSize:10,fontWeight:600,fontVariantNumeric:"tabular-nums"}}>{arrow}{Math.abs(r.d).toFixed(2)}</span>
             </span>
           );
         })}
@@ -808,242 +677,732 @@ function MarketTicker(){
   );
 }
 
-/* ── §02 The Library — three editorial entries ── */
-function LibraryEntry({num,dept,title,body,quote,idx,last}){
-  const[ref,v]=useInView(.12);
-  return(
-    <article ref={ref} style={{
-      padding:"40px 32px 44px",
-      borderRight:last?"none":`1px solid ${HAIR}`,
-      borderBottom:`1px solid ${INK}`,
-      position:"relative",
-      opacity:v?1:0,transform:v?"translateY(0)":"translateY(20px)",
-      transition:`opacity .7s ease ${idx*.14}s,transform .7s cubic-bezier(.22,1,.36,1) ${idx*.14}s`}}>
+/* ── DCFViewport — live calculation panel · the showpiece ── */
+function DCFViewport(){
+  const[flashCell,setFlashCell]=useState(-1);
+  const[tickN,setTickN]=useState(0);
 
-      <div style={{display:"flex",alignItems:"baseline",justifyContent:"space-between",
-        marginBottom:24}}>
-        <div style={{fontFamily:"'JetBrains Mono', monospace",fontSize:10,
-          color:MUTED_INK,letterSpacing:"2px",textTransform:"uppercase",fontWeight:600}}>{dept}</div>
-        <div style={{fontFamily:"'Fraunces', serif",fontStyle:"italic",
-          fontSize:38,color:OXBLOOD,fontWeight:300,lineHeight:1,
-          fontVariationSettings:"'opsz' 144"}}>{num}</div>
+  useEffect(()=>{
+    const i1=setInterval(()=>setTickN(n=>n+1),1100);
+    const i2=setInterval(()=>{
+      setFlashCell(Math.floor(Math.random()*5));
+      setTimeout(()=>setFlashCell(-1),400);
+    },2400);
+    return()=>{clearInterval(i1);clearInterval(i2);};
+  },[]);
+
+  const years=DCF_MODEL.noi.map((noi,i)=>{
+    const t=i+1;
+    const df=1/Math.pow(1+DCF_MODEL.wacc,t);
+    const pv=noi*df;
+    return{t,noi,df,pv};
+  });
+  const npv=years.reduce((s,r)=>s+r.pv,0);
+  const tvPv=DCF_MODEL.terminal/Math.pow(1+DCF_MODEL.wacc,5);
+  const totalPv=npv+tvPv;
+  const fmtM=v=>v.toLocaleString("en-MY",{maximumFractionDigits:0});
+
+  return(
+    <div style={{background:TERM_PANEL_S,border:`1px solid ${TERM_BORDER}`,
+      fontFamily:"'JetBrains Mono', monospace",position:"relative",overflow:"hidden"}}>
+      <ScanLines opacity={.55}/>
+
+      {/* Header */}
+      <div style={{padding:"12px 16px",borderBottom:`1px solid ${TERM_BORDER}`,
+        display:"flex",alignItems:"center",justifyContent:"space-between",gap:14,
+        background:"rgba(0,200,150,.045)",position:"relative",zIndex:1}}>
+        <div style={{display:"flex",alignItems:"center",gap:10,fontSize:10,
+          letterSpacing:"2px",textTransform:"uppercase",fontWeight:600}}>
+          <span style={{width:7,height:7,background:PHOSPHOR,
+            boxShadow:`0 0 8px ${PHOSPHOR}`,
+            animation:"phosphorPulse 1.6s ease infinite"}}/>
+          <span style={{color:TERM_FG}}>DCF · WKB {DCF_MODEL.workbook}</span>
+          <span style={{color:TERM_FG_MUTE}}>·</span>
+          <span style={{color:PHOSPHOR,fontWeight:500}}>LIVE</span>
+        </div>
+        <div style={{display:"flex",gap:12,fontSize:9.5,color:TERM_FG_DIM,
+          letterSpacing:"1.4px",textTransform:"uppercase",fontWeight:500}}>
+          <span>WACC <span style={{color:TERM_FG,fontWeight:600}}>{(DCF_MODEL.wacc*100).toFixed(2)}%</span></span>
+          <span style={{color:TERM_FG_MUTE}}>·</span>
+          <span>g <span style={{color:TERM_FG,fontWeight:600}}>{(DCF_MODEL.growth*100).toFixed(2)}%</span></span>
+        </div>
       </div>
 
-      <h3 style={{
-        fontFamily:"'Fraunces', serif",
-        fontSize:26,fontWeight:500,letterSpacing:"-.015em",
-        color:INK,margin:"0 0 16px",lineHeight:1.18,
-        fontVariationSettings:"'opsz' 72"}}>{title}</h3>
+      {/* Asset subtitle */}
+      <div style={{padding:"14px 16px",borderBottom:`1px solid ${TERM_BORDER}`,
+        display:"flex",justifyContent:"space-between",alignItems:"flex-start",
+        position:"relative",zIndex:1}}>
+        <div>
+          <div style={{fontSize:9.5,color:TERM_FG_DIM,letterSpacing:"1.8px",
+            textTransform:"uppercase",fontWeight:500,marginBottom:5}}>Asset</div>
+          <div style={{fontSize:14,color:TERM_FG,fontWeight:600,
+            fontFamily:"'Onest',sans-serif"}}>{DCF_MODEL.asset}</div>
+          <div style={{fontSize:11,color:TERM_FG_DIM,marginTop:2,
+            fontFamily:"'Onest',sans-serif"}}>{DCF_MODEL.location}</div>
+        </div>
+        <div style={{textAlign:"right",fontSize:9.5,color:TERM_FG_DIM,
+          letterSpacing:"1.5px",textTransform:"uppercase",fontWeight:500,lineHeight:1.8}}>
+          <div>5Y · HOLD</div>
+          <div style={{color:TERM_FG_MUTE}}>RM '000</div>
+        </div>
+      </div>
 
-      <p style={{fontFamily:"'Instrument Sans', sans-serif",
-        fontSize:14.5,lineHeight:1.65,color:INK,
-        margin:"0 0 26px",fontWeight:400}}>{body}</p>
+      {/* Year header row */}
+      <div style={{display:"grid",gridTemplateColumns:"66px repeat(5,1fr)",
+        padding:"10px 16px 8px",borderBottom:`1px solid ${TERM_GRID}`,
+        fontSize:9.5,color:TERM_FG_MUTE,letterSpacing:"1.5px",
+        textTransform:"uppercase",fontWeight:500,position:"relative",zIndex:1}}>
+        <span/>
+        {years.map(r=>(
+          <span key={r.t} style={{textAlign:"right"}}>Y<span style={{color:TERM_FG_DIM,marginLeft:2,fontWeight:600}}>{r.t}</span></span>
+        ))}
+      </div>
 
-      <blockquote style={{
-        fontFamily:"'Fraunces', serif",fontStyle:"italic",
-        fontSize:15,color:OXBLOOD,
-        margin:0,paddingLeft:14,borderLeft:`1.5px solid ${OXBLOOD}`,
-        lineHeight:1.42,letterSpacing:"-.005em",fontWeight:400,
-        fontVariationSettings:"'opsz' 36"}}>
-        “{quote}”
-      </blockquote>
-    </article>
+      {/* Data rows */}
+      {[
+        {label:"NOI",values:years.map(r=>r.noi),fmt:v=>fmtM(v)},
+        {label:"DF",values:years.map(r=>r.df),fmt:v=>v.toFixed(3),mute:true},
+        {label:"PV",values:years.map(r=>r.pv),fmt:v=>fmtM(v),highlight:true},
+      ].map((row)=>(
+        <div key={row.label} style={{
+          display:"grid",gridTemplateColumns:"66px repeat(5,1fr)",
+          padding:"11px 16px",borderBottom:`1px solid ${TERM_GRID}`,
+          background:row.highlight?"rgba(0,200,150,.04)":"transparent",
+          alignItems:"center",position:"relative",zIndex:1}}>
+          <span style={{fontSize:10,color:TERM_FG_DIM,letterSpacing:"1.8px",
+            textTransform:"uppercase",fontWeight:600}}>{row.label}</span>
+          {row.values.map((v,i)=>(
+            <span key={i} style={{textAlign:"right",
+              fontVariantNumeric:"tabular-nums",
+              fontSize:row.highlight?13:12,
+              color:row.highlight?PHOSPHOR:row.mute?TERM_FG_DIM:TERM_FG,
+              fontWeight:row.highlight?600:500,
+              ...(row.highlight&&flashCell===i?{background:"rgba(0,200,150,.18)",animation:"numberTick .4s ease"}:{}),
+              transition:"background .25s ease",padding:"3px 6px",margin:"-3px -6px"}}>
+              {row.fmt(v)}
+            </span>
+          ))}
+        </div>
+      ))}
+
+      {/* Terminal value row */}
+      <div style={{padding:"11px 16px",borderBottom:`1px solid ${TERM_BORDER}`,
+        display:"flex",justifyContent:"space-between",alignItems:"center",
+        background:"rgba(255,198,64,.045)",position:"relative",zIndex:1}}>
+        <span style={{fontSize:10,color:AMBER,letterSpacing:"1.7px",
+          textTransform:"uppercase",fontWeight:600,display:"flex",alignItems:"center",gap:8}}>
+          <span style={{width:5,height:5,background:AMBER}}/>
+          Terminal · Y5
+        </span>
+        <span style={{fontSize:12.5,color:AMBER,fontWeight:600,
+          fontVariantNumeric:"tabular-nums",letterSpacing:".5px"}}>
+          {fmtM(DCF_MODEL.terminal)} <span style={{color:"rgba(255,198,64,.55)"}}>→ PV</span> {fmtM(tvPv)}
+        </span>
+      </div>
+
+      {/* Results row */}
+      <div style={{padding:"22px 16px 20px",
+        display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:14,
+        background:"linear-gradient(180deg,rgba(0,200,150,.06) 0%,transparent 100%)",
+        position:"relative",zIndex:1}}>
+        {[
+          {label:"NPV",sub:"PV + TV",value:fmtM(totalPv),unit:"RM '000",trend:"up",delta:"+2.4%"},
+          {label:"IRR",sub:"",value:"8.40%",unit:"",trend:"up",delta:"+12 bps"},
+          {label:"CAP",sub:"RATE",value:"5.75%",unit:"",trend:"flat",delta:"flat"},
+        ].map((r,i)=>(
+          <div key={r.label} style={{
+            borderLeft:i>0?`1px solid ${TERM_BORDER}`:"none",
+            paddingLeft:i>0?14:0}}>
+            <div style={{fontSize:9,color:TERM_FG_DIM,letterSpacing:"1.5px",
+              textTransform:"uppercase",fontWeight:500,marginBottom:6,
+              display:"flex",justifyContent:"space-between",alignItems:"baseline"}}>
+              <span>{r.label}{r.sub&&<span style={{color:TERM_FG_MUTE,marginLeft:6}}>{r.sub}</span>}</span>
+              {r.unit&&<span style={{opacity:.6,fontSize:8}}>{r.unit}</span>}
+            </div>
+            <div style={{fontSize:22,fontWeight:600,
+              color:r.trend==="flat"?TERM_FG:PHOSPHOR,
+              fontVariantNumeric:"tabular-nums",letterSpacing:"-.5px",lineHeight:1}}>
+              {r.value}
+            </div>
+            <div style={{fontSize:9.5,color:r.trend==="up"?SIG_UP:r.trend==="down"?SIG_DOWN:TERM_FG_MUTE,
+              marginTop:6,letterSpacing:"1.2px",fontWeight:600,textTransform:"uppercase"}}>
+              {r.trend==="up"?"↗":r.trend==="down"?"↘":"→"} {r.delta}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Footer */}
+      <div style={{padding:"9px 16px",borderTop:`1px solid ${TERM_BORDER}`,
+        display:"flex",justifyContent:"space-between",alignItems:"center",
+        background:"rgba(11,15,13,.5)",position:"relative",zIndex:1,
+        fontSize:9,color:TERM_FG_MUTE,letterSpacing:"1.5px",
+        textTransform:"uppercase",fontWeight:500,flexWrap:"wrap",gap:6}}>
+        <span style={{display:"flex",alignItems:"center",gap:8}}>
+          <span style={{width:4,height:4,background:PHOSPHOR,
+            opacity:tickN%2?.4:1,transition:"opacity .2s"}}/>
+          UPDT · {new Date().toLocaleTimeString("en-MY",{hour:"2-digit",minute:"2-digit",hour12:false})} MYT
+        </span>
+        <span>SRC · CBRE.RES</span>
+        <span>VAL.MY/{DCF_MODEL.workbook}</span>
+      </div>
+    </div>
   );
 }
 
-function TheLibrary(){
-  const wide=useIsWide(1000);
+/* ── Hero — split layout: command pane + DCF viewport ── */
+function Hero({onEnter}){
+  const wide=useIsWide(960);
   return(
-    <section style={{background:PAPER,padding:wide?"120px 56px":"80px 28px",
-      position:"relative",borderBottom:`1px solid ${HAIR}`,overflow:"hidden"}}>
-      <PaperGrain/>
+    <section style={{position:"relative",background:TERM_BG,
+      borderBottom:`1px solid ${TERM_BORDER}`,overflow:"hidden"}}>
+      <ScanLines/>
+      {/* Grid backdrop */}
+      <div aria-hidden style={{position:"absolute",inset:0,zIndex:0,
+        backgroundImage:`linear-gradient(${TERM_GRID} 1px,transparent 1px),linear-gradient(90deg,${TERM_GRID} 1px,transparent 1px)`,
+        backgroundSize:"56px 56px",
+        maskImage:"radial-gradient(ellipse 60% 70% at 50% 50%,#000 30%,transparent 80%)",
+        WebkitMaskImage:"radial-gradient(ellipse 60% 70% at 50% 50%,#000 30%,transparent 80%)",
+        opacity:.55,pointerEvents:"none"}}/>
+
+      <div style={{maxWidth:1480,margin:"0 auto",
+        padding:wide?"72px 36px 80px":"60px 24px 56px",
+        position:"relative",zIndex:1,
+        display:"grid",
+        gridTemplateColumns:wide?"minmax(0,1fr) minmax(0,1fr)":"1fr",
+        gap:wide?60:40,alignItems:"start"}}>
+
+        {/* LEFT — command pane */}
+        <div>
+          {/* Breadcrumb / system path */}
+          <div style={{fontFamily:"'JetBrains Mono', monospace",fontSize:10,
+            color:TERM_FG_DIM,letterSpacing:"2.2px",fontWeight:500,
+            marginBottom:30,display:"flex",alignItems:"center",gap:10,
+            textTransform:"uppercase"}}>
+            <span style={{color:PHOSPHOR}}>[</span>
+            <span style={{color:PHOSPHOR,fontWeight:600}}>DCF/04</span>
+            <span style={{color:TERM_FG_MUTE}}>·</span>
+            <span>Model Library</span>
+            <span style={{color:PHOSPHOR}}>]</span>
+            <span style={{flex:1,height:1,background:TERM_BORDER}}/>
+            <span style={{color:TERM_FG_MUTE}}>v01.4</span>
+          </div>
+
+          <h1 style={{
+            fontFamily:"'Onest', sans-serif",
+            fontSize:"clamp(44px,6.5vw,86px)",
+            fontWeight:600,
+            lineHeight:.98,letterSpacing:"-.035em",
+            color:TERM_FG,margin:"0 0 24px"}}>
+            Discounted<br/>
+            Cash Flow,<br/>
+            <span style={{color:PHOSPHOR,position:"relative"}}>
+              deployed
+              <span aria-hidden style={{
+                display:"inline-block",width:14,height:14,
+                background:PHOSPHOR,marginLeft:10,marginBottom:6,
+                verticalAlign:"middle",
+                boxShadow:`0 0 14px ${PHOSPHOR}`}}/>
+            </span>
+          </h1>
+
+          <p style={{fontFamily:"'Onest', sans-serif",
+            fontSize:16.5,lineHeight:1.6,color:TERM_FG_DIM,
+            maxWidth:520,margin:"0 0 36px",fontWeight:400}}>
+            A precision library of pre-built DCF workbooks for the Malaysian property market. Wired by practicing valuers, calibrated against current CBRE research, deployed by you.
+          </p>
+
+          {/* ExecuteBar CTA */}
+          <ExecuteBar onComplete={onEnter}/>
+
+          <div style={{marginTop:14,fontFamily:"'JetBrains Mono', monospace",fontSize:9.5,
+            color:TERM_FG_MUTE,letterSpacing:"1.8px",textTransform:"uppercase",fontWeight:500}}>
+            ↳ press &amp; hold the bar above to initiate
+          </div>
+
+          {/* Stats row */}
+          <div style={{marginTop:36,paddingTop:24,borderTop:`1px solid ${TERM_BORDER}`,
+            display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:0}}>
+            {[
+              ["Categories","04"],
+              ["Workbooks","29"],
+              ["Format","XLSX"],
+              ["Region","MY"],
+            ].map(([k,v],i,a)=>(
+              <div key={k} style={{
+                borderRight:i<a.length-1?`1px solid ${TERM_BORDER}`:"none",
+                paddingRight:14,paddingLeft:i===0?0:14}}>
+                <div style={{fontFamily:"'JetBrains Mono', monospace",
+                  fontSize:9,color:TERM_FG_MUTE,letterSpacing:"1.8px",
+                  textTransform:"uppercase",fontWeight:500,marginBottom:6}}>
+                  {k}
+                </div>
+                <div style={{fontFamily:"'JetBrains Mono', monospace",
+                  fontSize:22,color:TERM_FG,fontWeight:600,
+                  fontVariantNumeric:"tabular-nums",letterSpacing:"-.5px"}}>
+                  {v}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* RIGHT — DCF viewport */}
+        <div style={{position:"relative"}}>
+          <div style={{fontFamily:"'JetBrains Mono', monospace",fontSize:9.5,
+            color:TERM_FG_MUTE,letterSpacing:"2px",fontWeight:500,
+            marginBottom:14,display:"flex",alignItems:"center",justifyContent:"space-between",
+            textTransform:"uppercase"}}>
+            <span>—— sample workbook · live</span>
+            <span>OPEN · KL · MYT</span>
+          </div>
+          <DCFViewport/>
+          <div style={{marginTop:12,fontFamily:"'JetBrains Mono', monospace",fontSize:9,
+            color:TERM_FG_MUTE,letterSpacing:"1.5px",textTransform:"uppercase",fontWeight:500,
+            display:"flex",justifyContent:"space-between"}}>
+            <span>↳ illustrative · not for direct use</span>
+            <span>REF · DCF.WKB.014</span>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ── §01 Mechanics — cash flow waterfall ── */
+function WaterfallSection(){
+  const wide=useIsWide(900);
+  const[ref,v]=useInView(.12);
+  const years=DCF_MODEL.noi.map((noi,i)=>{
+    const t=i+1,df=1/Math.pow(1+DCF_MODEL.wacc,t),pv=noi*df;
+    return{t,noi,df,pv};
+  });
+  const maxNOI=Math.max(...years.map(y=>y.noi));
+  const npv=years.reduce((s,r)=>s+r.pv,0);
+  const tvPv=DCF_MODEL.terminal/Math.pow(1+DCF_MODEL.wacc,5);
+  const totalPv=npv+tvPv;
+
+  return(
+    <section ref={ref} style={{background:TERM_BG,padding:wide?"100px 36px":"60px 24px",
+      position:"relative",borderBottom:`1px solid ${TERM_BORDER}`,overflow:"hidden"}}>
+      <ScanLines/>
       <div style={{maxWidth:1320,margin:"0 auto",position:"relative",zIndex:1}}>
         {/* Section header */}
-        <div style={{display:"grid",
-          gridTemplateColumns:wide?"180px 1fr 240px":"1fr",gap:0,
-          marginBottom:wide?80:48}}>
-          <div style={{borderRight:wide?`1px solid ${HAIR}`:"none",
-            paddingRight:wide?28:0,marginBottom:wide?0:24}}>
+        <div style={{display:wide?"grid":"block",
+          gridTemplateColumns:wide?"180px 1fr 240px":"1fr",
+          gap:0,marginBottom:wide?60:36}}>
+          <div style={{paddingRight:wide?28:0,marginBottom:wide?0:18}}>
             <div style={{fontFamily:"'JetBrains Mono', monospace",fontSize:10.5,
-              color:OXBLOOD,letterSpacing:"2.5px",textTransform:"uppercase",fontWeight:600}}>
-              §02
-            </div>
+              color:PHOSPHOR,letterSpacing:"2.5px",fontWeight:600,
+              textTransform:"uppercase"}}>§01</div>
             <div style={{fontFamily:"'JetBrains Mono', monospace",fontSize:9.5,
-              color:MUTED_INK,letterSpacing:"1.5px",textTransform:"uppercase",
-              marginTop:8,lineHeight:1.8}}>
-              The Library
-            </div>
+              color:TERM_FG_DIM,letterSpacing:"1.5px",fontWeight:500,
+              marginTop:6,textTransform:"uppercase"}}>Mechanics</div>
           </div>
           <div style={{padding:wide?"0 56px":"0"}}>
-            <h2 style={{
-              fontFamily:"'Fraunces', serif",
-              fontSize:"clamp(38px,5.4vw,72px)",
-              fontWeight:300,
+            <h2 style={{fontFamily:"'Onest', sans-serif",
+              fontSize:"clamp(34px,4.6vw,60px)",fontWeight:600,
               lineHeight:1.02,letterSpacing:"-.025em",
-              color:INK,margin:"0 0 22px",
-              fontVariationSettings:"'opsz' 144"}}>
-              Three reasons<br/>
-              <em style={{fontWeight:400}}>this exists.</em>
+              color:TERM_FG,margin:"0 0 16px"}}>
+              Five years of cash,<br/>
+              <span style={{color:PHOSPHOR}}>discounted to today.</span>
             </h2>
-            <p style={{fontFamily:"'Instrument Sans', sans-serif",
-              fontSize:16,lineHeight:1.62,color:MUTED_INK,maxWidth:520,margin:0}}>
-              Every workbook is reviewed by practicing valuers, calibrated to Malaysian market conditions, and kept current as yields move. Below — the working principles.
+            <p style={{fontFamily:"'Onest', sans-serif",fontSize:15,lineHeight:1.6,
+              color:TERM_FG_DIM,maxWidth:520,margin:0}}>
+              Each year's net operating income is discounted by the WACC factor. Terminal value at exit caps the model. The present-value sum is your NPV.
             </p>
           </div>
           {wide && <div/>}
         </div>
 
-        {/* Three editorial entries */}
-        <div style={{display:"grid",
-          gridTemplateColumns:wide?"repeat(3,1fr)":"1fr",gap:0,
-          borderTop:`1px solid ${INK}`}}>
-          {LIBRARY.map((item,i)=>(
-            <LibraryEntry key={item.num} {...item} idx={i} last={wide&&i===LIBRARY.length-1}/>
-          ))}
+        {/* Waterfall chart panel */}
+        <div style={{background:TERM_PANEL_S,border:`1px solid ${TERM_BORDER}`,
+          padding:wide?"36px 32px 28px":"24px 16px 22px",position:"relative"}}>
+          <ScanLines opacity={.5}/>
+
+          {/* Legend */}
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",
+            marginBottom:28,flexWrap:"wrap",gap:14,position:"relative",zIndex:1,
+            fontFamily:"'JetBrains Mono', monospace",fontSize:10,
+            letterSpacing:"1.5px",textTransform:"uppercase"}}>
+            <div style={{display:"flex",gap:18,color:TERM_FG_DIM,fontWeight:500,flexWrap:"wrap"}}>
+              <span><span style={{display:"inline-block",width:10,height:10,
+                border:`1px dashed ${TERM_FG_DIM}`,marginRight:6,verticalAlign:"middle"}}/>NOI</span>
+              <span><span style={{display:"inline-block",width:10,height:10,
+                background:PHOSPHOR,marginRight:6,verticalAlign:"middle"}}/>PV · discounted</span>
+              <span><span style={{display:"inline-block",width:10,height:10,
+                background:AMBER,marginRight:6,verticalAlign:"middle"}}/>Terminal PV</span>
+            </div>
+            <span style={{color:TERM_FG_MUTE,fontWeight:500}}>RM '000 · WACC 8.00%</span>
+          </div>
+
+          {/* Bar chart */}
+          <div style={{display:"grid",gridTemplateColumns:"repeat(6,1fr)",gap:wide?16:6,
+            alignItems:"flex-end",height:wide?280:200,position:"relative",zIndex:1}}>
+            {years.map((y,i)=>{
+              const noiH=(y.noi/maxNOI)*100;
+              const pvH=(y.pv/maxNOI)*100;
+              return(
+                <div key={y.t} style={{position:"relative",height:"100%"}}>
+                  {/* NOI outline (full height) */}
+                  <div style={{position:"absolute",bottom:0,left:0,right:0,
+                    height:`${noiH}%`,
+                    border:`1px dashed ${TERM_BORDER}`,borderBottom:"none",
+                    transformOrigin:"bottom",
+                    transform:v?"scaleY(1)":"scaleY(0)",
+                    transition:`transform .8s cubic-bezier(.22,1,.36,1) ${i*.1}s`}}/>
+                  {/* PV fill */}
+                  <div style={{position:"absolute",bottom:0,left:0,right:0,
+                    height:`${pvH}%`,
+                    background:`linear-gradient(180deg,${PHOSPHOR} 0%,${PHOSPHOR_DIM} 100%)`,
+                    transformOrigin:"bottom",
+                    transform:v?"scaleY(1)":"scaleY(0)",
+                    transition:`transform .9s cubic-bezier(.22,1,.36,1) ${.15+i*.1}s`,
+                    boxShadow:`inset 0 1px 0 rgba(56,239,166,.45)`}}/>
+                  {wide && (
+                    <div style={{position:"absolute",
+                      top:`${100-noiH}%`,marginTop:-22,
+                      left:0,right:0,textAlign:"center",pointerEvents:"none",
+                      fontFamily:"'JetBrains Mono', monospace",fontSize:10,
+                      color:TERM_FG,letterSpacing:".5px",fontWeight:600,
+                      fontVariantNumeric:"tabular-nums"}}>
+                      {Math.round(y.noi).toLocaleString()}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+            {/* Terminal value bar */}
+            <div style={{position:"relative",height:"100%"}}>
+              <div style={{position:"absolute",bottom:0,left:0,right:0,
+                height:`${Math.min(98,(tvPv/maxNOI)*100*.5)}%`,
+                background:`linear-gradient(180deg,${AMBER} 0%,#9F7A1A 100%)`,
+                transformOrigin:"bottom",
+                transform:v?"scaleY(1)":"scaleY(0)",
+                transition:`transform 1s cubic-bezier(.22,1,.36,1) .65s`,
+                boxShadow:`inset 0 1px 0 rgba(255,198,64,.5)`}}/>
+              {wide && (
+                <div style={{position:"absolute",
+                  top:`${100-Math.min(98,(tvPv/maxNOI)*100*.5)}%`,marginTop:-22,
+                  left:0,right:0,textAlign:"center",pointerEvents:"none",
+                  fontFamily:"'JetBrains Mono', monospace",fontSize:10,
+                  color:AMBER,letterSpacing:".5px",fontWeight:600,
+                  fontVariantNumeric:"tabular-nums"}}>
+                  {Math.round(tvPv).toLocaleString()}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* X-axis */}
+          <div style={{display:"grid",gridTemplateColumns:"repeat(6,1fr)",gap:wide?16:6,
+            marginTop:10,borderTop:`1px solid ${TERM_BORDER}`,paddingTop:10,
+            position:"relative",zIndex:1}}>
+            {years.map(y=>(
+              <div key={y.t} style={{textAlign:"center",
+                fontFamily:"'JetBrains Mono', monospace",fontSize:10,
+                color:TERM_FG_DIM,letterSpacing:"1.5px",fontWeight:600,
+                textTransform:"uppercase"}}>
+                Y{y.t}<br/>
+                <span style={{color:TERM_FG_MUTE,fontWeight:500,fontSize:9}}>
+                  DF {y.df.toFixed(3)}
+                </span>
+              </div>
+            ))}
+            <div style={{textAlign:"center",
+              fontFamily:"'JetBrains Mono', monospace",fontSize:10,
+              color:AMBER,letterSpacing:"1.5px",fontWeight:600,
+              textTransform:"uppercase"}}>
+              TV<br/>
+              <span style={{color:"#9F7A1A",fontWeight:500,fontSize:9}}>EXIT</span>
+            </div>
+          </div>
+
+          {/* Result */}
+          <div style={{marginTop:28,paddingTop:22,borderTop:`1px solid ${TERM_BORDER}`,
+            display:"flex",justifyContent:"space-between",alignItems:"baseline",
+            flexWrap:"wrap",gap:18,position:"relative",zIndex:1}}>
+            <div style={{fontFamily:"'JetBrains Mono', monospace",fontSize:10,
+              color:TERM_FG_DIM,letterSpacing:"2px",textTransform:"uppercase",fontWeight:500,
+              maxWidth:320}}>
+              ↳ Σ Operating-PV + Terminal-PV = present-value sum
+            </div>
+            <div style={{display:"flex",alignItems:"baseline",gap:16,
+              fontFamily:"'JetBrains Mono', monospace"}}>
+              <span style={{fontSize:10,color:TERM_FG_DIM,letterSpacing:"2px",
+                textTransform:"uppercase",fontWeight:600}}>NPV →</span>
+              <span style={{fontSize:30,color:PHOSPHOR,fontWeight:600,
+                fontVariantNumeric:"tabular-nums",letterSpacing:"-.5px"}}>
+                {totalPv.toLocaleString("en-MY",{maximumFractionDigits:0})}
+              </span>
+              <span style={{fontSize:11,color:TERM_FG_MUTE,letterSpacing:"1.5px",
+                textTransform:"uppercase",fontWeight:500}}>RM '000</span>
+            </div>
+          </div>
         </div>
       </div>
     </section>
   );
 }
 
-/* ── §03 Procedure — three printed steps ── */
-function Procedure(){
-  const wide=useIsWide(900);
+/* ── §02 Index — workbook catalog grid ── */
+function IndexSection(){
+  const wide=useIsWide(800);
   const[ref,v]=useInView(.08);
   return(
-    <section ref={ref} style={{background:PAPER_2,padding:wide?"110px 56px":"72px 28px",
-      position:"relative",borderBottom:`1px solid ${HAIR}`,overflow:"hidden"}}>
-      <PaperGrain opacity={.3}/>
+    <section ref={ref} style={{background:TERM_BG,padding:wide?"100px 36px":"60px 24px",
+      borderBottom:`1px solid ${TERM_BORDER}`,position:"relative",overflow:"hidden"}}>
+      <ScanLines/>
       <div style={{maxWidth:1320,margin:"0 auto",position:"relative",zIndex:1}}>
-        <div style={{display:"grid",
-          gridTemplateColumns:wide?"180px 1fr":"1fr",gap:0,marginBottom:wide?64:36}}>
-          <div style={{borderRight:wide?`1px solid ${HAIR}`:"none",
-            paddingRight:wide?28:0,marginBottom:wide?0:24}}>
+        <div style={{display:wide?"grid":"block",
+          gridTemplateColumns:wide?"180px 1fr 240px":"1fr",gap:0,marginBottom:wide?56:32}}>
+          <div style={{paddingRight:wide?28:0,marginBottom:wide?0:18}}>
             <div style={{fontFamily:"'JetBrains Mono', monospace",fontSize:10.5,
-              color:OXBLOOD,letterSpacing:"2.5px",textTransform:"uppercase",fontWeight:600}}>
-              §03
-            </div>
+              color:PHOSPHOR,letterSpacing:"2.5px",fontWeight:600,
+              textTransform:"uppercase"}}>§02</div>
             <div style={{fontFamily:"'JetBrains Mono', monospace",fontSize:9.5,
-              color:MUTED_INK,letterSpacing:"1.5px",textTransform:"uppercase",
-              marginTop:8,lineHeight:1.8}}>
-              Procedure
-            </div>
+              color:TERM_FG_DIM,letterSpacing:"1.5px",fontWeight:500,
+              marginTop:6,textTransform:"uppercase"}}>Index</div>
           </div>
           <div style={{padding:wide?"0 56px":"0"}}>
-            <h2 style={{
-              fontFamily:"'Fraunces', serif",
-              fontSize:"clamp(34px,4.6vw,64px)",
-              fontWeight:300,
+            <h2 style={{fontFamily:"'Onest', sans-serif",
+              fontSize:"clamp(34px,4.6vw,60px)",fontWeight:600,
               lineHeight:1.02,letterSpacing:"-.025em",
-              color:INK,margin:0,
-              fontVariationSettings:"'opsz' 144"}}>
-              In <em style={{fontWeight:400}}>three steps</em>.
+              color:TERM_FG,margin:0}}>
+              Four classes,<br/>
+              <span style={{color:PHOSPHOR}}>twenty-nine workbooks.</span>
             </h2>
           </div>
         </div>
 
-        {/* Steps */}
         <div style={{display:"grid",
-          gridTemplateColumns:wide?"repeat(3,1fr)":"1fr",gap:0,
-          borderTop:`1px solid ${INK}`,borderBottom:`1px solid ${INK}`,
-          background:PAPER}}>
-          {PROCEDURE.map((s,i)=>(
-            <div key={s.roman} style={{
-              padding:wide?"56px 40px 60px":"40px 28px",
-              borderRight:wide&&i<2?`1px solid ${HAIR}`:"none",
-              borderBottom:!wide&&i<2?`1px solid ${HAIR}`:"none",
+          gridTemplateColumns:wide?"repeat(2,1fr)":"1fr",gap:0,
+          border:`1px solid ${TERM_BORDER}`,background:TERM_PANEL_S}}>
+          {CATEGORIES.map((c,i)=>(
+            <div key={c.code} style={{
+              padding:wide?"36px 30px 36px":"26px 20px",
+              borderRight:wide&&i%2===0?`1px solid ${TERM_BORDER}`:"none",
+              borderBottom:wide?(i<CATEGORIES.length-2?`1px solid ${TERM_BORDER}`:"none"):(i<CATEGORIES.length-1?`1px solid ${TERM_BORDER}`:"none"),
               position:"relative",
-              opacity:v?1:0,transform:v?"translateY(0)":"translateY(16px)",
-              transition:`opacity .6s ease ${i*.18}s,transform .6s cubic-bezier(.22,1,.36,1) ${i*.18}s`}}>
-              <div style={{
-                fontFamily:"'Fraunces', serif",fontStyle:"italic",
-                fontSize:96,color:HAIR,fontWeight:300,lineHeight:1,
-                margin:"0 0 26px",
-                fontVariationSettings:"'opsz' 144"}}>{s.roman}</div>
-              <div style={{
-                fontFamily:"'JetBrains Mono', monospace",fontSize:11,
-                color:OXBLOOD,letterSpacing:"3px",fontWeight:600,
-                textTransform:"uppercase",marginBottom:14,
-                display:"flex",alignItems:"center",gap:8}}>
-                <span style={{color:INK}}>—</span>{s.verb}
+              opacity:v?1:0,transform:v?"translateY(0)":"translateY(14px)",
+              transition:`opacity .6s ease ${i*.1}s,transform .6s cubic-bezier(.22,1,.36,1) ${i*.1}s`}}>
+
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",
+                marginBottom:16}}>
+                <div style={{display:"flex",alignItems:"baseline",gap:12}}>
+                  <span style={{fontFamily:"'JetBrains Mono', monospace",fontSize:11,
+                    color:PHOSPHOR,letterSpacing:"2.5px",fontWeight:600,
+                    textTransform:"uppercase"}}>{c.n}</span>
+                  <span style={{fontFamily:"'JetBrains Mono', monospace",fontSize:9.5,
+                    color:TERM_FG_MUTE,letterSpacing:"2px",fontWeight:500,
+                    textTransform:"uppercase"}}>[{c.code}]</span>
+                </div>
+                <div style={{display:"flex",alignItems:"baseline",gap:8,
+                  fontFamily:"'JetBrains Mono', monospace",fontSize:9.5,
+                  color:TERM_FG_DIM,letterSpacing:"1.5px",
+                  textTransform:"uppercase",fontWeight:500}}>
+                  <span style={{color:TERM_FG,fontSize:14,fontWeight:600,
+                    fontVariantNumeric:"tabular-nums"}}>{c.types}</span>
+                  <span>WKB</span>
+                </div>
               </div>
-              <div style={{
-                fontFamily:"'Fraunces', serif",fontSize:22,
-                fontWeight:400,letterSpacing:"-.012em",lineHeight:1.32,
-                color:INK,fontVariationSettings:"'opsz' 72"}}>
-                {s.obj}
+
+              <h3 style={{fontFamily:"'Onest', sans-serif",fontSize:26,
+                fontWeight:600,letterSpacing:"-.02em",lineHeight:1.05,
+                color:TERM_FG,margin:"0 0 6px"}}>{c.name}</h3>
+
+              <div style={{fontFamily:"'JetBrains Mono', monospace",fontSize:10,
+                color:TERM_FG_DIM,letterSpacing:"1.2px",fontWeight:500,
+                marginBottom:18,textTransform:"uppercase"}}>{c.subtitle}</div>
+
+              <div style={{display:"flex",flexWrap:"wrap",gap:5}}>
+                {c.sample.map(s=>(
+                  <span key={s} style={{
+                    fontFamily:"'JetBrains Mono', monospace",fontSize:10,
+                    padding:"4px 10px",border:`1px solid ${TERM_BORDER}`,
+                    color:TERM_FG_DIM,letterSpacing:".5px",
+                    background:"rgba(0,200,150,.02)"}}>
+                    {s}
+                  </span>
+                ))}
+                <span style={{fontFamily:"'JetBrains Mono', monospace",fontSize:10,
+                  padding:"4px 10px",color:TERM_FG_MUTE,letterSpacing:".5px"}}>
+                  + more
+                </span>
               </div>
             </div>
           ))}
-        </div>
-
-        <div style={{marginTop:22,display:"flex",justifyContent:"space-between",
-          fontFamily:"'JetBrains Mono', monospace",fontSize:9.5,
-          color:MUTED_INK,letterSpacing:"1.5px",textTransform:"uppercase"}}>
-          <span>— Filed under Procedure</span>
-          <span>Pg · 03</span>
         </div>
       </div>
     </section>
   );
 }
 
-/* ── §04 Colophon — closing CTA + printer's mark ── */
-function Colophon({onEnter}){
+/* ── §03 Methodology — formula notation ── */
+function MethodologySection(){
+  const wide=useIsWide(900);
+  const[ref,v]=useInView(.1);
+  return(
+    <section ref={ref} style={{background:"#080B0A",padding:wide?"100px 36px":"60px 24px",
+      borderBottom:`1px solid ${TERM_BORDER}`,position:"relative",overflow:"hidden"}}>
+      <ScanLines/>
+      <div style={{maxWidth:1320,margin:"0 auto",position:"relative",zIndex:1}}>
+        <div style={{display:wide?"grid":"block",
+          gridTemplateColumns:wide?"180px 1fr 240px":"1fr",gap:0,marginBottom:wide?48:32}}>
+          <div style={{paddingRight:wide?28:0,marginBottom:wide?0:18}}>
+            <div style={{fontFamily:"'JetBrains Mono', monospace",fontSize:10.5,
+              color:PHOSPHOR,letterSpacing:"2.5px",fontWeight:600,
+              textTransform:"uppercase"}}>§03</div>
+            <div style={{fontFamily:"'JetBrains Mono', monospace",fontSize:9.5,
+              color:TERM_FG_DIM,letterSpacing:"1.5px",fontWeight:500,
+              marginTop:6,textTransform:"uppercase"}}>Methodology</div>
+          </div>
+          <div style={{padding:wide?"0 56px":"0"}}>
+            <h2 style={{fontFamily:"'Onest', sans-serif",
+              fontSize:"clamp(34px,4.6vw,60px)",fontWeight:600,
+              lineHeight:1.02,letterSpacing:"-.025em",
+              color:TERM_FG,margin:0}}>
+              The maths,<br/>
+              <span style={{color:PHOSPHOR}}>made transparent.</span>
+            </h2>
+          </div>
+        </div>
+
+        <div style={{display:"grid",
+          gridTemplateColumns:wide?"repeat(3,1fr)":"1fr",gap:0,
+          border:`1px solid ${TERM_BORDER}`,background:TERM_PANEL_S}}>
+          {FORMULAS.map((f,i)=>(
+            <div key={f.key} style={{
+              padding:wide?"32px 26px":"24px 18px",
+              borderRight:wide&&i<FORMULAS.length-1?`1px solid ${TERM_BORDER}`:"none",
+              borderBottom:!wide&&i<FORMULAS.length-1?`1px solid ${TERM_BORDER}`:"none",
+              opacity:v?1:0,transform:v?"translateY(0)":"translateY(12px)",
+              transition:`opacity .6s ease ${i*.12}s,transform .6s cubic-bezier(.22,1,.36,1) ${i*.12}s`}}>
+
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",
+                marginBottom:20}}>
+                <span style={{fontFamily:"'JetBrains Mono', monospace",fontSize:11,
+                  color:PHOSPHOR,letterSpacing:"2.5px",fontWeight:600,
+                  textTransform:"uppercase"}}>{f.key}</span>
+                <span style={{fontFamily:"'JetBrains Mono', monospace",fontSize:9.5,
+                  color:TERM_FG_MUTE,letterSpacing:"1.5px",fontWeight:500,
+                  textTransform:"uppercase"}}>F · 0{i+1}</span>
+              </div>
+
+              <h3 style={{fontFamily:"'Onest', sans-serif",fontSize:18,
+                fontWeight:600,letterSpacing:"-.015em",
+                color:TERM_FG,margin:"0 0 18px"}}>{f.label}</h3>
+
+              <div style={{padding:"16px 14px",background:TERM_BG,
+                border:`1px solid ${TERM_BORDER}`,marginBottom:18,
+                fontFamily:"'JetBrains Mono', monospace",fontSize:13,
+                color:TERM_FG,letterSpacing:".3px",fontWeight:500,
+                wordBreak:"break-word",lineHeight:1.55}}>
+                {f.eq}
+              </div>
+
+              <div style={{fontFamily:"'JetBrains Mono', monospace",fontSize:9.5,
+                color:TERM_FG_MUTE,letterSpacing:"2px",fontWeight:600,
+                textTransform:"uppercase",marginBottom:8}}>
+                where
+              </div>
+
+              {f.where.map(([sym,def])=>(
+                <div key={sym} style={{display:"flex",alignItems:"baseline",
+                  gap:14,padding:"6px 0",borderBottom:`1px solid ${TERM_GRID}`,
+                  fontSize:12,color:TERM_FG_DIM,lineHeight:1.4}}>
+                  <span style={{fontFamily:"'JetBrains Mono', monospace",
+                    color:TERM_FG,fontWeight:600,minWidth:62,letterSpacing:".5px"}}>
+                    {sym}
+                  </span>
+                  <span style={{fontFamily:"'Onest', sans-serif"}}>{def}</span>
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+
+        <div style={{marginTop:16,display:"flex",justifyContent:"space-between",
+          fontFamily:"'JetBrains Mono', monospace",fontSize:9.5,
+          color:TERM_FG_MUTE,letterSpacing:"1.5px",fontWeight:500,
+          textTransform:"uppercase",flexWrap:"wrap",gap:8}}>
+          <span>↳ References · Damodaran 2024 · CBRE Research · RICS</span>
+          <span>P · 03</span>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ── §04 Deploy — closing CTA ── */
+function DeploySection({onEnter}){
   const wide=useIsWide(900);
   const[ref,v]=useInView(.15);
   return(
-    <section ref={ref} style={{background:PAPER,padding:wide?"140px 56px 96px":"96px 28px 64px",
-      position:"relative",borderTop:`1px solid ${INK}`,overflow:"hidden"}}>
-      <PaperGrain/>
-      <div style={{maxWidth:900,margin:"0 auto",position:"relative",zIndex:1,
-        textAlign:"center",
+    <section ref={ref} style={{background:TERM_BG,padding:wide?"120px 36px 80px":"72px 24px 56px",
+      borderTop:`1px solid ${TERM_BORDER}`,position:"relative",overflow:"hidden"}}>
+      <ScanLines/>
+      <div aria-hidden style={{position:"absolute",inset:0,zIndex:0,
+        backgroundImage:`linear-gradient(${TERM_GRID} 1px,transparent 1px),linear-gradient(90deg,${TERM_GRID} 1px,transparent 1px)`,
+        backgroundSize:"56px 56px",
+        maskImage:"radial-gradient(ellipse 50% 60% at 50% 50%,#000 0%,transparent 70%)",
+        WebkitMaskImage:"radial-gradient(ellipse 50% 60% at 50% 50%,#000 0%,transparent 70%)",
+        opacity:.7,pointerEvents:"none"}}/>
+
+      <div style={{maxWidth:1100,margin:"0 auto",position:"relative",zIndex:1,
         opacity:v?1:0,transform:v?"translateY(0)":"translateY(20px)",
         transition:"opacity .8s ease,transform .8s cubic-bezier(.22,1,.36,1)"}}>
 
         <div style={{fontFamily:"'JetBrains Mono', monospace",fontSize:10,
-          color:OXBLOOD,letterSpacing:"4px",fontWeight:600,
-          textTransform:"uppercase",marginBottom:38,
-          display:"inline-flex",alignItems:"center",gap:14}}>
-          <span style={{width:48,height:1,background:OXBLOOD}}/>
-          §04 · Colophon
-          <span style={{width:48,height:1,background:OXBLOOD}}/>
+          color:PHOSPHOR,letterSpacing:"3.5px",fontWeight:600,
+          textTransform:"uppercase",marginBottom:28,
+          display:"flex",alignItems:"center",gap:14}}>
+          <span style={{width:48,height:1,background:PHOSPHOR,
+            boxShadow:`0 0 6px ${PHOSPHOR}`}}/>
+          §04 · Deploy
         </div>
 
-        <h2 style={{
-          fontFamily:"'Fraunces', serif",
-          fontSize:"clamp(46px,7.2vw,96px)",
-          fontWeight:300,letterSpacing:"-.032em",lineHeight:.98,
-          color:INK,margin:"0 0 30px",
-          fontVariationSettings:"'opsz' 144"}}>
-          Begin your<br/>
-          <em style={{fontWeight:400,color:OXBLOOD,fontVariationSettings:"'opsz' 144"}}>valuation.</em>
+        <h2 style={{fontFamily:"'Onest', sans-serif",
+          fontSize:"clamp(40px,6vw,80px)",fontWeight:600,
+          lineHeight:.98,letterSpacing:"-.032em",
+          color:TERM_FG,margin:"0 0 22px",maxWidth:900}}>
+          Deploy a workbook<br/>
+          to your <span style={{color:PHOSPHOR}}>next valuation</span>.
         </h2>
 
-        <p style={{fontFamily:"'Instrument Sans', sans-serif",
-          fontSize:16,lineHeight:1.64,color:INK,
-          maxWidth:540,margin:"0 auto 56px"}}>
-          Press and hold the seal below. The library opens. Free, current, and indexed by property class.
+        <p style={{fontFamily:"'Onest', sans-serif",fontSize:16,lineHeight:1.62,
+          color:TERM_FG_DIM,maxWidth:560,margin:"0 0 36px"}}>
+          Hold the command bar below to initiate. The library opens — free, current, traceable to CBRE source data.
         </p>
 
-        <div style={{display:"flex",justifyContent:"center",marginBottom:72}}>
-          <WaxSeal onComplete={onEnter}/>
-        </div>
+        <ExecuteBar onComplete={onEnter} command="initiate --library --region=MY" width={640}/>
 
-        {/* Printer's mark — footer info */}
-        <div style={{marginTop:64,paddingTop:34,
-          borderTop:`1px solid ${HAIR}`,
-          display:"flex",justifyContent:"space-between",alignItems:"baseline",
-          flexWrap:"wrap",gap:18,
+        {/* System metadata strip */}
+        <div style={{marginTop:64,paddingTop:24,borderTop:`1px solid ${TERM_BORDER}`,
+          display:"grid",gridTemplateColumns:wide?"repeat(5,1fr)":"repeat(2,1fr)",gap:0,
           fontFamily:"'JetBrains Mono', monospace",fontSize:9.5,
-          color:MUTED_INK,letterSpacing:"1.5px",textTransform:"uppercase"}}>
-          <span>Valorem · A library of DCF workbooks</span>
-          <span style={{fontFamily:"'Fraunces', serif",fontStyle:"italic",
-            fontSize:14,color:INK,letterSpacing:"normal",textTransform:"none",fontWeight:400,
-            fontVariationSettings:"'opsz' 36"}}>
-            Published by CBRE Malaysia
-          </span>
-          <span>Anno {EDITION.year} · No. {EDITION.no}</span>
+          letterSpacing:"1.8px",textTransform:"uppercase",fontWeight:500}}>
+          {[
+            ["SYS","OK","up"],
+            ["ENV","PROD","up"],
+            ["BLD","01.4",""],
+            ["SRC","CBRE.RES",""],
+            ["HOST","VAL.MY",""],
+          ].map(([k,v,t],i,a)=>(
+            <div key={k} style={{
+              padding:wide?"14px 18px":"14px 12px",
+              borderRight:wide?(i<a.length-1?`1px solid ${TERM_BORDER}`:"none"):(i%2===0?`1px solid ${TERM_BORDER}`:"none"),
+              borderBottom:!wide&&i<a.length-2?`1px solid ${TERM_BORDER}`:"none",
+              display:"flex",alignItems:"baseline",gap:10}}>
+              <span style={{color:TERM_FG_MUTE}}>{k}</span>
+              <span style={{color:t==="up"?SIG_UP:TERM_FG,fontWeight:600}}>{v}</span>
+              {t==="up"&&<span style={{
+                width:5,height:5,background:SIG_UP,
+                boxShadow:`0 0 4px ${SIG_UP}`,
+                animation:"phosphorPulse 1.6s ease infinite",
+                marginLeft:"auto"}}/>}
+            </div>
+          ))}
         </div>
       </div>
     </section>
@@ -1052,12 +1411,14 @@ function Colophon({onEnter}){
 
 function LandingPage({onEnter}){
   return(
-    <div style={{background:PAPER}}>
+    <div style={{background:TERM_BG}}>
+      <div aria-hidden style={{height:56,background:TERM_BG}}/>
+      <LiveYieldTicker/>
       <Hero onEnter={onEnter}/>
-      <MarketTicker/>
-      <TheLibrary/>
-      <Procedure/>
-      <Colophon onEnter={onEnter}/>
+      <WaterfallSection/>
+      <IndexSection/>
+      <MethodologySection/>
+      <DeploySection onEnter={onEnter}/>
     </div>
   );
 }
@@ -1275,8 +1636,8 @@ export default function App(){
   return(
     <div ref={scrollRef} onScroll={onScroll} onMouseMove={onMouse}
       style={{height:"100vh",overflowY:"auto",overflowX:"hidden",
-        background:page==="landing"?PAPER:PLR,
-        fontFamily:page==="landing"?"'Instrument Sans',sans-serif":"-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif"}}>
+        background:page==="landing"?TERM_BG:PLR,
+        fontFamily:page==="landing"?"'Onest',sans-serif":"-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif"}}>
       <style>{CSS}</style>
       <ProgressBar scrollRef={scrollRef}/>
       <Nav page={page} onBack={()=>go("landing")} onAdminClick={()=>setShowLogin(true)}/>
