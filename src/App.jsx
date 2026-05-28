@@ -11,12 +11,11 @@ const CSS = `
   @keyframes rotateSlow{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
   @keyframes rotateSlowR{from{transform:rotate(0deg)}to{transform:rotate(-360deg)}}
   @keyframes glowPulse{0%,100%{opacity:.5}50%{opacity:1}}
-  @keyframes scanLine{0%{transform:translateY(-100%)}100%{transform:translateY(1000%)}}
-  @keyframes hoverWave{0%{transform:translateZ(0) scale(1);opacity:.65}100%{transform:translateZ(0) scale(7);opacity:0}}
-  @keyframes marquee{from{transform:translateX(0)}to{transform:translateX(-50%)}}
-  @keyframes scrollCue{0%,100%{transform:translateY(0);opacity:.4}50%{transform:translateY(6px);opacity:.95}}
-  @keyframes glowDrift{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(24px,-18px) scale(1.06)}}
-  @keyframes featureGlow{0%,100%{opacity:.45}50%{opacity:.85}}
+  @keyframes tickerScroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+  @keyframes inkSink{0%{opacity:0;transform:translateY(8px);letter-spacing:.04em}100%{opacity:1;transform:translateY(0);letter-spacing:normal}}
+  @keyframes inkFade{from{opacity:0}to{opacity:1}}
+  @keyframes underlineDraw{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+  body{margin:0;font-family:'Instrument Sans',sans-serif;font-feature-settings:"ss01","cv11";color:#0A0A08;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
   .btn-p{transition:all .2s ease;cursor:pointer;border:none;font-family:inherit}
   .btn-p:hover{opacity:.88;transform:translateY(-2px)}
   .btn-o{transition:all .2s ease;cursor:pointer;font-family:inherit;border:none}
@@ -32,13 +31,17 @@ const CSS = `
   .upload-zone{transition:all .2s ease;cursor:pointer}
   .upload-zone:hover{border-color:#003F2D!important;background:rgba(0,63,45,.04)!important}
   input:focus{outline:none;border-color:rgba(0,63,45,.5)!important}
-  ::-webkit-scrollbar{width:4px}
-  ::-webkit-scrollbar-track{background:#eef6f2}
-  ::-webkit-scrollbar-thumb{background:#9fc8b8;border-radius:2px}
+  .ed-link{position:relative;display:inline-block}
+  .ed-link::after{content:"";position:absolute;left:0;right:0;bottom:-2px;height:1px;background:currentColor;transform:scaleX(0);transform-origin:left center;transition:transform .35s cubic-bezier(.22,1,.36,1)}
+  .ed-link:hover::after{transform:scaleX(1)}
+  ::-webkit-scrollbar{width:6px}
+  ::-webkit-scrollbar-track{background:#E8E1D2}
+  ::-webkit-scrollbar-thumb{background:#A8A095;border-radius:0}
 `;
 
-const BG="#020D07";
+const BG="#F2EDE4";
 const D="#003F2D",M="#006A4D",BR="#1DB87B",PL="#EEF6F2",PLR="#F7FBF9",W="#FFF",MU="#587066",BD="rgba(0,63,45,.1)";
+const INK="#0A0A08",PAPER="#F2EDE4",PAPER_2="#FAF6EE",HAIR="#C9C2B5",MUTED_INK="#5C5750",OXBLOOD="#6B1F28";
 const ADMIN_USER="admin", ADMIN_PASS="cbre";
 
 const computeCatStats=(catId,stats)=>{
@@ -54,15 +57,6 @@ const computeCatStats=(catId,stats)=>{
     updated:lu?new Date(lu).toLocaleDateString("en-MY",{month:"short",year:"numeric"}):"—",
   };
 };
-
-const TERMS=[
-  {t:"IRR",x:7,y:15,sx:.14,mx:22},{t:"NPV",x:83,y:21,sx:.2,mx:18},
-  {t:"WACC",x:54,y:7,sx:.09,mx:28},{t:"Cap Rate",x:17,y:71,sx:.24,mx:16},
-  {t:"Yield %",x:76,y:65,sx:.17,mx:20},{t:"DCF",x:38,y:84,sx:.11,mx:24},
-  {t:"Exit Val",x:90,y:43,sx:.22,mx:15},{t:"PV Factor",x:5,y:49,sx:.18,mx:22},
-  {t:"NOI",x:48,y:54,sx:.13,mx:26},{t:"Cash Flow",x:14,y:91,sx:.1,mx:18},
-  {t:"Disc.Rate",x:29,y:33,sx:.19,mx:20},{t:"GDV",x:65,y:88,sx:.15,mx:22},
-];
 
 const TMPLS=[
   {id:"residential",title:"Residential",sub:"Landed & Strata Properties",
@@ -140,7 +134,7 @@ function ProgressBar({scrollRef}){
   );
 }
 
-/* ── Nav: transparent on landing, white on dashboard/admin ── */
+/* ── Nav: editorial masthead on landing, white card on dashboard/admin ── */
 function Nav({page,onBack,onAdminClick}){
   const onLanding = page==="landing";
   const onDash    = page==="dashboard";
@@ -152,11 +146,25 @@ function Nav({page,onBack,onAdminClick}){
       background: onLanding ? "transparent" : "rgba(255,255,255,.97)",
       backdropFilter: onLanding ? "none" : "blur(18px)",
       borderBottom: onLanding ? "none" : `1px solid ${BD}`,
-      display:"flex",alignItems:"center",justifyContent:"space-between",padding:"0 36px",
+      display:"flex",alignItems:"center",justifyContent:"space-between",
+      padding: onLanding ? "0 56px" : "0 36px",
     }}>
       <div>
-        <div style={{fontWeight:800,fontSize:14,letterSpacing:"-.2px",color:onLanding?W:D}}>CBRE <span style={{fontWeight:300,opacity:.6}}>|</span> Valorem</div>
-        <div style={{fontSize:9,letterSpacing:"1.2px",marginTop:-1,color:onLanding?"rgba(255,255,255,.45)":MU}}>DCF VALUATION PLATFORM</div>
+        {onLanding ? (
+          <>
+            <div style={{fontFamily:"'Fraunces', serif",fontStyle:"italic",fontWeight:500,
+              fontSize:22,letterSpacing:"-.01em",color:INK,lineHeight:1,
+              fontVariationSettings:"'opsz' 72"}}>Valorem</div>
+            <div style={{fontFamily:"'JetBrains Mono', monospace",fontSize:8.5,
+              letterSpacing:"2.5px",marginTop:3,color:MUTED_INK,fontWeight:500,
+              textTransform:"uppercase"}}>Published · CBRE Malaysia</div>
+          </>
+        ) : (
+          <>
+            <div style={{fontWeight:800,fontSize:14,letterSpacing:"-.2px",color:D}}>CBRE <span style={{fontWeight:300,opacity:.6}}>|</span> Valorem</div>
+            <div style={{fontSize:9,letterSpacing:"1.2px",marginTop:-1,color:MU}}>DCF VALUATION PLATFORM</div>
+          </>
+        )}
       </div>
       <div style={{display:"flex",alignItems:"center",gap:10}}>
         {(onDash||onAdmin)&&(
@@ -168,9 +176,10 @@ function Nav({page,onBack,onAdminClick}){
         )}
         {onLanding&&(
           <button className="btn-o" onClick={onAdminClick}
-            style={{background:"rgba(255,255,255,.08)",color:W,
-              border:"1px solid rgba(255,255,255,.18)",fontFamily:"inherit",
-              padding:"8px 20px",borderRadius:8,fontWeight:600,fontSize:13,cursor:"pointer"}}>
+            style={{background:"transparent",color:INK,
+              border:`1px solid ${INK}`,fontFamily:"'JetBrains Mono', monospace",
+              padding:"8px 18px",borderRadius:0,fontWeight:500,fontSize:10.5,
+              cursor:"pointer",letterSpacing:"2.5px",textTransform:"uppercase"}}>
             Admin
           </button>
         )}
@@ -444,333 +453,452 @@ function AdminPanel({onLogout,uploads,setUploads,setStats}){
   );
 }
 
-function HeroBg({mouse,scrollY}){
-  const mx=mouse.x,my=mouse.y,sy=scrollY;
-  const hx=(mx+.5)*100,hy=(my+.5)*100;
-  const tiltX=(my*14).toFixed(2);
-  const tiltY=(mx*-14).toFixed(2);
-  const archLines=[
-    {x1:"0%",y1:"30%",x2:"100%",y2:"18%"},
-    {x1:"0%",y1:"70%",x2:"100%",y2:"58%"},
-    {x1:"25%",y1:"0%",x2:"35%",y2:"100%"},
-    {x1:"68%",y1:"0%",x2:"72%",y2:"100%"},
-  ];
+/* ── Editorial data — published in this issue ── */
+const EDITION={vol:"IV",no:"04",year:"MMXXVI",month:"MAY",loc:"KUALA LUMPUR",iss:"01"};
+
+const TICKER=[
+  {seg:"Office Grade A",loc:"KL Central",y:"5.75",d:"-0.12"},
+  {seg:"Office Grade B",loc:"KL Fringe",y:"6.40",d:"-0.05"},
+  {seg:"Retail Prime",loc:"Bukit Bintang",y:"7.10",d:"+0.08"},
+  {seg:"Retail Suburban",loc:"Petaling Jaya",y:"7.85",d:"+0.02"},
+  {seg:"Logistics",loc:"Shah Alam",y:"6.20",d:"=0.00"},
+  {seg:"Industrial",loc:"Johor Bahru",y:"7.05",d:"-0.03"},
+  {seg:"Hotel Upscale",loc:"Penang",y:"8.10",d:"+0.15"},
+  {seg:"Residential High-Rise",loc:"Mont Kiara",y:"4.90",d:"-0.08"},
+  {seg:"Residential Landed",loc:"Damansara",y:"4.20",d:"-0.04"},
+  {seg:"Agricultural",loc:"Pahang",y:"6.80",d:"+0.01"},
+  {seg:"Development Land",loc:"Selangor",y:"—",d:"—"},
+];
+
+const LIBRARY=[
+  {num:"I",dept:"Methodology",title:"Industry-Standard DCF",
+   body:"WACC, IRR, NPV and cap-rate logic, calibrated across asset classes and reviewed by practicing valuers. The mathematics are already proven, the references already documented.",
+   quote:"The mathematics already proven."},
+  {num:"II",dept:"Geography",title:"Malaysian-Tuned",
+   body:"Ringgit currency throughout, local rental tiers, MSC office grades and statutory considerations baked into every workbook — calibrated to our market, not adapted from a US template.",
+   quote:"Built for our market, not adapted from another."},
+  {num:"III",dept:"Provenance",title:"Continuously Revised",
+   body:"New editions reflect the latest yields, rentals and absorption rates as recorded by CBRE Research. Workbooks are dated, versioned, and traceable to source data.",
+   quote:"Current with the market as it moves."},
+];
+
+const PROCEDURE=[
+  {roman:"I",verb:"Select",obj:"a category — Residential, Commercial, Industrial or Land."},
+  {roman:"II",verb:"Specify",obj:"a property type — terrace, warehouse, office tower, shophouse."},
+  {roman:"III",verb:"Download",obj:"the workbook, plug in your deal, present your numbers."},
+];
+
+const NOISE_SVG=`<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' seed='7' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.04 0 0 0 0 0.04 0 0 0 0 0.03 0 0 0 0.22 0'/></filter><rect width='100%' height='100%' filter='url(#n)'/></svg>`;
+const NOISE_URL=`url("data:image/svg+xml;utf8,${encodeURIComponent(NOISE_SVG)}")`;
+
+function PaperGrain({opacity=.55}){
   return(
-    <div style={{position:"absolute",inset:0,overflow:"hidden",pointerEvents:"none"}}>
-      {/* Deep glow shift */}
-      <div style={{position:"absolute",inset:0,
-        background:`radial-gradient(ellipse 80% 70% at ${50+mx*12}% ${50+my*12}%,rgba(0,90,55,.55) 0%,transparent 60%)`,
-        transition:"background .6s ease"}}/>
-      {/* 3D grid */}
-      <div style={{position:"absolute",inset:0,perspective:"600px",
-        perspectiveOrigin:`${50+mx*8}% ${50+my*8}%`,transition:"perspective-origin .5s ease"}}>
-        <div style={{position:"absolute",inset:"-20%",
-          backgroundImage:`linear-gradient(rgba(29,184,123,.18) 1px,transparent 1px),linear-gradient(90deg,rgba(29,184,123,.18) 1px,transparent 1px)`,
-          backgroundSize:"60px 60px",
-          transform:`rotateX(${tiltX}deg) rotateY(${tiltY}deg) translateZ(-40px) translateY(${sy*.08}px)`,
-          transition:"transform .45s cubic-bezier(.22,1,.36,1)"}}/>
-      </div>
-      {/* Architectural SVG lines */}
-      <svg style={{position:"absolute",inset:0,width:"100%",height:"100%",
-        transform:`translate(${mx*8}px,${my*6}px)`,transition:"transform .7s ease"}}
-        viewBox="0 0 100 100" preserveAspectRatio="none">
-        {archLines.map((l,i)=>(
-          <line key={i} x1={l.x1} y1={l.y1} x2={l.x2} y2={l.y2}
-            stroke="rgba(255,255,255,.04)" strokeWidth=".15"/>
-        ))}
-      </svg>
-      {/* Concentric rings */}
-      <div style={{position:"absolute",top:"50%",left:"50%",width:700,height:700,marginLeft:-350,marginTop:-350,
-        transform:`translate(${mx*18}px,${my*14}px)`,transition:"transform .5s ease"}}>
-        {[340,270,200,130,70].map((r,i)=>(
-          <div key={i} style={{position:"absolute",top:"50%",left:"50%",
-            width:r*2,height:r*2,marginLeft:-r,marginTop:-r,borderRadius:"50%",
-            border:`${i===2?"1.5px":"1px"} solid rgba(29,184,123,${.04+i*.025})`,
-            animation:`${i%2===0?"rotateSlow":"rotateSlowR"} ${60+i*18}s linear infinite`,
-            ...(i===2?{boxShadow:"0 0 40px rgba(29,184,123,.06)"}:{})}}/>
-        ))}
-        <div style={{position:"absolute",top:"50%",left:"50%",width:1,height:130,marginLeft:-.5,marginTop:-65,
-          background:"linear-gradient(transparent,rgba(29,184,123,.18),transparent)"}}/>
-        <div style={{position:"absolute",top:"50%",left:"50%",width:130,height:1,marginTop:-.5,marginLeft:-65,
-          background:"linear-gradient(90deg,transparent,rgba(29,184,123,.18),transparent)"}}/>
-        <div style={{position:"absolute",top:"50%",left:"50%",width:8,height:8,borderRadius:"50%",
-          background:"rgba(29,184,123,.5)",marginLeft:-4,marginTop:-4,
-          boxShadow:"0 0 12px rgba(29,184,123,.6)",animation:"glowPulse 2.5s ease infinite"}}/>
-      </div>
-      {/* DCF terms */}
-      {TERMS.map((t,i)=>(
-        <div key={i} style={{position:"absolute",left:`${t.x}%`,top:`${t.y}%`,
-          color:"rgba(255,255,255,.07)",fontSize:9,fontWeight:700,
-          letterSpacing:".25em",fontFamily:"monospace",textTransform:"uppercase",
-          transform:`translate(${mx*t.mx*.6}px,${my*t.mx*.3+sy*t.sx}px)`,
-          transition:"transform .9s ease"}}>{t.t}</div>
-      ))}
-      {/* Scan line */}
-      <div style={{position:"absolute",left:0,right:0,height:1,
-        background:"linear-gradient(90deg,transparent,rgba(29,184,123,.12),transparent)",
-        animation:"scanLine 9s linear infinite"}}/>
-      {/* Cursor spotlight */}
-      <div style={{position:"absolute",inset:0,
-        background:`radial-gradient(ellipse 28% 28% at ${(mx+.5)*100}% ${(my+.5)*100}%,rgba(29,184,123,.10) 0%,transparent 70%)`,
-        transition:"background .08s linear"}}/>
-      {/* Lens flare */}
-      <div style={{position:"absolute",
-        left:`calc(${(mx+.5)*100}% - 60px)`,top:`calc(${(my+.5)*100}% - 60px)`,
-        width:120,height:120,borderRadius:"50%",
-        background:"radial-gradient(circle,rgba(255,255,255,.04) 0%,transparent 65%)",
-        transition:"left .08s linear,top .08s linear"}}/>
-      {/* Corner marks */}
-      {[{top:20,left:20},{top:20,right:20},{bottom:20,left:20},{bottom:20,right:20}].map((pos,i)=>(
-        <div key={i} style={{position:"absolute",...pos,width:20,height:20,
-          borderTop:pos.top!==undefined?"1px solid rgba(29,184,123,.25)":"none",
-          borderBottom:pos.bottom!==undefined?"1px solid rgba(29,184,123,.25)":"none",
-          borderLeft:pos.left!==undefined?"1px solid rgba(29,184,123,.25)":"none",
-          borderRight:pos.right!==undefined?"1px solid rgba(29,184,123,.25)":"none",
-          transform:`translate(${mx*(i%2===0?-6:6)}px,${my*(i<2?-4:4)}px)`,
-          transition:"transform .5s ease"}}/>
-      ))}
-      {/* Hover water waves following cursor */}
-      <div style={{position:"absolute",left:`${hx}%`,top:`${hy}%`,
-        marginLeft:-70,marginTop:-70,pointerEvents:"none",
-        transition:"left .14s ease-out,top .14s ease-out"}}>
-        <svg width="140" height="140" viewBox="-70 -70 140 140" style={{overflow:"visible"}}>
-          {[0,1,2].map(i=>(
-            <circle key={i} cx="0" cy="0" r="20"
-              fill="none"
-              stroke={`rgba(29,184,123,${.55-i*.08})`}
-              strokeWidth="1.2"
-              style={{animation:"hoverWave 3.4s ease-out infinite",
-                animationDelay:`${i*1.13}s`,transformOrigin:"0 0",
-                willChange:"transform,opacity"}}/>
-          ))}
-        </svg>
-      </div>
-    </div>
+    <div aria-hidden style={{position:"absolute",inset:0,pointerEvents:"none",
+      opacity,mixBlendMode:"multiply",zIndex:0,
+      backgroundImage:NOISE_URL,backgroundSize:"220px 220px"}}/>
   );
 }
 
-function HoldButton({onComplete,label,duration=800,style,className}){
-  const[progress,setProgress]=useState(0);
-  const[holding,setHolding]=useState(false);
-  const rafRef=useRef(0);
-  const startRef=useRef(0);
-  const doneRef=useRef(false);
-
-  useEffect(()=>()=>{
-    if(rafRef.current)cancelAnimationFrame(rafRef.current);
+function useIsWide(bp=920){
+  const[w,sw]=useState(typeof window!=="undefined"?window.innerWidth:1280);
+  useEffect(()=>{
+    const fn=()=>sw(window.innerWidth);
+    window.addEventListener("resize",fn);
+    return()=>window.removeEventListener("resize",fn);
   },[]);
+  return w>=bp;
+}
+
+/* ── The Wax Seal — press and hold to enter the library ── */
+function WaxSeal({onComplete,size=216,duration=900}){
+  const[p,setP]=useState(0);
+  const[holding,setHolding]=useState(false);
+  const rafRef=useRef(0),startRef=useRef(0),doneRef=useRef(false);
+
+  useEffect(()=>()=>{ if(rafRef.current)cancelAnimationFrame(rafRef.current); },[]);
 
   const tick=t=>{
     if(!startRef.current)startRef.current=t;
-    const p=Math.min(1,(t-startRef.current)/duration);
-    setProgress(p);
-    if(p>=1){
-      doneRef.current=true;
-      setHolding(false);
-      rafRef.current=0;
-      onComplete();
-      return;
-    }
+    const np=Math.min(1,(t-startRef.current)/duration);
+    setP(np);
+    if(np>=1){doneRef.current=true;setHolding(false);rafRef.current=0;onComplete();return;}
     rafRef.current=requestAnimationFrame(tick);
   };
 
   const start=e=>{
     e.preventDefault();e.stopPropagation();
     if(doneRef.current)return;
-    setHolding(true);
-    startRef.current=0;
-    rafRef.current=requestAnimationFrame(tick);
+    setHolding(true);startRef.current=0;rafRef.current=requestAnimationFrame(tick);
   };
 
   const stop=e=>{
     if(e)e.stopPropagation();
     if(rafRef.current){cancelAnimationFrame(rafRef.current);rafRef.current=0;}
     setHolding(false);
-    if(!doneRef.current)setProgress(0);
+    if(!doneRef.current)setP(0);
   };
 
-  const pct=progress*100;
-  const ease=holding?"none":"width .32s cubic-bezier(.4,0,.2,1),clip-path .32s cubic-bezier(.4,0,.2,1),-webkit-clip-path .32s cubic-bezier(.4,0,.2,1)";
+  const fillR=p*36;
+  const flipped=p>0.45;
+  const trans=holding?"none":"r .35s cubic-bezier(.4,0,.2,1)";
 
   return(
     <button
-      onPointerDown={start}
-      onPointerUp={stop}
-      onPointerLeave={stop}
-      onPointerCancel={stop}
-      onClick={e=>e.stopPropagation()}
-      onContextMenu={e=>e.preventDefault()}
-      className={className}
-      style={{...style,position:"relative",overflow:"hidden",
-        userSelect:"none",touchAction:"none",
-        display:"inline-flex",alignItems:"center",justifyContent:"center"}}>
-      <span aria-hidden style={{position:"absolute",left:0,top:0,bottom:0,
-        width:`${pct}%`,
-        background:`linear-gradient(90deg,${M},${BR})`,
-        transition:ease,willChange:"width"}}/>
-      <span style={{position:"relative",zIndex:1}}>{label}</span>
-      <span aria-hidden style={{position:"absolute",inset:0,
-        display:"flex",alignItems:"center",justifyContent:"center",
-        color:W,clipPath:`inset(0 ${100-pct}% 0 0)`,
-        WebkitClipPath:`inset(0 ${100-pct}% 0 0)`,
-        transition:ease,pointerEvents:"none",zIndex:2,willChange:"clip-path",
-        font:"inherit",letterSpacing:"inherit"}}>
-        {label}
-      </span>
+      onPointerDown={start} onPointerUp={stop} onPointerLeave={stop} onPointerCancel={stop}
+      onClick={e=>e.stopPropagation()} onContextMenu={e=>e.preventDefault()}
+      aria-label="Press and hold to enter the library"
+      style={{position:"relative",width:size,height:size,
+        background:"transparent",border:"none",cursor:"pointer",padding:0,
+        userSelect:"none",touchAction:"none",fontFamily:"inherit",
+        filter:holding?"drop-shadow(0 8px 22px rgba(10,10,8,.22))":"drop-shadow(0 4px 12px rgba(10,10,8,.14))",
+        transition:"filter .2s ease,transform .2s ease",
+        transform:holding?"scale(.985)":"scale(1)"}}>
+      <svg viewBox="-50 -50 100 100" style={{width:"100%",height:"100%",overflow:"visible",display:"block"}}>
+        <defs>
+          <path id="ws-top" d="M -39 -5 A 39 39 0 0 1 39 -5"/>
+          <path id="ws-bot" d="M -33 6 A 33 33 0 0 0 33 6"/>
+          <radialGradient id="ws-wax" cx="40%" cy="38%" r="65%">
+            <stop offset="0%" stopColor="#0F5239"/>
+            <stop offset="55%" stopColor="#003F2D"/>
+            <stop offset="100%" stopColor="#012219"/>
+          </radialGradient>
+        </defs>
+
+        {/* outer rim — double hairline */}
+        <circle cx="0" cy="0" r="47" fill="none" stroke={INK} strokeWidth=".7"/>
+        <circle cx="0" cy="0" r="45.4" fill="none" stroke={INK} strokeWidth=".25"/>
+
+        {/* curved text on upper arc */}
+        <text fontSize="3.4" letterSpacing="2.4" fill={INK}
+          style={{fontFamily:"'JetBrains Mono', monospace",textTransform:"uppercase",fontWeight:500}}>
+          <textPath href="#ws-top" startOffset="50%" textAnchor="middle">VALOREM · CBRE MALAYSIA</textPath>
+        </text>
+
+        {/* curved text on lower arc */}
+        <text fontSize="2.9" letterSpacing="2" fill={INK}
+          style={{fontFamily:"'JetBrains Mono', monospace",textTransform:"uppercase",fontWeight:500}}>
+          <textPath href="#ws-bot" startOffset="50%" textAnchor="middle">EST · MMXXVI</textPath>
+        </text>
+
+        {/* ornamental side marks — printer's flourish */}
+        <g fill={INK} stroke={INK} strokeWidth=".25">
+          <circle cx="-43" cy="0" r=".7" fill={INK}/>
+          <circle cx="43" cy="0" r=".7" fill={INK}/>
+          <path d="M -47 -2 L -49 0 L -47 2" fill="none"/>
+          <path d="M 47 -2 L 49 0 L 47 2" fill="none"/>
+        </g>
+
+        {/* inner ring */}
+        <circle cx="0" cy="0" r="38" fill="none" stroke={INK} strokeWidth=".32"/>
+        <circle cx="0" cy="0" r="36.6" fill="none" stroke={INK} strokeWidth=".15"/>
+
+        {/* wax fill — radial, soaking outward */}
+        <circle cx="0" cy="0" r={fillR} fill="url(#ws-wax)" style={{transition:trans}}/>
+        {p>0.04 && (
+          <circle cx="-5" cy="-6" r={fillR*.38} fill="rgba(255,255,255,.08)" style={{transition:trans}}/>
+        )}
+
+        {/* V monogram — Fraunces italic */}
+        <text x="0" y="3" textAnchor="middle"
+          fontSize="32" fill={flipped?PAPER:INK}
+          style={{fontFamily:"'Fraunces', serif",fontWeight:600,fontStyle:"italic",
+            transition:"fill .25s ease",fontVariationSettings:"'opsz' 144"}}>V</text>
+
+        {/* instruction */}
+        <text x="0" y="20" textAnchor="middle"
+          fontSize="3" letterSpacing="2.6" fontWeight="500"
+          fill={flipped?"rgba(242,237,228,.8)":MUTED_INK}
+          style={{fontFamily:"'JetBrains Mono', monospace",textTransform:"uppercase",
+            transition:"fill .25s ease"}}>
+          Press · Hold
+        </text>
+      </svg>
     </button>
   );
 }
 
-const MARQUEE_TERMS=["IRR","NPV","WACC","Cap Rate","DCF","Cash Flow","NOI","Yield %","Exit Value","Disc. Rate","GDV","PV Factor","Sensitivity","Terminal Value"];
-
-const FEATURES=[
-  {icon:"chart",title:"Industry-Standard DCF",
-   desc:"WACC, IRR, NPV and cap-rate logic wired up correctly across every workbook — the metrics professional valuers expect, with the maths already proven."},
-  {icon:"map",title:"Malaysian-Tuned",
-   desc:"RM currency, local rental tiers, MSC office grades and statutory considerations baked into every model so you start from the right baseline, not a US template."},
-  {icon:"refresh",title:"Continuously Updated",
-   desc:"New revisions reflect the latest yields, rentals and absorption rates. Stay current on the market without rebuilding spreadsheets from scratch."},
-];
-
-const STEPS=[
-  {n:"01",title:"Pick a Category",desc:"Residential, Commercial, Industrial or Land — each grouped by asset class."},
-  {n:"02",title:"Choose a Property Type",desc:"Terrace, warehouse, office tower, shophouse — drill down to the exact sub-class."},
-  {n:"03",title:"Download & Value",desc:"Open the Excel workbook, plug in your deal, and present the numbers."},
-];
-
-function FeatureIcon({name}){
-  const p={fill:"none",stroke:W,strokeWidth:1.8,strokeLinecap:"round",strokeLinejoin:"round"};
-  if(name==="chart")return(<svg width="22" height="22" viewBox="0 0 24 24" {...p}><path d="M3 3v18h18"/><path d="M7 16l4-6 4 3 5-8"/></svg>);
-  if(name==="map")return(<svg width="22" height="22" viewBox="0 0 24 24" {...p}><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>);
-  if(name==="refresh")return(<svg width="22" height="22" viewBox="0 0 24 24" {...p}><path d="M3 12a9 9 0 0115.5-6.3L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 01-15.5 6.3L3 16"/><path d="M3 21v-5h5"/></svg>);
-  return null;
-}
-
-function CapabilitiesStrip(){
-  const seq=[...MARQUEE_TERMS,...MARQUEE_TERMS];
+/* ── Masthead-style hero — editorial cover ── */
+function Hero({onEnter}){
+  const wide=useIsWide(1100);
+  const heroCols=wide?"180px 1fr 240px":"1fr";
   return(
-    <section style={{background:BG,padding:"32px 0",overflow:"hidden",position:"relative",
-      borderTop:"1px solid rgba(29,184,123,.1)",borderBottom:"1px solid rgba(29,184,123,.1)"}}>
-      <div style={{position:"absolute",inset:0,
-        background:"linear-gradient(90deg,#020D07 0%,transparent 8%,transparent 92%,#020D07 100%)",
-        zIndex:2,pointerEvents:"none"}}/>
-      <div style={{display:"flex",animation:"marquee 38s linear infinite",
-        whiteSpace:"nowrap",width:"max-content",willChange:"transform"}}>
-        {seq.map((t,i)=>(
-          <span key={i} style={{color:"rgba(255,255,255,.35)",
-            fontSize:14,fontWeight:700,letterSpacing:".22em",
-            fontFamily:"monospace",textTransform:"uppercase",
-            display:"inline-flex",alignItems:"center",gap:64,marginRight:64}}>
-            {t}
-            <span style={{width:6,height:6,borderRadius:"50%",background:`${BR}`,opacity:.4}}/>
-          </span>
-        ))}
+    <section style={{position:"relative",background:PAPER,overflow:"hidden",
+      borderBottom:`1px solid ${HAIR}`}}>
+      <PaperGrain/>
+
+      {/* Edition strip — between nav and hero body */}
+      <div style={{padding:wide?"86px 56px 14px":"82px 28px 12px",
+        position:"relative",zIndex:2,borderBottom:`1px solid ${INK}`,
+        display:"flex",flexWrap:"wrap",justifyContent:"space-between",alignItems:"baseline",gap:18,
+        fontFamily:"'JetBrains Mono', monospace",fontSize:10,
+        color:INK,letterSpacing:"2px",textTransform:"uppercase",fontWeight:500}}>
+        <span><strong style={{letterSpacing:"3px",fontWeight:600}}>Vol · {EDITION.vol}</strong> &nbsp; · &nbsp; No · {EDITION.no}</span>
+        <span style={{flex:wide?1:"unset",textAlign:"center",opacity:.55,letterSpacing:"3.5px"}}>
+          A Library of DCF Workbooks &nbsp;·&nbsp; Published by CBRE Malaysia
+        </span>
+        <span>{EDITION.month} · {EDITION.year} &nbsp; · &nbsp; {EDITION.loc}</span>
       </div>
-    </section>
-  );
-}
 
-function FeatureCard({icon,title,desc,idx}){
-  const[ref,v]=useInView(.12);
-  const[hov,setHov]=useState(false);
-  return(
-    <div ref={ref}
-      onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}
-      style={{position:"relative",
-        background:"rgba(255,255,255,.03)",
-        border:"1px solid rgba(255,255,255,.08)",
-        borderRadius:18,padding:"30px 28px 32px",overflow:"hidden",
-        opacity:v?1:0,transform:v?"translateY(0)":"translateY(28px)",
-        transition:`opacity .65s ease ${idx*.1}s,transform .65s cubic-bezier(.22,1,.36,1) ${idx*.1}s,background .3s ease,border-color .3s ease`,
-        ...(hov?{background:"rgba(255,255,255,.05)",borderColor:"rgba(29,184,123,.3)"}:{}),
-      }}>
-      <div style={{position:"absolute",top:-60,right:-60,width:160,height:160,borderRadius:"50%",
-        background:`radial-gradient(circle,rgba(29,184,123,${hov?.18:.08}) 0%,transparent 70%)`,
-        transition:"background .4s ease",pointerEvents:"none"}}/>
-      <div style={{width:46,height:46,borderRadius:12,
-        background:`linear-gradient(135deg,${M},${BR})`,
-        display:"inline-flex",alignItems:"center",justifyContent:"center",
-        marginBottom:20,boxShadow:`0 8px 22px rgba(29,184,123,${hov?.35:.2})`,
-        transition:"box-shadow .3s ease",position:"relative"}}>
-        <FeatureIcon name={icon}/>
-      </div>
-      <h3 style={{fontSize:18,fontWeight:800,letterSpacing:"-.4px",color:W,margin:"0 0 10px",position:"relative"}}>{title}</h3>
-      <p style={{fontSize:14,color:"rgba(255,255,255,.55)",lineHeight:1.7,margin:0,position:"relative"}}>{desc}</p>
-    </div>
-  );
-}
+      {/* Hero body — three-column editorial */}
+      <div style={{display:"grid",gridTemplateColumns:heroCols,gap:0,
+        padding:wide?"68px 56px 96px":"48px 28px 72px",
+        position:"relative",zIndex:1,maxWidth:1480,margin:"0 auto"}}>
 
-function SectionEyebrow({children}){
-  return(<div style={{display:"inline-block",fontSize:11,letterSpacing:".42em",fontWeight:700,
-    color:BR,marginBottom:14,fontFamily:"monospace",textTransform:"uppercase"}}>{children}</div>);
-}
+        {/* Left marginalia */}
+        {wide && (
+          <aside style={{borderRight:`1px solid ${HAIR}`,paddingRight:28,
+            fontFamily:"'JetBrains Mono', monospace",fontSize:9.5,
+            color:MUTED_INK,letterSpacing:"1.5px",textTransform:"uppercase",
+            lineHeight:2.4}}>
+            <div style={{color:INK,fontWeight:600,marginBottom:18,fontSize:10.5,letterSpacing:"2px"}}>—— Frontispiece</div>
+            <div>Volume — {EDITION.vol}</div>
+            <div>Number — {EDITION.no}</div>
+            <div>Issue — {EDITION.iss}</div>
+            <div>Anno — {EDITION.year}</div>
+            <div style={{marginTop:22,color:OXBLOOD,fontWeight:600}}>—— Filed:</div>
+            <div>{EDITION.loc}</div>
+            <div>{EDITION.month} · {EDITION.year}</div>
+          </aside>
+        )}
 
-function FeaturesSection(){
-  const[ref,v]=useInView(.08);
-  return(
-    <section style={{background:BG,padding:"110px 28px 90px",position:"relative",overflow:"hidden"}}>
-      <div style={{position:"absolute",top:"15%",left:"-10%",width:480,height:480,borderRadius:"50%",
-        background:`radial-gradient(circle,rgba(29,184,123,.12) 0%,transparent 65%)`,
-        animation:"glowDrift 14s ease-in-out infinite",pointerEvents:"none"}}/>
-      <div style={{position:"absolute",bottom:"5%",right:"-12%",width:520,height:520,borderRadius:"50%",
-        background:`radial-gradient(circle,rgba(0,106,77,.18) 0%,transparent 65%)`,
-        animation:"glowDrift 18s ease-in-out infinite reverse",pointerEvents:"none"}}/>
-      <div ref={ref} style={{maxWidth:1180,margin:"0 auto",position:"relative"}}>
-        <div style={{textAlign:"center",marginBottom:58,
-          opacity:v?1:0,transform:v?"translateY(0)":"translateY(16px)",
-          transition:"opacity .6s ease,transform .6s cubic-bezier(.22,1,.36,1)"}}>
-          <SectionEyebrow>WHY VALOREM</SectionEyebrow>
-          <h2 style={{fontSize:"clamp(28px,4vw,42px)",fontWeight:900,letterSpacing:"-1.4px",
-            color:W,margin:"0 auto 14px",lineHeight:1.1,maxWidth:720}}>
-            Built for serious<br/>valuation work.
-          </h2>
-          <p style={{fontSize:15,color:"rgba(255,255,255,.5)",lineHeight:1.7,maxWidth:560,margin:"0 auto"}}>
-            Every workbook is reviewed by practicing valuers, calibrated to Malaysian market conditions, and kept current as yields move.
+        {/* Main column */}
+        <div style={{padding:wide?"0 56px":"0",position:"relative"}}>
+          <div style={{fontFamily:"'JetBrains Mono', monospace",
+            fontSize:10,color:OXBLOOD,letterSpacing:"3.5px",
+            textTransform:"uppercase",marginBottom:34,fontWeight:600,
+            display:"flex",alignItems:"center",gap:14,
+            animation:"inkSink .8s ease forwards"}}>
+            <span style={{width:34,height:1,background:OXBLOOD,display:"inline-block"}}/>
+            Department of Property Valuation
+          </div>
+
+          <h1 style={{
+            fontFamily:"'Fraunces', serif",
+            fontSize:"clamp(54px,9vw,128px)",
+            fontWeight:300,
+            lineHeight:.94,letterSpacing:"-.04em",
+            color:INK,margin:"0 0 28px",
+            fontVariationSettings:"'opsz' 144"}}>
+            Valuation,<br/>
+            <em style={{fontWeight:400,fontVariationSettings:"'opsz' 144"}}>without</em>
+            <span aria-hidden style={{display:"inline-block",width:18,height:18,
+              background:OXBLOOD,borderRadius:"50%",margin:"0 14px 8px 20px",
+              verticalAlign:"middle"}}/>
+            <br/>
+            Reinvention.
+          </h1>
+
+          <p style={{
+            fontFamily:"'Instrument Sans', sans-serif",
+            fontSize:17,lineHeight:1.62,
+            color:INK,maxWidth:600,
+            margin:"0 0 48px",fontWeight:400}}>
+            <span style={{
+              fontFamily:"'Fraunces', serif",
+              fontSize:80,float:"left",
+              lineHeight:.82,marginRight:14,
+              marginTop:8,marginBottom:-4,
+              fontWeight:600,color:INK,
+              fontVariationSettings:"'opsz' 144"}}>P</span>
+            re-built Discounted Cash Flow workbooks for the Malaysian property market — residential, commercial, industrial and land. Each model is wired by practicing valuers and reviewed against current CBRE market data. Open the workbook, plug in your deal, present the numbers.
           </p>
+
+          {/* CTA — wax seal + caption */}
+          <div style={{display:"flex",alignItems:"center",gap:36,marginTop:4,flexWrap:"wrap"}}>
+            <WaxSeal onComplete={onEnter}/>
+            <div style={{maxWidth:260}}>
+              <div style={{
+                fontFamily:"'Fraunces', serif",fontStyle:"italic",
+                fontSize:21,color:INK,lineHeight:1.32,
+                fontWeight:400,marginBottom:10,
+                fontVariationSettings:"'opsz' 36"}}>
+                Press &amp; hold the seal to enter the library.
+              </div>
+              <div style={{
+                fontFamily:"'JetBrains Mono', monospace",
+                fontSize:9.5,letterSpacing:"1.8px",
+                color:MUTED_INK,textTransform:"uppercase",lineHeight:1.7}}>
+                ↳ Free · No signup · Always current
+              </div>
+            </div>
+          </div>
         </div>
-        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(280px,1fr))",gap:22}}>
-          {FEATURES.map((f,i)=>(<FeatureCard key={i} idx={i} {...f}/>))}
-        </div>
+
+        {/* Right marginalia — fact card */}
+        {wide && (
+          <aside style={{borderLeft:`1px solid ${HAIR}`,paddingLeft:28}}>
+            <div style={{
+              fontFamily:"'JetBrains Mono', monospace",fontSize:10.5,
+              color:INK,letterSpacing:"2px",fontWeight:600,marginBottom:14,
+              textTransform:"uppercase"}}>—— Catalogue</div>
+            {[
+              ["Categories","04"],
+              ["Property Types","29"],
+              ["Format","XLSX"],
+              ["Currency","RM"],
+              ["Coverage","Peninsular MY"],
+              ["Edition","I · MMXXVI"]
+            ].map(([k,v],i,a)=>(
+              <div key={k} style={{
+                padding:"13px 0",
+                borderBottom:i<a.length-1?`1px solid ${HAIR}`:"none",
+                display:"flex",justifyContent:"space-between",alignItems:"baseline"}}>
+                <span style={{
+                  fontFamily:"'JetBrains Mono', monospace",
+                  fontSize:9.5,color:MUTED_INK,letterSpacing:"1.2px",
+                  textTransform:"uppercase"}}>{k}</span>
+                <span style={{
+                  fontFamily:"'Fraunces', serif",
+                  fontSize:17,color:INK,fontWeight:500,
+                  fontVariationSettings:"'opsz' 36"}}>{v}</span>
+              </div>
+            ))}
+          </aside>
+        )}
+      </div>
+
+      {/* Lower edge marks */}
+      <div style={{position:"absolute",bottom:22,left:wide?56:28,
+        fontFamily:"'JetBrains Mono', monospace",fontSize:9,
+        color:MUTED_INK,letterSpacing:"2px",textTransform:"uppercase",zIndex:2}}>
+        — Pg · 01
+      </div>
+      <div style={{position:"absolute",bottom:22,right:wide?56:28,
+        fontFamily:"'JetBrains Mono', monospace",fontSize:9,
+        color:MUTED_INK,letterSpacing:"2px",textTransform:"uppercase",zIndex:2}}>
+        Scroll ↓
       </div>
     </section>
   );
 }
 
-function ProcessSection(){
-  const[ref,v]=useInView(.08);
+/* ── Market ticker — dark inverted band, Bloomberg-style ── */
+function MarketTicker(){
+  const seq=[...TICKER,...TICKER];
   return(
-    <section style={{background:"#03150E",padding:"100px 28px",position:"relative",overflow:"hidden",
-      borderTop:"1px solid rgba(29,184,123,.08)",borderBottom:"1px solid rgba(29,184,123,.08)"}}>
+    <section style={{background:INK,padding:"24px 0",overflow:"hidden",position:"relative"}}>
       <div style={{position:"absolute",inset:0,
-        backgroundImage:`linear-gradient(rgba(29,184,123,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(29,184,123,.06) 1px,transparent 1px)`,
-        backgroundSize:"56px 56px",opacity:.6,pointerEvents:"none",
-        maskImage:"radial-gradient(ellipse 70% 80% at 50% 50%,#000 30%,transparent 80%)",
-        WebkitMaskImage:"radial-gradient(ellipse 70% 80% at 50% 50%,#000 30%,transparent 80%)"}}/>
-      <div ref={ref} style={{maxWidth:1100,margin:"0 auto",position:"relative"}}>
-        <div style={{textAlign:"center",marginBottom:56,
-          opacity:v?1:0,transform:v?"translateY(0)":"translateY(16px)",
-          transition:"opacity .6s ease,transform .6s cubic-bezier(.22,1,.36,1)"}}>
-          <SectionEyebrow>HOW IT WORKS</SectionEyebrow>
-          <h2 style={{fontSize:"clamp(28px,4vw,42px)",fontWeight:900,letterSpacing:"-1.4px",
-            color:W,margin:0,lineHeight:1.1}}>
-            Three steps to your<br/>next valuation.
-          </h2>
-        </div>
-        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(240px,1fr))",
-          gap:32,position:"relative"}}>
-          {STEPS.map((s,i)=>(
-            <div key={i} style={{position:"relative",
-              opacity:v?1:0,transform:v?"translateY(0)":"translateY(20px)",
-              transition:`opacity .6s ease ${i*.14}s,transform .6s cubic-bezier(.22,1,.36,1) ${i*.14}s`}}>
-              <div style={{display:"flex",alignItems:"baseline",gap:12,marginBottom:14}}>
-                <span style={{fontSize:38,fontWeight:900,letterSpacing:"-1.5px",
-                  color:"transparent",WebkitTextStroke:`1.4px ${BR}`,
-                  fontFamily:"monospace",lineHeight:1,opacity:.85}}>{s.n}</span>
-                <span style={{flex:1,height:1,background:"linear-gradient(90deg,rgba(29,184,123,.35),transparent)"}}/>
-              </div>
-              <h3 style={{fontSize:18,fontWeight:800,letterSpacing:"-.4px",color:W,margin:"0 0 10px"}}>{s.title}</h3>
-              <p style={{fontSize:14,color:"rgba(255,255,255,.55)",lineHeight:1.7,margin:0}}>{s.desc}</p>
+        background:"linear-gradient(90deg,#0A0A08 0%,transparent 6%,transparent 94%,#0A0A08 100%)",
+        zIndex:2,pointerEvents:"none"}}/>
+      <div style={{display:"flex",animation:"tickerScroll 95s linear infinite",
+        whiteSpace:"nowrap",width:"max-content",willChange:"transform"}}>
+        {seq.map((r,i)=>{
+          const sign=r.d.startsWith("-")?"down":r.d.startsWith("+")?"up":"flat";
+          const arrow=sign==="down"?"↓":sign==="up"?"↑":"→";
+          const col=sign==="down"?"#5FB591":sign==="up"?"#D88898":"rgba(242,237,228,.4)";
+          return(
+            <span key={i} style={{
+              display:"inline-flex",alignItems:"baseline",gap:12,
+              marginRight:54,
+              fontFamily:"'JetBrains Mono', monospace",fontSize:10.5,
+              letterSpacing:"1.4px",textTransform:"uppercase"}}>
+              <span style={{color:"rgba(242,237,228,.62)",fontWeight:500}}>{r.seg}</span>
+              <span style={{color:"rgba(242,237,228,.25)"}}>·</span>
+              <span style={{color:"rgba(242,237,228,.45)"}}>{r.loc}</span>
+              <span style={{color:"rgba(242,237,228,.25)"}}>·</span>
+              <span style={{color:PAPER,fontWeight:600,fontSize:12.5}}>{r.y}{r.y!=="—"?"%":""}</span>
+              <span style={{color:col,fontSize:10,letterSpacing:"1px",fontWeight:500}}>
+                {arrow} {r.d.replace(/^[-+=]/,'')}
+              </span>
+            </span>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+/* ── §02 The Library — three editorial entries ── */
+function LibraryEntry({num,dept,title,body,quote,idx,last}){
+  const[ref,v]=useInView(.12);
+  return(
+    <article ref={ref} style={{
+      padding:"40px 32px 44px",
+      borderRight:last?"none":`1px solid ${HAIR}`,
+      borderBottom:`1px solid ${INK}`,
+      position:"relative",
+      opacity:v?1:0,transform:v?"translateY(0)":"translateY(20px)",
+      transition:`opacity .7s ease ${idx*.14}s,transform .7s cubic-bezier(.22,1,.36,1) ${idx*.14}s`}}>
+
+      <div style={{display:"flex",alignItems:"baseline",justifyContent:"space-between",
+        marginBottom:24}}>
+        <div style={{fontFamily:"'JetBrains Mono', monospace",fontSize:10,
+          color:MUTED_INK,letterSpacing:"2px",textTransform:"uppercase",fontWeight:600}}>{dept}</div>
+        <div style={{fontFamily:"'Fraunces', serif",fontStyle:"italic",
+          fontSize:38,color:OXBLOOD,fontWeight:300,lineHeight:1,
+          fontVariationSettings:"'opsz' 144"}}>{num}</div>
+      </div>
+
+      <h3 style={{
+        fontFamily:"'Fraunces', serif",
+        fontSize:26,fontWeight:500,letterSpacing:"-.015em",
+        color:INK,margin:"0 0 16px",lineHeight:1.18,
+        fontVariationSettings:"'opsz' 72"}}>{title}</h3>
+
+      <p style={{fontFamily:"'Instrument Sans', sans-serif",
+        fontSize:14.5,lineHeight:1.65,color:INK,
+        margin:"0 0 26px",fontWeight:400}}>{body}</p>
+
+      <blockquote style={{
+        fontFamily:"'Fraunces', serif",fontStyle:"italic",
+        fontSize:15,color:OXBLOOD,
+        margin:0,paddingLeft:14,borderLeft:`1.5px solid ${OXBLOOD}`,
+        lineHeight:1.42,letterSpacing:"-.005em",fontWeight:400,
+        fontVariationSettings:"'opsz' 36"}}>
+        “{quote}”
+      </blockquote>
+    </article>
+  );
+}
+
+function TheLibrary(){
+  const wide=useIsWide(1000);
+  return(
+    <section style={{background:PAPER,padding:wide?"120px 56px":"80px 28px",
+      position:"relative",borderBottom:`1px solid ${HAIR}`,overflow:"hidden"}}>
+      <PaperGrain/>
+      <div style={{maxWidth:1320,margin:"0 auto",position:"relative",zIndex:1}}>
+        {/* Section header */}
+        <div style={{display:"grid",
+          gridTemplateColumns:wide?"180px 1fr 240px":"1fr",gap:0,
+          marginBottom:wide?80:48}}>
+          <div style={{borderRight:wide?`1px solid ${HAIR}`:"none",
+            paddingRight:wide?28:0,marginBottom:wide?0:24}}>
+            <div style={{fontFamily:"'JetBrains Mono', monospace",fontSize:10.5,
+              color:OXBLOOD,letterSpacing:"2.5px",textTransform:"uppercase",fontWeight:600}}>
+              §02
             </div>
+            <div style={{fontFamily:"'JetBrains Mono', monospace",fontSize:9.5,
+              color:MUTED_INK,letterSpacing:"1.5px",textTransform:"uppercase",
+              marginTop:8,lineHeight:1.8}}>
+              The Library
+            </div>
+          </div>
+          <div style={{padding:wide?"0 56px":"0"}}>
+            <h2 style={{
+              fontFamily:"'Fraunces', serif",
+              fontSize:"clamp(38px,5.4vw,72px)",
+              fontWeight:300,
+              lineHeight:1.02,letterSpacing:"-.025em",
+              color:INK,margin:"0 0 22px",
+              fontVariationSettings:"'opsz' 144"}}>
+              Three reasons<br/>
+              <em style={{fontWeight:400}}>this exists.</em>
+            </h2>
+            <p style={{fontFamily:"'Instrument Sans', sans-serif",
+              fontSize:16,lineHeight:1.62,color:MUTED_INK,maxWidth:520,margin:0}}>
+              Every workbook is reviewed by practicing valuers, calibrated to Malaysian market conditions, and kept current as yields move. Below — the working principles.
+            </p>
+          </div>
+          {wide && <div/>}
+        </div>
+
+        {/* Three editorial entries */}
+        <div style={{display:"grid",
+          gridTemplateColumns:wide?"repeat(3,1fr)":"1fr",gap:0,
+          borderTop:`1px solid ${INK}`}}>
+          {LIBRARY.map((item,i)=>(
+            <LibraryEntry key={item.num} {...item} idx={i} last={wide&&i===LIBRARY.length-1}/>
           ))}
         </div>
       </div>
@@ -778,100 +906,158 @@ function ProcessSection(){
   );
 }
 
-function FinalCTA({onEnter}){
-  const[ref,v]=useInView(.12);
+/* ── §03 Procedure — three printed steps ── */
+function Procedure(){
+  const wide=useIsWide(900);
+  const[ref,v]=useInView(.08);
   return(
-    <section style={{background:BG,padding:"120px 28px",position:"relative",overflow:"hidden"}}>
-      <div style={{position:"absolute",inset:0,
-        background:`radial-gradient(ellipse 55% 60% at 50% 50%,rgba(29,184,123,.22) 0%,rgba(29,184,123,.05) 40%,transparent 75%)`,
-        animation:"featureGlow 6s ease-in-out infinite",pointerEvents:"none"}}/>
-      <div style={{position:"absolute",left:"50%",top:"50%",width:520,height:520,marginLeft:-260,marginTop:-260,
-        borderRadius:"50%",border:"1px solid rgba(29,184,123,.12)",pointerEvents:"none",
-        animation:"rotateSlow 80s linear infinite"}}/>
-      <div style={{position:"absolute",left:"50%",top:"50%",width:760,height:760,marginLeft:-380,marginTop:-380,
-        borderRadius:"50%",border:"1px solid rgba(29,184,123,.08)",pointerEvents:"none",
-        animation:"rotateSlowR 110s linear infinite"}}/>
-      <div ref={ref} style={{maxWidth:780,margin:"0 auto",textAlign:"center",position:"relative",
-        opacity:v?1:0,transform:v?"translateY(0)":"translateY(24px)",
-        transition:"opacity .7s ease,transform .7s cubic-bezier(.22,1,.36,1)"}}>
-        <SectionEyebrow>READY WHEN YOU ARE</SectionEyebrow>
-        <h2 style={{fontSize:"clamp(32px,5vw,52px)",fontWeight:900,letterSpacing:"-1.8px",
-          color:W,margin:"0 0 18px",lineHeight:1.08}}>
-          Start your next<br/>
-          <span style={{background:"linear-gradient(90deg,#aee8cc,#ffffff,#1DB87B,#ffffff)",
-            backgroundSize:"300% auto",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",
-            animation:"shimmer 5s linear infinite"}}>valuation in minutes.</span>
-        </h2>
-        <p style={{fontSize:15,color:"rgba(255,255,255,.55)",lineHeight:1.78,maxWidth:500,margin:"0 auto 36px"}}>
-          Hold the button below to enter the template library. Free to download. No signup required.
-        </p>
-        <HoldButton onComplete={onEnter} label="Hold to Access Templates" className="btn-p"
-          style={{background:W,color:D,padding:"14px 34px",borderRadius:10,fontWeight:800,fontSize:15,
-            boxShadow:"0 10px 32px rgba(0,0,0,.4)"}}/>
+    <section ref={ref} style={{background:PAPER_2,padding:wide?"110px 56px":"72px 28px",
+      position:"relative",borderBottom:`1px solid ${HAIR}`,overflow:"hidden"}}>
+      <PaperGrain opacity={.3}/>
+      <div style={{maxWidth:1320,margin:"0 auto",position:"relative",zIndex:1}}>
+        <div style={{display:"grid",
+          gridTemplateColumns:wide?"180px 1fr":"1fr",gap:0,marginBottom:wide?64:36}}>
+          <div style={{borderRight:wide?`1px solid ${HAIR}`:"none",
+            paddingRight:wide?28:0,marginBottom:wide?0:24}}>
+            <div style={{fontFamily:"'JetBrains Mono', monospace",fontSize:10.5,
+              color:OXBLOOD,letterSpacing:"2.5px",textTransform:"uppercase",fontWeight:600}}>
+              §03
+            </div>
+            <div style={{fontFamily:"'JetBrains Mono', monospace",fontSize:9.5,
+              color:MUTED_INK,letterSpacing:"1.5px",textTransform:"uppercase",
+              marginTop:8,lineHeight:1.8}}>
+              Procedure
+            </div>
+          </div>
+          <div style={{padding:wide?"0 56px":"0"}}>
+            <h2 style={{
+              fontFamily:"'Fraunces', serif",
+              fontSize:"clamp(34px,4.6vw,64px)",
+              fontWeight:300,
+              lineHeight:1.02,letterSpacing:"-.025em",
+              color:INK,margin:0,
+              fontVariationSettings:"'opsz' 144"}}>
+              In <em style={{fontWeight:400}}>three steps</em>.
+            </h2>
+          </div>
+        </div>
+
+        {/* Steps */}
+        <div style={{display:"grid",
+          gridTemplateColumns:wide?"repeat(3,1fr)":"1fr",gap:0,
+          borderTop:`1px solid ${INK}`,borderBottom:`1px solid ${INK}`,
+          background:PAPER}}>
+          {PROCEDURE.map((s,i)=>(
+            <div key={s.roman} style={{
+              padding:wide?"56px 40px 60px":"40px 28px",
+              borderRight:wide&&i<2?`1px solid ${HAIR}`:"none",
+              borderBottom:!wide&&i<2?`1px solid ${HAIR}`:"none",
+              position:"relative",
+              opacity:v?1:0,transform:v?"translateY(0)":"translateY(16px)",
+              transition:`opacity .6s ease ${i*.18}s,transform .6s cubic-bezier(.22,1,.36,1) ${i*.18}s`}}>
+              <div style={{
+                fontFamily:"'Fraunces', serif",fontStyle:"italic",
+                fontSize:96,color:HAIR,fontWeight:300,lineHeight:1,
+                margin:"0 0 26px",
+                fontVariationSettings:"'opsz' 144"}}>{s.roman}</div>
+              <div style={{
+                fontFamily:"'JetBrains Mono', monospace",fontSize:11,
+                color:OXBLOOD,letterSpacing:"3px",fontWeight:600,
+                textTransform:"uppercase",marginBottom:14,
+                display:"flex",alignItems:"center",gap:8}}>
+                <span style={{color:INK}}>—</span>{s.verb}
+              </div>
+              <div style={{
+                fontFamily:"'Fraunces', serif",fontSize:22,
+                fontWeight:400,letterSpacing:"-.012em",lineHeight:1.32,
+                color:INK,fontVariationSettings:"'opsz' 72"}}>
+                {s.obj}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div style={{marginTop:22,display:"flex",justifyContent:"space-between",
+          fontFamily:"'JetBrains Mono', monospace",fontSize:9.5,
+          color:MUTED_INK,letterSpacing:"1.5px",textTransform:"uppercase"}}>
+          <span>— Filed under Procedure</span>
+          <span>Pg · 03</span>
+        </div>
       </div>
     </section>
   );
 }
 
-function LandingPage({scrollY,mouse,onEnter}){
-  const op=Math.max(0,1-scrollY/480);
-  const cueOp=Math.max(0,1-scrollY/200);
+/* ── §04 Colophon — closing CTA + printer's mark ── */
+function Colophon({onEnter}){
+  const wide=useIsWide(900);
+  const[ref,v]=useInView(.15);
   return(
-    <div>
-      <section style={{position:"relative",height:"100vh",background:BG,
-        display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden"}}>
-        <HeroBg mouse={mouse} scrollY={scrollY}/>
-        <div style={{position:"relative",zIndex:1,textAlign:"center",maxWidth:740,padding:"0 28px",
-          opacity:op,transform:`translateY(${-scrollY*.22}px)`}}>
-          <div style={{display:"inline-flex",background:"rgba(255,255,255,.07)",
-            border:"1px solid rgba(255,255,255,.14)",borderRadius:100,padding:"5px 18px",
-            marginBottom:26,fontSize:12,color:"rgba(255,255,255,.7)",fontWeight:600,letterSpacing:".5px"}}>
-            Professional DCF Templates · Malaysian Property Market
-          </div>
-          <h1 style={{fontSize:"clamp(32px,5.5vw,60px)",fontWeight:900,lineHeight:1.1,
-            letterSpacing:"-2px",marginBottom:20,color:W}}>
-            Stop Rebuilding.<br/>
-            <span style={{background:"linear-gradient(90deg,#aee8cc,#ffffff,#1DB87B,#ffffff)",
-              backgroundSize:"300% auto",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",
-              animation:"shimmer 5s linear infinite"}}>Start Valuing.</span>
-          </h1>
-          <p style={{fontSize:16,color:"rgba(255,255,255,.55)",lineHeight:1.78,maxWidth:520,margin:"0 auto 36px"}}>
-            Pre-built Discounted Cash Flow templates for Residential, Commercial, Industrial and Land properties. Built for Malaysian valuers. Designed for accuracy.
-          </p>
-          <HoldButton
-            onComplete={onEnter}
-            label="Hold to Access Templates"
-            className="btn-p"
-            style={{background:W,color:D,padding:"14px 34px",borderRadius:10,fontWeight:800,fontSize:15,
-              boxShadow:"0 10px 32px rgba(0,0,0,.4)"}}/>
-          <div style={{marginTop:42,display:"flex",justifyContent:"center",alignItems:"baseline",
-            gap:22,flexWrap:"wrap",
-            fontSize:11,color:"rgba(255,255,255,.45)",fontWeight:600,letterSpacing:".5px"}}>
-            {[["4","CATEGORIES"],["29","PROPERTY TYPES"],["RM","MALAYSIAN MARKET"]].flatMap(([n,l],i)=>{
-              const item=(
-                <span key={`i${i}`} style={{display:"inline-flex",alignItems:"baseline",gap:7}}>
-                  <strong style={{color:"rgba(255,255,255,.92)",fontSize:15,fontWeight:800,letterSpacing:"-.3px"}}>{n}</strong>
-                  {l}
-                </span>
-              );
-              return i===0?[item]:[<span key={`s${i}`} style={{opacity:.3}}>·</span>,item];
-            })}
-          </div>
+    <section ref={ref} style={{background:PAPER,padding:wide?"140px 56px 96px":"96px 28px 64px",
+      position:"relative",borderTop:`1px solid ${INK}`,overflow:"hidden"}}>
+      <PaperGrain/>
+      <div style={{maxWidth:900,margin:"0 auto",position:"relative",zIndex:1,
+        textAlign:"center",
+        opacity:v?1:0,transform:v?"translateY(0)":"translateY(20px)",
+        transition:"opacity .8s ease,transform .8s cubic-bezier(.22,1,.36,1)"}}>
+
+        <div style={{fontFamily:"'JetBrains Mono', monospace",fontSize:10,
+          color:OXBLOOD,letterSpacing:"4px",fontWeight:600,
+          textTransform:"uppercase",marginBottom:38,
+          display:"inline-flex",alignItems:"center",gap:14}}>
+          <span style={{width:48,height:1,background:OXBLOOD}}/>
+          §04 · Colophon
+          <span style={{width:48,height:1,background:OXBLOOD}}/>
         </div>
-        <div style={{position:"absolute",bottom:28,left:"50%",transform:"translateX(-50%)",
-          opacity:cueOp,pointerEvents:"none",transition:"opacity .25s ease"}}>
-          <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:8,
-            color:"rgba(255,255,255,.6)",fontSize:9,letterSpacing:".5em",fontWeight:700,
-            animation:"scrollCue 2.2s ease infinite"}}>
-            <span>SCROLL</span>
-            <div style={{width:1,height:28,background:"linear-gradient(to bottom,rgba(255,255,255,.5),transparent)"}}/>
-          </div>
+
+        <h2 style={{
+          fontFamily:"'Fraunces', serif",
+          fontSize:"clamp(46px,7.2vw,96px)",
+          fontWeight:300,letterSpacing:"-.032em",lineHeight:.98,
+          color:INK,margin:"0 0 30px",
+          fontVariationSettings:"'opsz' 144"}}>
+          Begin your<br/>
+          <em style={{fontWeight:400,color:OXBLOOD,fontVariationSettings:"'opsz' 144"}}>valuation.</em>
+        </h2>
+
+        <p style={{fontFamily:"'Instrument Sans', sans-serif",
+          fontSize:16,lineHeight:1.64,color:INK,
+          maxWidth:540,margin:"0 auto 56px"}}>
+          Press and hold the seal below. The library opens. Free, current, and indexed by property class.
+        </p>
+
+        <div style={{display:"flex",justifyContent:"center",marginBottom:72}}>
+          <WaxSeal onComplete={onEnter}/>
         </div>
-      </section>
-      <CapabilitiesStrip/>
-      <FeaturesSection/>
-      <ProcessSection/>
-      <FinalCTA onEnter={onEnter}/>
+
+        {/* Printer's mark — footer info */}
+        <div style={{marginTop:64,paddingTop:34,
+          borderTop:`1px solid ${HAIR}`,
+          display:"flex",justifyContent:"space-between",alignItems:"baseline",
+          flexWrap:"wrap",gap:18,
+          fontFamily:"'JetBrains Mono', monospace",fontSize:9.5,
+          color:MUTED_INK,letterSpacing:"1.5px",textTransform:"uppercase"}}>
+          <span>Valorem · A library of DCF workbooks</span>
+          <span style={{fontFamily:"'Fraunces', serif",fontStyle:"italic",
+            fontSize:14,color:INK,letterSpacing:"normal",textTransform:"none",fontWeight:400,
+            fontVariationSettings:"'opsz' 36"}}>
+            Published by CBRE Malaysia
+          </span>
+          <span>Anno {EDITION.year} · No. {EDITION.no}</span>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function LandingPage({onEnter}){
+  return(
+    <div style={{background:PAPER}}>
+      <Hero onEnter={onEnter}/>
+      <MarketTicker/>
+      <TheLibrary/>
+      <Procedure/>
+      <Colophon onEnter={onEnter}/>
     </div>
   );
 }
@@ -1089,12 +1275,12 @@ export default function App(){
   return(
     <div ref={scrollRef} onScroll={onScroll} onMouseMove={onMouse}
       style={{height:"100vh",overflowY:"auto",overflowX:"hidden",
-        background:page==="landing"?BG:PLR,
-        fontFamily:"-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif"}}>
+        background:page==="landing"?PAPER:PLR,
+        fontFamily:page==="landing"?"'Instrument Sans',sans-serif":"-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif"}}>
       <style>{CSS}</style>
       <ProgressBar scrollRef={scrollRef}/>
       <Nav page={page} onBack={()=>go("landing")} onAdminClick={()=>setShowLogin(true)}/>
-      {page==="landing"&&<LandingPage scrollY={scrollY} mouse={mouse} onEnter={()=>go("dashboard")}/>}
+      {page==="landing"&&<LandingPage onEnter={()=>go("dashboard")}/>}
       {page==="dashboard"&&<Dashboard onDownload={handleDL} downloading={downloading} uploads={uploads} stats={stats}/>}
       {page==="admin"&&<AdminPanel onLogout={()=>go("landing")} uploads={uploads} setUploads={setUploads} setStats={setStats}/>}
       {showLogin&&(
