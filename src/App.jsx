@@ -75,6 +75,21 @@ const CSS = `
   .lp-sys-pill:hover{background:rgba(0,200,150,.06)}
   .lp-sys-pill:hover .lp-sys-val{text-shadow:0 0 8px rgba(0,200,150,.45)}
   .lp-execute:hover{border-color:rgba(0,200,150,.55)!important;box-shadow:0 0 18px rgba(0,200,150,.1)!important}
+  .lp-knob{cursor:pointer;display:inline-flex;align-items:baseline;gap:6px;padding:2px 8px;margin:-2px -4px;border:1px solid transparent;transition:border-color .15s ease,background .15s ease;-webkit-tap-highlight-color:transparent}
+  .lp-knob:hover{border-color:rgba(0,200,150,.55);background:rgba(0,200,150,.08)}
+  .lp-knob:hover .lp-knob-val{color:#00C896!important;text-shadow:0 0 8px rgba(0,200,150,.35)}
+  .lp-knob:hover .lp-knob-chev{color:#00C896!important;opacity:1!important}
+  .lp-knob:active{transform:translateY(1px)}
+  .lp-knob-chev{font-size:9px;color:#7C8881;opacity:.45;transition:color .15s ease,opacity .15s ease;letter-spacing:-1px}
+  .lp-cell-flash{animation:cellFlash .55s ease}
+  @keyframes cellFlash{0%{background:rgba(0,200,150,.3)}100%{background:rgba(0,200,150,0)}}
+  .lp-expand-link{cursor:pointer;color:#00C896;font-family:'JetBrains Mono',monospace;font-size:10;letter-spacing:1.5px;text-transform:uppercase;font-weight:600;padding:4px 10px;border:1px solid rgba(0,200,150,.35);background:rgba(0,200,150,.05);transition:all .15s ease;-webkit-tap-highlight-color:transparent}
+  .lp-expand-link:hover{background:rgba(0,200,150,.15);border-color:#00C896;text-shadow:0 0 6px rgba(0,200,150,.45)}
+  .lp-expand-grid{animation:expandIn .35s cubic-bezier(.22,1,.36,1)}
+  .lp-pin-item{cursor:pointer;-webkit-tap-highlight-color:transparent}
+  .lp-pin-item.is-pinned{background:rgba(0,200,150,.16)!important;outline:1px solid #00C896}
+  .lp-pin-panel{animation:pinSlide .35s cubic-bezier(.22,1,.36,1)}
+  @keyframes pinSlide{from{opacity:0;transform:translateY(-12px);max-height:0}to{opacity:1;transform:translateY(0);max-height:400px}}
   ::-webkit-scrollbar{width:6px}
   ::-webkit-scrollbar-track{background:#0F1411}
   ::-webkit-scrollbar-thumb{background:#283129;border-radius:0}
@@ -708,15 +723,25 @@ const DCF_MODEL={
 };
 
 const CATEGORIES=[
-  {n:"01",code:"RES",name:"Residential",types:8,subtitle:"Landed & strata title",
+  {n:"01",id:"residential",code:"RES",name:"Residential",types:8,subtitle:"Landed & strata title",
    sample:["Condominium","Terrace","Bungalow","SOHO","Affordable"]},
-  {n:"02",code:"COM",name:"Commercial",types:7,subtitle:"Office, retail & mixed-use",
+  {n:"02",id:"commercial",code:"COM",name:"Commercial",types:7,subtitle:"Office, retail & mixed-use",
    sample:["Office Tower","Retail Mall","Hotel","Shophouse","Med. Centre"]},
-  {n:"03",code:"IND",name:"Industrial",types:7,subtitle:"Factory & logistics",
+  {n:"03",id:"industrial",code:"IND",name:"Industrial",types:7,subtitle:"Factory & logistics",
    sample:["Det. Factory","Warehouse","Logistics","Cold Storage","Light Ind."]},
-  {n:"04",code:"LND",name:"Land",types:7,subtitle:"Bare land & development",
+  {n:"04",id:"land",code:"LND",name:"Land",types:7,subtitle:"Bare land & development",
    sample:["Resi Land","Comm. Land","Industrial","Agricultural","Freehold"]},
 ];
+
+const ASSETS=[
+  {asset:"Grade A Office Tower",location:"Kuala Lumpur Sentral",noi:2400,wkb:"01.4"},
+  {asset:"Retail Mall · Prime",location:"Bukit Bintang, KL",noi:3200,wkb:"02.7"},
+  {asset:"Logistics Hub",location:"Shah Alam, Selangor",noi:1800,wkb:"03.3"},
+  {asset:"Hotel · Upscale",location:"Georgetown, Penang",noi:1500,wkb:"02.4"},
+  {asset:"Industrial Park",location:"Pasir Gudang, JB",noi:2100,wkb:"03.6"},
+];
+const WACC_STEPS=[600,650,700,750,800,850,900,950,1000];
+const GROWTH_STEPS=[200,300,400,500,600,700];
 
 const FORMULAS=[
   {key:"NPV",label:"Net Present Value",
@@ -848,7 +873,7 @@ function ExecuteBar({onComplete,duration=900,command="initiate --library --regio
 
 /* ── Masthead-style hero — editorial cover ── */
 /* ── Live yield ticker — top financial ticker ── */
-function LiveYieldTicker(){
+function LiveYieldTicker({pinnedCode,onPin}){
   const seq=[...BENCHMARKS,...BENCHMARKS];
   return(
     <section className="lp-ticker" style={{background:"#070A09",
@@ -873,8 +898,13 @@ function LiveYieldTicker(){
           const sign=r.d<0?"down":r.d>0?"up":"flat";
           const arrow=sign==="down"?"↓":sign==="up"?"↑":"→";
           const col=sign==="down"?SIG_UP:sign==="up"?SIG_DOWN:TERM_FG_MUTE;
+          const isPin=pinnedCode===r.code;
           return(
-            <span key={i} className="lp-ticker-item" style={{display:"inline-flex",alignItems:"baseline",gap:10,marginRight:44,
+            <span key={i}
+              className={`lp-ticker-item lp-pin-item${isPin?" is-pinned":""}`}
+              onClick={e=>{e.stopPropagation();onPin&&onPin(isPin?null:r);}}
+              title={isPin?"Click to unpin":"Click to pin this benchmark"}
+              style={{display:"inline-flex",alignItems:"baseline",gap:10,
               fontFamily:"'JetBrains Mono', monospace",fontSize:10.5,letterSpacing:"1px",fontWeight:500,
               padding:"3px 6px",margin:"-3px 38px -3px -6px"}}>
               <span style={{color:TERM_FG,fontWeight:600}}>{r.code}</span>
@@ -889,29 +919,150 @@ function LiveYieldTicker(){
   );
 }
 
+function PinnedTickerPanel({item,onClose}){
+  if(!item)return null;
+  const sign=item.d<0?"down":item.d>0?"up":"flat";
+  const arrow=sign==="down"?"↓":sign==="up"?"↑":"→";
+  const col=sign==="down"?SIG_UP:sign==="up"?SIG_DOWN:TERM_FG_MUTE;
+  // Stylised 12M sparkline points (deterministic from yield + delta)
+  const baseY=item.y-item.d*8;
+  const seedR=(n,seed)=>{const x=Math.sin((seed+n)*9301)*43758.5453;return x-Math.floor(x);};
+  const pts=Array.from({length:12},(_,i)=>{
+    const noise=(seedR(i,item.code.charCodeAt(0)+item.code.charCodeAt(1))-.5)*0.25;
+    const trend=item.d*(i/11);
+    return baseY+trend+noise;
+  });
+  const minY=Math.min(...pts),maxY=Math.max(...pts),rangeY=maxY-minY||1;
+  const path="M "+pts.map((y,i)=>`${(i/(pts.length-1)*100).toFixed(1)} ${(100-((y-minY)/rangeY)*100).toFixed(1)}`).join(" L ");
+  return(
+    <section className="lp-pin-panel" style={{background:"#080B0A",
+      borderBottom:`1px solid ${TERM_BORDER}`,position:"relative",overflow:"hidden"}}>
+      <ScanLines opacity={.35}/>
+      <div style={{maxWidth:1480,margin:"0 auto",padding:"18px 36px",
+        display:"grid",gridTemplateColumns:"auto 1fr auto auto",gap:24,alignItems:"center",
+        position:"relative",zIndex:1}}>
+        <div style={{display:"flex",alignItems:"center",gap:14}}>
+          <span style={{width:7,height:7,background:PHOSPHOR,
+            boxShadow:`0 0 8px ${PHOSPHOR}`,
+            animation:"phosphorPulse 1.6s ease infinite"}}/>
+          <div>
+            <div style={{fontFamily:"'JetBrains Mono', monospace",fontSize:9.5,
+              color:PHOSPHOR,letterSpacing:"2.5px",fontWeight:600,textTransform:"uppercase",
+              marginBottom:3}}>📌 Pinned · Watching</div>
+            <div style={{fontFamily:"'JetBrains Mono', monospace",fontSize:18,
+              color:TERM_FG,letterSpacing:"1.5px",fontWeight:700,
+              fontVariantNumeric:"tabular-nums"}}>{item.code}</div>
+          </div>
+        </div>
+
+        <div style={{minWidth:0}}>
+          <div style={{fontFamily:"'JetBrains Mono', monospace",fontSize:9.5,
+            color:TERM_FG_MUTE,letterSpacing:"2px",fontWeight:500,
+            textTransform:"uppercase",marginBottom:4}}>Asset · Location</div>
+          <div style={{fontFamily:"'Onest',sans-serif",fontSize:14.5,
+            color:TERM_FG,fontWeight:600,letterSpacing:"-.005em"}}>{item.label}</div>
+          <div style={{fontFamily:"'JetBrains Mono', monospace",fontSize:9.5,
+            color:TERM_FG_DIM,letterSpacing:"1.5px",marginTop:3,
+            textTransform:"uppercase",fontWeight:500}}>
+            ↳ 12M trend · benchmark yield
+          </div>
+        </div>
+
+        {/* Sparkline */}
+        <div style={{width:160,height:60,position:"relative"}}>
+          <svg width="160" height="60" viewBox="0 0 100 100" preserveAspectRatio="none"
+            style={{display:"block",overflow:"visible"}}>
+            <line x1="0" y1="50" x2="100" y2="50" stroke={TERM_BORDER} strokeWidth=".4" strokeDasharray="2 2"/>
+            <path d={path} fill="none" stroke={col} strokeWidth="1.6"
+              vectorEffect="non-scaling-stroke"/>
+            <circle cx="100" cy={(100-((pts[pts.length-1]-minY)/rangeY)*100).toFixed(1)} r="2.5"
+              fill={col} style={{filter:`drop-shadow(0 0 4px ${col})`}}/>
+          </svg>
+          <div style={{position:"absolute",left:0,bottom:-14,
+            fontFamily:"'JetBrains Mono', monospace",fontSize:8.5,
+            color:TERM_FG_MUTE,letterSpacing:"1px",
+            textTransform:"uppercase",fontWeight:500}}>12M · BPS</div>
+        </div>
+
+        <div style={{display:"flex",alignItems:"center",gap:14}}>
+          <div style={{textAlign:"right"}}>
+            <div style={{fontFamily:"'JetBrains Mono', monospace",fontSize:9.5,
+              color:TERM_FG_MUTE,letterSpacing:"2px",fontWeight:500,
+              textTransform:"uppercase",marginBottom:4}}>Yield · Δ</div>
+            <div style={{display:"flex",alignItems:"baseline",gap:10,
+              fontFamily:"'JetBrains Mono', monospace"}}>
+              <span style={{fontSize:24,color:TERM_FG,fontWeight:700,
+                fontVariantNumeric:"tabular-nums",letterSpacing:"-.5px"}}>
+                {item.y.toFixed(2)}<span style={{color:TERM_FG_MUTE,fontSize:14,fontWeight:500}}>%</span>
+              </span>
+              <span style={{color:col,fontSize:13,fontWeight:600,
+                fontVariantNumeric:"tabular-nums",letterSpacing:".5px"}}>
+                {arrow}{Math.abs(item.d).toFixed(2)}
+              </span>
+            </div>
+          </div>
+          <button onClick={e=>{e.stopPropagation();onClose();}}
+            style={{background:"transparent",color:TERM_FG,
+              border:`1px solid ${TERM_BORDER}`,
+              fontFamily:"'JetBrains Mono', monospace",
+              padding:"8px 12px",borderRadius:0,fontWeight:500,fontSize:10,
+              cursor:"pointer",letterSpacing:"2px",textTransform:"uppercase"}}>
+            × Unpin
+          </button>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 /* ── DCFViewport — live calculation panel · the showpiece ── */
 function DCFViewport(){
-  const[flashCell,setFlashCell]=useState(-1);
+  const[assetIdx,setAssetIdx]=useState(0);
+  const[waccBps,setWaccBps]=useState(800);
+  const[growthBps,setGrowthBps]=useState(400);
   const[tickN,setTickN]=useState(0);
+  const[changeKey,setChangeKey]=useState(0);
 
   useEffect(()=>{
-    const i1=setInterval(()=>setTickN(n=>n+1),1100);
-    const i2=setInterval(()=>{
-      setFlashCell(Math.floor(Math.random()*5));
-      setTimeout(()=>setFlashCell(-1),400);
-    },2400);
-    return()=>{clearInterval(i1);clearInterval(i2);};
+    const i=setInterval(()=>setTickN(n=>n+1),1100);
+    return()=>clearInterval(i);
   },[]);
 
-  const years=DCF_MODEL.noi.map((noi,i)=>{
-    const t=i+1;
-    const df=1/Math.pow(1+DCF_MODEL.wacc,t);
+  const asset=ASSETS[assetIdx];
+  const wacc=waccBps/10000;
+  const growth=growthBps/10000;
+
+  const cycle=(arr,cur,setter)=>{
+    const next=(arr.indexOf(cur)+1)%arr.length;
+    setter(arr[next]);
+    setChangeKey(k=>k+1);
+  };
+  const cycleAsset=()=>{ setAssetIdx(i=>(i+1)%ASSETS.length); setChangeKey(k=>k+1); };
+  const cycleWacc=()=>cycle(WACC_STEPS,waccBps,setWaccBps);
+  const cycleGrowth=()=>cycle(GROWTH_STEPS,growthBps,setGrowthBps);
+
+  const years=[1,2,3,4,5].map(t=>{
+    const noi=asset.noi*Math.pow(1+growth,t-1);
+    const df=1/Math.pow(1+wacc,t);
     const pv=noi*df;
     return{t,noi,df,pv};
   });
   const npv=years.reduce((s,r)=>s+r.pv,0);
-  const tvPv=DCF_MODEL.terminal/Math.pow(1+DCF_MODEL.wacc,5);
+  // Terminal value: NOI(Y6) capitalised at (WACC - g), conventional Gordon growth
+  const noiY6=asset.noi*Math.pow(1+growth,5);
+  const terminalRate=Math.max(.005,wacc-growth);
+  const terminal=noiY6/terminalRate;
+  const tvPv=terminal/Math.pow(1+wacc,5);
   const totalPv=npv+tvPv;
+  // Stylised derived metrics
+  const irr=(wacc+(growth-0.04)*1.4)*100;
+  const cap=(asset.noi/totalPv)*100;
+  // Baseline (default state) for delta arrows
+  const BASE_NPV=42180,BASE_IRR=8.40,BASE_CAP=5.75;
+  const npvDelta=(totalPv-BASE_NPV)/BASE_NPV*100;
+  const irrDelta=irr-BASE_IRR;
+  const capDelta=cap-BASE_CAP;
+  const tDir=(d,th=0.01)=>d>th?"up":d<-th?"down":"flat";
   const fmtM=v=>v.toLocaleString("en-MY",{maximumFractionDigits:0});
 
   return(
@@ -922,38 +1073,54 @@ function DCFViewport(){
       {/* Header */}
       <div style={{padding:"12px 16px",borderBottom:`1px solid ${TERM_BORDER}`,
         display:"flex",alignItems:"center",justifyContent:"space-between",gap:14,
-        background:"rgba(0,200,150,.045)",position:"relative",zIndex:1}}>
+        background:"rgba(0,200,150,.045)",position:"relative",zIndex:1,flexWrap:"wrap"}}>
         <div style={{display:"flex",alignItems:"center",gap:10,fontSize:10,
           letterSpacing:"2px",textTransform:"uppercase",fontWeight:600}}>
           <span style={{width:7,height:7,background:PHOSPHOR,
             boxShadow:`0 0 8px ${PHOSPHOR}`,
             animation:"phosphorPulse 1.6s ease infinite"}}/>
-          <span style={{color:TERM_FG}}>DCF · WKB {DCF_MODEL.workbook}</span>
+          <span style={{color:TERM_FG}}>DCF · WKB {asset.wkb}</span>
           <span style={{color:TERM_FG_MUTE}}>·</span>
-          <span style={{color:PHOSPHOR,fontWeight:500}}>LIVE</span>
+          <span style={{color:PHOSPHOR,fontWeight:500}}>INTERACTIVE</span>
         </div>
-        <div style={{display:"flex",gap:12,fontSize:9.5,color:TERM_FG_DIM,
-          letterSpacing:"1.4px",textTransform:"uppercase",fontWeight:500}}>
-          <span>WACC <span style={{color:TERM_FG,fontWeight:600}}>{(DCF_MODEL.wacc*100).toFixed(2)}%</span></span>
-          <span style={{color:TERM_FG_MUTE}}>·</span>
-          <span>g <span style={{color:TERM_FG,fontWeight:600}}>{(DCF_MODEL.growth*100).toFixed(2)}%</span></span>
+        <div style={{display:"flex",gap:6,fontSize:9.5,color:TERM_FG_DIM,
+          letterSpacing:"1.4px",textTransform:"uppercase",fontWeight:500,alignItems:"baseline"}}>
+          <span style={{color:TERM_FG_MUTE}}>WACC</span>
+          <span className="lp-knob" onClick={cycleWacc} title="Tap to cycle">
+            <span className="lp-knob-val" key={`wacc-${waccBps}`} style={{color:TERM_FG,fontWeight:600,
+              fontVariantNumeric:"tabular-nums",animation:"numberTick .35s ease"}}>{(wacc*100).toFixed(2)}%</span>
+            <span className="lp-knob-chev">▾</span>
+          </span>
+          <span style={{color:TERM_FG_MUTE,margin:"0 4px"}}>·</span>
+          <span style={{color:TERM_FG_MUTE}}>g</span>
+          <span className="lp-knob" onClick={cycleGrowth} title="Tap to cycle">
+            <span className="lp-knob-val" key={`g-${growthBps}`} style={{color:TERM_FG,fontWeight:600,
+              fontVariantNumeric:"tabular-nums",animation:"numberTick .35s ease"}}>{(growth*100).toFixed(2)}%</span>
+            <span className="lp-knob-chev">▾</span>
+          </span>
         </div>
       </div>
 
-      {/* Asset subtitle */}
+      {/* Asset subtitle — clickable */}
       <div style={{padding:"14px 16px",borderBottom:`1px solid ${TERM_BORDER}`,
-        display:"flex",justifyContent:"space-between",alignItems:"flex-start",
+        display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:14,
         position:"relative",zIndex:1}}>
-        <div>
-          <div style={{fontSize:9.5,color:TERM_FG_DIM,letterSpacing:"1.8px",
-            textTransform:"uppercase",fontWeight:500,marginBottom:5}}>Asset</div>
-          <div style={{fontSize:14,color:TERM_FG,fontWeight:600,
-            fontFamily:"'Onest',sans-serif"}}>{DCF_MODEL.asset}</div>
-          <div style={{fontSize:11,color:TERM_FG_DIM,marginTop:2,
-            fontFamily:"'Onest',sans-serif"}}>{DCF_MODEL.location}</div>
+        <div className="lp-knob" onClick={cycleAsset} title="Tap to cycle asset"
+          style={{padding:"6px 10px",margin:"-6px -10px",alignItems:"flex-start",flex:"1 1 auto",minWidth:0}}>
+          <div style={{flex:1,minWidth:0}}>
+            <div style={{fontSize:9.5,color:TERM_FG_DIM,letterSpacing:"1.8px",
+              textTransform:"uppercase",fontWeight:500,marginBottom:5,
+              display:"flex",alignItems:"center",gap:6}}>
+              Asset <span className="lp-knob-chev" style={{fontSize:8}}>[TAP]</span>
+            </div>
+            <div className="lp-knob-val" key={`a-${assetIdx}`} style={{fontSize:14,color:TERM_FG,fontWeight:600,
+              fontFamily:"'Onest',sans-serif",animation:"numberTick .4s ease"}}>{asset.asset}</div>
+            <div style={{fontSize:11,color:TERM_FG_DIM,marginTop:2,
+              fontFamily:"'Onest',sans-serif"}}>{asset.location}</div>
+          </div>
         </div>
         <div style={{textAlign:"right",fontSize:9.5,color:TERM_FG_DIM,
-          letterSpacing:"1.5px",textTransform:"uppercase",fontWeight:500,lineHeight:1.8}}>
+          letterSpacing:"1.5px",textTransform:"uppercase",fontWeight:500,lineHeight:1.8,flexShrink:0}}>
           <div>5Y · HOLD</div>
           <div style={{color:TERM_FG_MUTE}}>RM '000</div>
         </div>
@@ -984,13 +1151,14 @@ function DCFViewport(){
           <span style={{fontSize:10,color:TERM_FG_DIM,letterSpacing:"1.8px",
             textTransform:"uppercase",fontWeight:600}}>{row.label}</span>
           {row.values.map((v,i)=>(
-            <span key={i} style={{textAlign:"right",
-              fontVariantNumeric:"tabular-nums",
-              fontSize:row.highlight?13:12,
-              color:row.highlight?PHOSPHOR:row.mute?TERM_FG_DIM:TERM_FG,
-              fontWeight:row.highlight?600:500,
-              ...(row.highlight&&flashCell===i?{background:"rgba(0,200,150,.18)",animation:"numberTick .4s ease"}:{}),
-              transition:"background .25s ease",padding:"3px 6px",margin:"-3px -6px"}}>
+            <span key={`${row.label}-${i}-${changeKey}`}
+              className={row.highlight?"lp-cell-flash":""}
+              style={{textAlign:"right",
+                fontVariantNumeric:"tabular-nums",
+                fontSize:row.highlight?13:12,
+                color:row.highlight?PHOSPHOR:row.mute?TERM_FG_DIM:TERM_FG,
+                fontWeight:row.highlight?600:500,
+                transition:"background .25s ease",padding:"3px 6px",margin:"-3px -6px"}}>
               {row.fmt(v)}
             </span>
           ))}
@@ -999,16 +1167,17 @@ function DCFViewport(){
 
       {/* Terminal value row */}
       <div style={{padding:"11px 16px",borderBottom:`1px solid ${TERM_BORDER}`,
-        display:"flex",justifyContent:"space-between",alignItems:"center",
-        background:"rgba(255,198,64,.045)",position:"relative",zIndex:1}}>
+        display:"flex",justifyContent:"space-between",alignItems:"center",gap:14,
+        background:"rgba(255,198,64,.045)",position:"relative",zIndex:1,flexWrap:"wrap"}}>
         <span style={{fontSize:10,color:AMBER,letterSpacing:"1.7px",
           textTransform:"uppercase",fontWeight:600,display:"flex",alignItems:"center",gap:8}}>
           <span style={{width:5,height:5,background:AMBER}}/>
           Terminal · Y5
         </span>
-        <span style={{fontSize:12.5,color:AMBER,fontWeight:600,
-          fontVariantNumeric:"tabular-nums",letterSpacing:".5px"}}>
-          {fmtM(DCF_MODEL.terminal)} <span style={{color:"rgba(255,198,64,.55)"}}>→ PV</span> {fmtM(tvPv)}
+        <span key={`tv-${changeKey}`} style={{fontSize:12.5,color:AMBER,fontWeight:600,
+          fontVariantNumeric:"tabular-nums",letterSpacing:".5px",
+          animation:"numberTick .35s ease"}}>
+          {fmtM(terminal)} <span style={{color:"rgba(255,198,64,.55)"}}>→ PV</span> {fmtM(tvPv)}
         </span>
       </div>
 
@@ -1018,9 +1187,9 @@ function DCFViewport(){
         background:"linear-gradient(180deg,rgba(0,200,150,.06) 0%,transparent 100%)",
         position:"relative",zIndex:1}}>
         {[
-          {label:"NPV",sub:"PV + TV",value:fmtM(totalPv),unit:"RM '000",trend:"up",delta:"+2.4%"},
-          {label:"IRR",sub:"",value:"8.40%",unit:"",trend:"up",delta:"+12 bps"},
-          {label:"CAP",sub:"RATE",value:"5.75%",unit:"",trend:"flat",delta:"flat"},
+          {label:"NPV",sub:"PV + TV",value:fmtM(totalPv),unit:"RM '000",trend:tDir(npvDelta),delta:`${npvDelta>=0?"+":""}${npvDelta.toFixed(1)}%`},
+          {label:"IRR",sub:"",value:`${irr.toFixed(2)}%`,unit:"",trend:tDir(irrDelta,0.005),delta:`${irrDelta>=0?"+":""}${(irrDelta*100).toFixed(0)} bps`},
+          {label:"CAP",sub:"RATE",value:`${cap.toFixed(2)}%`,unit:"",trend:tDir(capDelta,0.05),delta:`${capDelta>=0?"+":""}${capDelta.toFixed(2)}`},
         ].map((r,i)=>(
           <div key={r.label} className="lp-dcf-result" style={{
             borderLeft:i>0?`1px solid ${TERM_BORDER}`:"none",
@@ -1031,10 +1200,10 @@ function DCFViewport(){
               <span>{r.label}{r.sub&&<span style={{color:TERM_FG_MUTE,marginLeft:6}}>{r.sub}</span>}</span>
               {r.unit&&<span style={{opacity:.6,fontSize:8}}>{r.unit}</span>}
             </div>
-            <div className="lp-dcf-result-val" style={{fontSize:22,fontWeight:600,
+            <div className="lp-dcf-result-val" key={`${r.label}-${changeKey}`} style={{fontSize:22,fontWeight:600,
               color:r.trend==="flat"?TERM_FG:PHOSPHOR,
               fontVariantNumeric:"tabular-nums",letterSpacing:"-.5px",lineHeight:1,
-              transition:"text-shadow .2s ease"}}>
+              transition:"text-shadow .2s ease",animation:"numberTick .4s ease"}}>
               {r.value}
             </div>
             <div style={{fontSize:9.5,color:r.trend==="up"?SIG_UP:r.trend==="down"?SIG_DOWN:TERM_FG_MUTE,
@@ -1054,10 +1223,10 @@ function DCFViewport(){
         <span style={{display:"flex",alignItems:"center",gap:8}}>
           <span style={{width:4,height:4,background:PHOSPHOR,
             opacity:tickN%2?.4:1,transition:"opacity .2s"}}/>
-          UPDT · {new Date().toLocaleTimeString("en-MY",{hour:"2-digit",minute:"2-digit",hour12:false})} MYT
+          ↳ TAP WACC · g · ASSET TO ADJUST
         </span>
         <span>SRC · CBRE.RES</span>
-        <span>VAL.MY/{DCF_MODEL.workbook}</span>
+        <span>VAL.MY/{asset.wkb}</span>
       </div>
     </div>
   );
@@ -1366,6 +1535,7 @@ function WaterfallSection(){
 function IndexSection(){
   const wide=useIsWide(800);
   const[ref,v]=useInView(.08);
+  const[opened,setOpened]=useState(null);
   return(
     <section ref={ref} style={{background:TERM_BG,padding:wide?"100px 36px":"60px 24px",
       borderBottom:`1px solid ${TERM_BORDER}`,position:"relative",overflow:"hidden"}}>
@@ -1379,7 +1549,7 @@ function IndexSection(){
               textTransform:"uppercase"}}>§02</div>
             <div style={{fontFamily:"'JetBrains Mono', monospace",fontSize:9.5,
               color:TERM_FG_DIM,letterSpacing:"1.5px",fontWeight:500,
-              marginTop:6,textTransform:"uppercase"}}>Index</div>
+              marginTop:6,textTransform:"uppercase"}}>Index · <span style={{color:PHOSPHOR}}>Tap a row</span></div>
           </div>
           <div style={{padding:wide?"0 56px":"0"}}>
             <h2 style={{fontFamily:"'Onest', sans-serif",
@@ -1395,14 +1565,20 @@ function IndexSection(){
         <div style={{display:"grid",
           gridTemplateColumns:wide?"repeat(2,1fr)":"1fr",gap:0,
           border:`1px solid ${TERM_BORDER}`,background:TERM_PANEL_S}}>
-          {CATEGORIES.map((c,i)=>(
-            <div key={c.code} className="lp-card" style={{
-              padding:wide?"36px 30px 36px":"26px 20px",
-              borderRight:wide&&i%2===0?`1px solid ${TERM_BORDER}`:"none",
-              borderBottom:wide?(i<CATEGORIES.length-2?`1px solid ${TERM_BORDER}`:"none"):(i<CATEGORIES.length-1?`1px solid ${TERM_BORDER}`:"none"),
-              position:"relative",
-              opacity:v?1:0,transform:v?"translateY(0)":"translateY(14px)",
-              transition:`opacity .6s ease ${i*.1}s,transform .6s cubic-bezier(.22,1,.36,1) ${i*.1}s,border-color .22s ease,background .22s ease,box-shadow .25s ease`}}>
+          {CATEGORIES.map((c,i)=>{
+            const isOpen=opened===c.code;
+            const fullTypes=(TMPLS.find(t=>t.id===c.id)?.types)||[];
+            return(
+            <div key={c.code} className="lp-card"
+              onClick={e=>{e.stopPropagation();setOpened(isOpen?null:c.code);}}
+              style={{
+                padding:wide?"36px 30px 36px":"26px 20px",
+                borderRight:wide&&i%2===0?`1px solid ${TERM_BORDER}`:"none",
+                borderBottom:wide?(i<CATEGORIES.length-2?`1px solid ${TERM_BORDER}`:"none"):(i<CATEGORIES.length-1?`1px solid ${TERM_BORDER}`:"none"),
+                position:"relative",cursor:"pointer",
+                background:isOpen?"rgba(0,200,150,.05)":undefined,
+                opacity:v?1:0,transform:v?"translateY(0)":"translateY(14px)",
+                transition:`opacity .6s ease ${i*.1}s,transform .6s cubic-bezier(.22,1,.36,1) ${i*.1}s,border-color .22s ease,background .22s ease,box-shadow .25s ease`}}>
 
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",
                 marginBottom:16}}>
@@ -1433,7 +1609,9 @@ function IndexSection(){
                 {c.name}
                 <span className="lp-card-arrow" style={{
                   fontFamily:"'JetBrains Mono', monospace",fontSize:18,fontWeight:500,
-                  color:TERM_FG_MUTE,opacity:0,transform:"translateX(-8px)",
+                  color:TERM_FG_MUTE,
+                  opacity:isOpen?1:0,
+                  transform:isOpen?"rotate(90deg)":"translateX(-8px)",
                   transition:"opacity .25s ease,transform .25s ease,color .2s ease"}}>→</span>
               </h3>
 
@@ -1441,23 +1619,67 @@ function IndexSection(){
                 color:TERM_FG_DIM,letterSpacing:"1.2px",fontWeight:500,
                 marginBottom:18,textTransform:"uppercase"}}>{c.subtitle}</div>
 
-              <div style={{display:"flex",flexWrap:"wrap",gap:5}}>
-                {c.sample.map(s=>(
-                  <span key={s} className="lp-chip" style={{
-                    fontFamily:"'JetBrains Mono', monospace",fontSize:10,
-                    padding:"4px 10px",border:`1px solid ${TERM_BORDER}`,
-                    color:TERM_FG_DIM,letterSpacing:".5px",
-                    background:"rgba(0,200,150,.02)"}}>
-                    {s}
+              {!isOpen && (
+                <div style={{display:"flex",flexWrap:"wrap",gap:5}}>
+                  {c.sample.map(s=>(
+                    <span key={s} className="lp-chip" style={{
+                      fontFamily:"'JetBrains Mono', monospace",fontSize:10,
+                      padding:"4px 10px",border:`1px solid ${TERM_BORDER}`,
+                      color:TERM_FG_DIM,letterSpacing:".5px",
+                      background:"rgba(0,200,150,.02)"}}>
+                      {s}
+                    </span>
+                  ))}
+                  <span className="lp-expand-link"
+                    onClick={e=>{e.stopPropagation();setOpened(c.code);}}>
+                    + {c.types-c.sample.length} more →
                   </span>
-                ))}
-                <span style={{fontFamily:"'JetBrains Mono', monospace",fontSize:10,
-                  padding:"4px 10px",color:TERM_FG_MUTE,letterSpacing:".5px"}}>
-                  + more
-                </span>
-              </div>
+                </div>
+              )}
+
+              {isOpen && (
+                <div className="lp-expand-grid">
+                  <div style={{display:"flex",alignItems:"baseline",justifyContent:"space-between",
+                    paddingBottom:10,marginBottom:10,
+                    borderBottom:`1px solid ${TERM_BORDER}`}}>
+                    <span style={{fontFamily:"'JetBrains Mono', monospace",fontSize:10,
+                      color:PHOSPHOR,letterSpacing:"2px",fontWeight:600,
+                      textTransform:"uppercase"}}>All {c.types} workbooks</span>
+                    <span className="lp-expand-link"
+                      onClick={e=>{e.stopPropagation();setOpened(null);}}
+                      style={{fontSize:9.5,padding:"3px 8px"}}>× Collapse</span>
+                  </div>
+                  <div style={{display:"grid",
+                    gridTemplateColumns:"repeat(auto-fill,minmax(150px,1fr))",gap:6}}>
+                    {fullTypes.map((pt,ti)=>(
+                      <div key={pt.id} style={{
+                        padding:"8px 10px",
+                        border:`1px solid ${TERM_BORDER}`,
+                        background:"rgba(0,200,150,.03)",
+                        transition:"border-color .15s ease,background .15s ease",
+                        opacity:0,animation:`inkFade .4s ease ${ti*.02}s forwards`}}>
+                        <div style={{display:"flex",alignItems:"baseline",gap:6,marginBottom:2}}>
+                          <span style={{fontFamily:"'JetBrains Mono', monospace",fontSize:9,
+                            color:TERM_FG_MUTE,letterSpacing:"1px",fontWeight:500}}>
+                            {String(ti+1).padStart(2,"0")}
+                          </span>
+                          <span style={{fontFamily:"'Onest',sans-serif",fontSize:12,
+                            color:TERM_FG,fontWeight:600,letterSpacing:"-.005em"}}>
+                            {pt.label}
+                          </span>
+                        </div>
+                        <div style={{fontFamily:"'JetBrains Mono', monospace",fontSize:9,
+                          color:TERM_FG_DIM,letterSpacing:".3px",
+                          textTransform:"uppercase",fontWeight:500}}>
+                          {pt.note}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
-          ))}
+          );})}
         </div>
       </div>
     </section>
@@ -1639,10 +1861,12 @@ function DeploySection({onEnter}){
 }
 
 function LandingPage({onEnter}){
+  const[pinned,setPinned]=useState(null);
   return(
     <div style={{background:TERM_BG}}>
       <div aria-hidden style={{height:56,background:TERM_BG}}/>
-      <LiveYieldTicker/>
+      <LiveYieldTicker pinnedCode={pinned?.code} onPin={setPinned}/>
+      {pinned&&<PinnedTickerPanel item={pinned} onClose={()=>setPinned(null)}/>}
       <Hero onEnter={onEnter}/>
       <WaterfallSection/>
       <IndexSection/>
