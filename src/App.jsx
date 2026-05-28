@@ -22,21 +22,23 @@ const CSS = `
   @keyframes barRise{from{transform:scaleY(0)}to{transform:scaleY(1)}}
   @keyframes dotJitter{0%,100%{transform:translate(0,0)}25%{transform:translate(1px,-1px)}50%{transform:translate(0,1px)}75%{transform:translate(-1px,0)}}
   body{margin:0;font-family:'Onest',sans-serif;font-feature-settings:"ss01","cv11";color:#E5E9E7;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;background:#0B0F0D}
-  .btn-p{transition:all .2s ease;cursor:pointer;border:none;font-family:inherit}
-  .btn-p:hover{opacity:.88;transform:translateY(-2px)}
-  .btn-o{transition:all .2s ease;cursor:pointer;font-family:inherit;border:none}
-  .vf-card{transition:transform .28s cubic-bezier(.34,1.3,.64,1),box-shadow .28s ease}
-  .vf-card:hover{transform:translateY(-4px);box-shadow:0 20px 48px rgba(0,63,45,.13)}
-  .dl-btn{transition:opacity .2s ease,transform .2s ease;cursor:pointer}
-  .dl-btn:hover{opacity:.88;transform:translateY(-1px)}
-  .prop-card{transition:all .2s ease;cursor:pointer;user-select:none}
-  .prop-card:hover{transform:translateY(-3px);}
-  .fltr{cursor:pointer;font-family:inherit;border:none;transition:all .18s ease}
+  .btn-p{transition:all .15s ease;cursor:pointer;border:none;font-family:inherit}
+  .btn-p:hover{filter:brightness(1.1)}
+  .btn-o{transition:all .15s ease;cursor:pointer;font-family:inherit}
+  .btn-o:hover{border-color:#00C896!important;color:#00C896!important}
+  .vf-card{transition:border-color .2s ease,box-shadow .25s ease,transform .25s ease}
+  .vf-card:hover{transform:translateY(-2px);border-color:rgba(0,200,150,.42)!important;box-shadow:0 0 0 1px rgba(0,200,150,.08),0 22px 44px rgba(0,0,0,.4)}
+  .dl-btn{transition:filter .15s ease,transform .15s ease;cursor:pointer}
+  .dl-btn:hover{filter:brightness(1.1)}
+  .prop-card{transition:all .15s ease;cursor:pointer;user-select:none}
+  .prop-card:hover{border-color:rgba(0,200,150,.5)!important}
+  .fltr{cursor:pointer;font-family:inherit;border:none;transition:all .15s ease}
   .adm-row{transition:background .15s ease}
-  .adm-row:hover{background:rgba(0,63,45,.03)!important}
+  .adm-row:hover{background:rgba(0,200,150,.04)!important}
   .upload-zone{transition:all .2s ease;cursor:pointer}
-  .upload-zone:hover{border-color:#003F2D!important;background:rgba(0,63,45,.04)!important}
-  input:focus{outline:none;border-color:rgba(0,63,45,.5)!important}
+  .upload-zone:hover{border-color:#00C896!important;background:rgba(0,200,150,.05)!important;color:#00C896!important}
+  input:focus,textarea:focus{outline:none;border-color:#00C896!important}
+  input::placeholder{color:#4B5450}
   .ed-link{position:relative;display:inline-block}
   .ed-link::after{content:"";position:absolute;left:0;right:0;bottom:-2px;height:1px;background:currentColor;transform:scaleX(0);transform-origin:left center;transition:transform .35s cubic-bezier(.22,1,.36,1)}
   .ed-link:hover::after{transform:scaleX(1)}
@@ -141,54 +143,48 @@ function ProgressBar({scrollRef}){
   );
 }
 
-/* ── Nav: terminal status bar on landing, white card on dashboard/admin ── */
+/* ── Nav: unified terminal status bar across all pages ── */
 function Nav({page,onBack,onAdminClick}){
   const onLanding = page==="landing";
   const onDash    = page==="dashboard";
   const onAdmin   = page==="admin";
+  const path      = onLanding?"/":onDash?"/dashboard":"/admin";
 
   return(
     <nav style={{
       position:"fixed",top:2,left:0,right:0,zIndex:300,height:54,
-      background: onLanding ? "rgba(11,15,13,.88)" : "rgba(255,255,255,.97)",
-      backdropFilter: "blur(18px)",
-      borderBottom: onLanding ? `1px solid ${TERM_BORDER}` : `1px solid ${BD}`,
+      background:"rgba(11,15,13,.88)",
+      backdropFilter:"blur(18px)",
+      borderBottom:`1px solid ${TERM_BORDER}`,
       display:"flex",alignItems:"center",justifyContent:"space-between",
-      padding: onLanding ? "0 28px" : "0 36px",
-    }}>
-      <div style={{display:"flex",alignItems:"center",gap:onLanding?22:0}}>
-        {onLanding ? (
-          <>
-            <div style={{display:"flex",alignItems:"center",gap:10}}>
-              <span style={{width:8,height:8,background:PHOSPHOR,
-                boxShadow:`0 0 8px ${PHOSPHOR}`,
-                animation:"phosphorPulse 1.8s ease infinite"}}/>
-              <div style={{fontFamily:"'JetBrains Mono', monospace",fontWeight:600,
-                fontSize:13,letterSpacing:"2.5px",color:TERM_FG,textTransform:"uppercase"}}>
-                VALOREM<span style={{color:PHOSPHOR,margin:"0 6px"}}>·</span><span style={{color:TERM_FG_DIM,fontWeight:500}}>CBRE.MY</span>
-              </div>
-            </div>
-            <div style={{display:"flex",alignItems:"center",gap:18,
-              fontFamily:"'JetBrains Mono', monospace",fontSize:9.5,
-              color:TERM_FG_MUTE,letterSpacing:"1.8px",textTransform:"uppercase",fontWeight:500}}>
-              <span style={{color:TERM_FG_DIM}}>SYS:OK</span>
-              <span>ENV:PROD</span>
-              <span>BLD:01.4</span>
-            </div>
-          </>
-        ) : (
-          <>
-            <div style={{fontWeight:800,fontSize:14,letterSpacing:"-.2px",color:D}}>CBRE <span style={{fontWeight:300,opacity:.6}}>|</span> Valorem</div>
-            <div style={{fontSize:9,letterSpacing:"1.2px",marginTop:-1,color:MU}}>DCF VALUATION PLATFORM</div>
-          </>
-        )}
+      padding:"0 28px"}}>
+      <div style={{display:"flex",alignItems:"center",gap:22}}>
+        <div style={{display:"flex",alignItems:"center",gap:10}}>
+          <span style={{width:8,height:8,background:PHOSPHOR,
+            boxShadow:`0 0 8px ${PHOSPHOR}`,
+            animation:"phosphorPulse 1.8s ease infinite"}}/>
+          <div style={{fontFamily:"'JetBrains Mono', monospace",fontWeight:600,
+            fontSize:13,letterSpacing:"2.5px",color:TERM_FG,textTransform:"uppercase"}}>
+            VALOREM<span style={{color:PHOSPHOR,margin:"0 6px"}}>·</span><span style={{color:TERM_FG_DIM,fontWeight:500}}>CBRE.MY</span>
+          </div>
+        </div>
+        <div style={{display:"flex",alignItems:"center",gap:18,
+          fontFamily:"'JetBrains Mono', monospace",fontSize:9.5,
+          color:TERM_FG_MUTE,letterSpacing:"1.8px",textTransform:"uppercase",fontWeight:500}}>
+          <span style={{color:TERM_FG_DIM}}>SYS:OK</span>
+          <span style={{color:PHOSPHOR,fontWeight:600}}>PATH:{path}</span>
+          {onAdmin&&<span style={{color:AMBER}}>USER:ADMIN</span>}
+          <span>BLD:01.4</span>
+        </div>
       </div>
       <div style={{display:"flex",alignItems:"center",gap:10}}>
         {(onDash||onAdmin)&&(
           <button className="btn-o" onClick={onBack}
-            style={{background:"transparent",color:D,border:`1.5px solid ${BD}`,
-              padding:"8px 20px",borderRadius:8,fontWeight:600,fontSize:13,cursor:"pointer"}}>
-            ← Home
+            style={{background:"transparent",color:TERM_FG,
+              border:`1px solid ${TERM_BORDER}`,fontFamily:"'JetBrains Mono', monospace",
+              padding:"7px 16px",borderRadius:0,fontWeight:500,fontSize:10,
+              cursor:"pointer",letterSpacing:"2.5px",textTransform:"uppercase"}}>
+            ← [Home]
           </button>
         )}
         {onLanding&&(
@@ -208,16 +204,25 @@ function Nav({page,onBack,onAdminClick}){
 function Toast({msg,onClose}){
   useEffect(()=>{const t=setTimeout(onClose,3600);return()=>clearTimeout(t);},[]);
   return(
-    <div style={{position:"fixed",bottom:24,right:24,zIndex:9999,background:W,
-      border:`2px solid ${D}`,borderRadius:12,padding:"14px 18px",
-      display:"flex",alignItems:"center",gap:12,
-      boxShadow:"0 12px 40px rgba(0,63,45,.2)",
-      animation:"toastIn .4s cubic-bezier(.34,1.4,.64,1) forwards",maxWidth:310}}>
-      <div style={{flex:1}}>
-        <div style={{color:D,fontWeight:700,fontSize:13}}>Download Ready</div>
-        <div style={{color:MU,fontSize:12,marginTop:3,lineHeight:1.4}}>{msg}</div>
+    <div style={{position:"fixed",bottom:24,right:24,zIndex:9999,
+      background:TERM_PANEL_S,border:`1px solid ${PHOSPHOR}`,padding:"14px 18px",
+      display:"flex",alignItems:"flex-start",gap:14,
+      boxShadow:`0 0 24px rgba(0,200,150,.18),0 18px 40px rgba(0,0,0,.5)`,
+      animation:"toastIn .4s cubic-bezier(.34,1.4,.64,1) forwards",maxWidth:340,
+      fontFamily:"'Onest',sans-serif"}}>
+      <span style={{width:8,height:8,background:PHOSPHOR,marginTop:6,flexShrink:0,
+        boxShadow:`0 0 8px ${PHOSPHOR}`,animation:"phosphorPulse 1.6s ease infinite"}}/>
+      <div style={{flex:1,minWidth:0}}>
+        <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:10,
+          color:PHOSPHOR,letterSpacing:"2.5px",fontWeight:600,
+          textTransform:"uppercase",marginBottom:5}}>
+          ✓ DOWNLOAD READY
+        </div>
+        <div style={{color:TERM_FG,fontSize:12.5,lineHeight:1.5,fontWeight:500}}>{msg}</div>
       </div>
-      <div onClick={onClose} style={{color:MU,cursor:"pointer",fontSize:20,lineHeight:1}}>×</div>
+      <div onClick={onClose} style={{color:TERM_FG_DIM,cursor:"pointer",
+        fontSize:14,lineHeight:1,padding:"0 4px",
+        fontFamily:"'JetBrains Mono',monospace"}}>×</div>
     </div>
   );
 }
@@ -228,42 +233,91 @@ function AdminLoginModal({onClose,onSuccess}){
     sl(true);se("");
     setTimeout(()=>{
       if(u===ADMIN_USER&&p===ADMIN_PASS){onSuccess();}
-      else{se("Invalid credentials. Please try again.");sl(false);}
+      else{se("AUTH FAILED · invalid credentials");sl(false);}
     },900);
   };
   return(
-    <div style={{position:"fixed",inset:0,zIndex:500,background:"rgba(0,20,12,.6)",
-      backdropFilter:"blur(6px)",display:"flex",alignItems:"center",justifyContent:"center",
-      animation:"fadeIn .2s ease"}}>
-      <div style={{background:W,borderRadius:20,padding:"40px 40px 36px",width:360,maxWidth:"90vw",
-        boxShadow:"0 24px 64px rgba(0,63,45,.22)",animation:"modalIn .3s cubic-bezier(.22,1,.36,1)"}}>
-        <div style={{textAlign:"center",marginBottom:28}}>
-          <div style={{width:48,height:48,borderRadius:14,background:PL,
-            display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 14px",
-            border:`1px solid ${BD}`,fontSize:22}}>🔐</div>
-          <h2 style={{fontSize:20,fontWeight:900,color:D,margin:"0 0 6px",letterSpacing:"-.4px"}}>Admin Sign In</h2>
-          <p style={{color:MU,fontSize:13,margin:0}}>Restricted access · CBRE administrators only</p>
+    <div style={{position:"fixed",inset:0,zIndex:500,background:"rgba(11,15,13,.78)",
+      backdropFilter:"blur(8px)",display:"flex",alignItems:"center",justifyContent:"center",
+      animation:"fadeIn .2s ease",padding:"24px"}}>
+      <div style={{background:TERM_PANEL_S,border:`1px solid ${TERM_BORDER}`,
+        padding:"32px 32px 28px",width:380,maxWidth:"100%",position:"relative",
+        boxShadow:`0 0 0 1px rgba(0,200,150,.06),0 28px 64px rgba(0,0,0,.55)`,
+        animation:"modalIn .3s cubic-bezier(.22,1,.36,1)",
+        fontFamily:"'Onest',sans-serif"}}>
+        <ScanLines opacity={.45}/>
+        {/* Header strip */}
+        <div style={{position:"relative",zIndex:1,
+          paddingBottom:14,marginBottom:24,borderBottom:`1px solid ${TERM_BORDER}`,
+          display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+          <div style={{display:"flex",alignItems:"center",gap:10,
+            fontFamily:"'JetBrains Mono',monospace",fontSize:10,
+            color:PHOSPHOR,letterSpacing:"2.5px",fontWeight:600,textTransform:"uppercase"}}>
+            <span style={{width:7,height:7,background:PHOSPHOR,
+              boxShadow:`0 0 8px ${PHOSPHOR}`,
+              animation:"phosphorPulse 1.6s ease infinite"}}/>
+            AUTH · REQUIRED
+          </div>
+          <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:9,
+            color:TERM_FG_MUTE,letterSpacing:"1.5px",fontWeight:500,textTransform:"uppercase"}}>
+            §/ADMIN
+          </div>
         </div>
-        {[["USERNAME","text",u,su,"Enter username"],["PASSWORD","password",p,sp,"Enter password"]].map(([lbl,type,val,set,ph])=>(
-          <div key={lbl} style={{marginBottom:14}}>
-            <div style={{fontSize:11,color:M,fontWeight:700,letterSpacing:".5px",marginBottom:6}}>{lbl}</div>
+
+        <div style={{position:"relative",zIndex:1,marginBottom:22}}>
+          <h2 style={{fontFamily:"'Onest',sans-serif",fontSize:22,fontWeight:600,
+            color:TERM_FG,margin:"0 0 6px",letterSpacing:"-.02em"}}>
+            Sign in to <span style={{color:PHOSPHOR}}>admin</span>
+          </h2>
+          <p style={{color:TERM_FG_DIM,fontSize:13,margin:0,lineHeight:1.5}}>
+            Restricted access · CBRE administrators only.
+          </p>
+        </div>
+
+        {[["USERNAME","text",u,su,"admin"],["PASSWORD","password",p,sp,"··········"]].map(([lbl,type,val,set,ph])=>(
+          <div key={lbl} style={{marginBottom:14,position:"relative",zIndex:1}}>
+            <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:9.5,
+              color:TERM_FG_DIM,fontWeight:600,letterSpacing:"2px",
+              textTransform:"uppercase",marginBottom:7}}>—— {lbl}</div>
             <input type={type} value={val} onChange={e=>set(e.target.value)}
               onKeyDown={e=>e.key==="Enter"&&submit()} placeholder={ph}
-              style={{width:"100%",boxSizing:"border-box",background:PLR,border:`1px solid ${BD}`,
-                borderRadius:9,padding:"11px 14px",fontSize:14,color:D,fontFamily:"inherit"}}/>
+              style={{width:"100%",boxSizing:"border-box",
+                background:TERM_BG,border:`1px solid ${TERM_BORDER}`,
+                padding:"12px 14px",fontSize:13.5,color:TERM_FG,
+                fontFamily:"'JetBrains Mono',monospace",letterSpacing:".5px",
+                borderRadius:0}}/>
           </div>
         ))}
-        {err&&<div style={{background:"#FEF2F2",border:"1px solid #FCA5A5",borderRadius:8,
-          padding:"9px 13px",marginBottom:14,fontSize:12,color:"#B91C1C"}}>{err}</div>}
+
+        {err&&<div style={{position:"relative",zIndex:1,
+          background:"rgba(230,102,96,.08)",border:`1px solid ${SIG_DOWN}`,
+          padding:"10px 13px",marginBottom:14,fontSize:11.5,
+          color:SIG_DOWN,fontFamily:"'JetBrains Mono',monospace",
+          letterSpacing:"1.2px",textTransform:"uppercase",fontWeight:500,
+          display:"flex",alignItems:"center",gap:8}}>
+          <span>!</span> {err}
+        </div>}
+
         <button onClick={submit} className="btn-p"
-          style={{width:"100%",background:D,color:W,padding:"13px",borderRadius:10,
-            fontWeight:700,fontSize:14,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
-          {loading?<><div style={{width:13,height:13,borderRadius:"50%",border:"2px solid rgba(255,255,255,.4)",
-            borderTopColor:W,animation:"spin .8s linear infinite"}}/> Signing in...</>:"Sign In"}
+          style={{width:"100%",position:"relative",zIndex:1,
+            background:PHOSPHOR,color:TERM_BG,
+            padding:"14px",fontWeight:700,fontSize:12,borderRadius:0,
+            border:`1px solid ${PHOSPHOR}`,
+            fontFamily:"'JetBrains Mono',monospace",letterSpacing:"2.5px",
+            textTransform:"uppercase",
+            display:"flex",alignItems:"center",justifyContent:"center",gap:10}}>
+          {loading?<><div style={{width:11,height:11,
+            border:`2px solid rgba(11,15,13,.35)`,borderTopColor:TERM_BG,
+            animation:"spin .8s linear infinite"}}/> Authenticating</>
+            :<>$ login · execute ▶</>}
         </button>
         <button onClick={onClose} className="btn-o"
-          style={{width:"100%",marginTop:10,background:"transparent",color:MU,
-            padding:"10px",borderRadius:10,fontWeight:500,fontSize:13,cursor:"pointer"}}>Cancel</button>
+          style={{width:"100%",marginTop:10,position:"relative",zIndex:1,
+            background:"transparent",color:TERM_FG_DIM,
+            border:`1px solid ${TERM_BORDER}`,
+            padding:"11px",borderRadius:0,fontSize:11,cursor:"pointer",
+            fontFamily:"'JetBrains Mono',monospace",letterSpacing:"2px",
+            textTransform:"uppercase",fontWeight:500}}>Cancel</button>
       </div>
     </div>
   );
@@ -333,56 +387,121 @@ function AdminPanel({onLogout,uploads,setUploads,setStats}){
   };
 
   return(
-    <div style={{background:PLR,minHeight:"100vh",paddingTop:59}}>
-      <div style={{background:D}}>
-        <div style={{maxWidth:1100,margin:"0 auto",padding:"20px 36px",
-          display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+    <div style={{background:TERM_BG,minHeight:"100vh",paddingTop:56,position:"relative"}}>
+      <ScanLines opacity={.35}/>
+
+      {/* Header status strip */}
+      <div style={{borderBottom:`1px solid ${TERM_BORDER}`,
+        background:"rgba(255,198,64,.04)",position:"relative",zIndex:1}}>
+        <div style={{maxWidth:1280,margin:"0 auto",padding:"20px 32px",
+          display:"flex",justifyContent:"space-between",alignItems:"flex-end",
+          flexWrap:"wrap",gap:18}}>
           <div>
-            <div style={{color:"rgba(255,255,255,.5)",fontSize:10,letterSpacing:"1px",marginBottom:4}}>ADMIN PORTAL</div>
-            <h1 style={{color:W,fontSize:22,fontWeight:900,margin:0,letterSpacing:"-.5px"}}>Template Management</h1>
-            <p style={{color:"rgba(255,255,255,.5)",fontSize:12,margin:"4px 0 0"}}>Upload and manage DCF templates for end users</p>
+            <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:10,
+              fontFamily:"'JetBrains Mono',monospace",fontSize:10,
+              letterSpacing:"2.5px",fontWeight:600,textTransform:"uppercase"}}>
+              <span style={{width:7,height:7,background:AMBER,
+                boxShadow:`0 0 8px ${AMBER}`,
+                animation:"phosphorPulse 1.8s ease infinite"}}/>
+              <span style={{color:AMBER}}>RESTRICTED · §/ADMIN</span>
+              <span style={{color:TERM_FG_MUTE}}>·</span>
+              <span style={{color:TERM_FG_DIM}}>USER:ADMIN</span>
+            </div>
+            <h1 style={{fontFamily:"'Onest',sans-serif",fontSize:24,fontWeight:600,
+              color:TERM_FG,margin:0,letterSpacing:"-.02em",lineHeight:1.1}}>
+              Template <span style={{color:AMBER}}>Management</span>
+            </h1>
+            <p style={{fontFamily:"'Onest',sans-serif",fontSize:13,
+              color:TERM_FG_DIM,margin:"5px 0 0",lineHeight:1.5}}>
+              Upload and manage DCF Excel workbooks for end-user distribution.
+            </p>
           </div>
-          <div style={{display:"flex",gap:16,alignItems:"center"}}>
-            <div style={{textAlign:"right"}}>
-              <div style={{color:"rgba(255,255,255,.5)",fontSize:10,letterSpacing:".4px"}}>UPLOADED</div>
-              <div style={{color:BR,fontWeight:800,fontSize:20}}>{totalUploaded} / 29</div>
+          <div style={{display:"flex",gap:14,alignItems:"flex-end"}}>
+            <div style={{textAlign:"right",
+              border:`1px solid ${TERM_BORDER}`,padding:"10px 18px",
+              background:TERM_PANEL_S}}>
+              <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:9.5,
+                color:TERM_FG_MUTE,letterSpacing:"2px",
+                textTransform:"uppercase",fontWeight:500,marginBottom:4}}>UPLOADED</div>
+              <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:20,
+                color:totalUploaded===29?PHOSPHOR:totalUploaded>0?AMBER:TERM_FG_DIM,
+                fontWeight:600,fontVariantNumeric:"tabular-nums",letterSpacing:"-.3px"}}>
+                {totalUploaded}<span style={{color:TERM_FG_MUTE,fontWeight:500}}> / 29</span>
+              </div>
             </div>
             <button onClick={onLogout} className="btn-o"
-              style={{background:"rgba(255,255,255,.1)",color:W,border:"1px solid rgba(255,255,255,.2)",
-                padding:"9px 18px",borderRadius:8,fontWeight:600,fontSize:12,cursor:"pointer",fontFamily:"inherit"}}>
-              Sign Out
+              style={{background:"transparent",color:TERM_FG,
+                border:`1px solid ${TERM_BORDER}`,
+                fontFamily:"'JetBrains Mono',monospace",
+                padding:"10px 18px",borderRadius:0,fontWeight:500,fontSize:10,
+                cursor:"pointer",letterSpacing:"2.5px",textTransform:"uppercase"}}>
+              ↳ [Sign Out]
             </button>
           </div>
         </div>
       </div>
-      <div style={{maxWidth:1100,margin:"0 auto",padding:"30px 36px"}}>
-        <p style={{color:MU,fontSize:13,marginBottom:24}}>
-          Expand each property category to upload the corresponding Excel DCF template for each property type.
-        </p>
-        {TMPLS.map(cat=>{
+
+      <div style={{maxWidth:1280,margin:"0 auto",padding:"32px 32px 60px",
+        position:"relative",zIndex:1}}>
+        <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:20,
+          fontFamily:"'JetBrains Mono',monospace",fontSize:10,
+          color:AMBER,letterSpacing:"2px",fontWeight:600,textTransform:"uppercase"}}>
+          <span style={{flex:0,height:1,background:AMBER,width:24}}/>
+          ↳ Each row accepts a single .xlsx workbook (max 50MB).
+        </div>
+
+        {TMPLS.map((cat,catIdx)=>{
           const catUploads=cat.types.filter(pt=>uploads[`${cat.id}__${pt.id}`]).length;
           const isOpen=expandedCat===cat.id;
+          const code=CAT_CODES[cat.id]||cat.id.slice(0,3).toUpperCase();
+          const catNum=String(catIdx+1).padStart(2,"0");
+          const complete=catUploads===cat.types.length;
+          const dotColor=complete?PHOSPHOR:catUploads>0?AMBER:TERM_FG_MUTE;
           return(
-            <div key={cat.id} style={{background:W,border:`1px solid ${BD}`,borderRadius:16,
-              marginBottom:14,overflow:"hidden",boxShadow:"0 2px 12px rgba(0,63,45,.06)"}}>
+            <div key={cat.id} style={{background:TERM_PANEL_S,
+              border:`1px solid ${isOpen?PHOSPHOR:TERM_BORDER}`,
+              marginBottom:12,overflow:"hidden",position:"relative",
+              transition:"border-color .15s ease"}}>
               <div onClick={()=>setExp(isOpen?null:cat.id)}
-                style={{padding:"18px 24px",display:"flex",alignItems:"center",justifyContent:"space-between",
-                  cursor:"pointer",background:isOpen?PL:W,borderBottom:isOpen?`1px solid ${BD}`:"none",transition:"background .2s"}}>
+                style={{padding:"18px 22px",display:"flex",alignItems:"center",
+                  justifyContent:"space-between",cursor:"pointer",
+                  background:isOpen?"rgba(0,200,150,.05)":"transparent",
+                  borderBottom:isOpen?`1px solid ${TERM_BORDER}`:"none",
+                  transition:"background .15s ease",gap:18,flexWrap:"wrap"}}>
                 <div style={{display:"flex",alignItems:"center",gap:14}}>
-                  <div style={{background:isOpen?D:PLR,border:`1px solid ${BD}`,borderRadius:10,
-                    width:36,height:36,display:"flex",alignItems:"center",justifyContent:"center",
-                    fontWeight:800,fontSize:12,color:isOpen?W:D,transition:"all .2s"}}>{cat.title[0]}</div>
+                  <span style={{width:8,height:8,background:dotColor,
+                    boxShadow:complete?`0 0 8px ${PHOSPHOR}`:"none",flexShrink:0}}/>
+                  <div style={{display:"flex",alignItems:"baseline",gap:10,
+                    fontFamily:"'JetBrains Mono',monospace",fontSize:10.5,
+                    color:PHOSPHOR,letterSpacing:"2.5px",fontWeight:600,
+                    textTransform:"uppercase"}}>
+                    <span>{catNum}</span>
+                    <span style={{color:TERM_FG_MUTE}}>[{code}]</span>
+                  </div>
                   <div>
-                    <div style={{fontWeight:800,fontSize:15,color:D}}>{cat.title}</div>
-                    <div style={{fontSize:12,color:MU,marginTop:1}}>{cat.sub}</div>
+                    <div style={{fontFamily:"'Onest',sans-serif",fontWeight:600,
+                      fontSize:16.5,color:TERM_FG,letterSpacing:"-.01em"}}>
+                      {cat.title}
+                    </div>
+                    <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:9.5,
+                      color:TERM_FG_DIM,letterSpacing:"1.2px",fontWeight:500,
+                      marginTop:2,textTransform:"uppercase"}}>{cat.sub}</div>
                   </div>
                 </div>
                 <div style={{display:"flex",alignItems:"center",gap:14}}>
-                  <div style={{background:catUploads===cat.types.length?D:catUploads>0?M:PLR,
-                    color:catUploads>0?W:MU,borderRadius:100,padding:"3px 12px",fontSize:11,fontWeight:700}}>
-                    {catUploads} / {cat.types.length} uploaded
+                  <div style={{border:`1px solid ${complete?PHOSPHOR:catUploads>0?AMBER:TERM_BORDER}`,
+                    background:complete?"rgba(0,200,150,.08)":catUploads>0?"rgba(255,198,64,.06)":"transparent",
+                    color:complete?PHOSPHOR:catUploads>0?AMBER:TERM_FG_DIM,
+                    padding:"5px 12px",fontSize:10,fontWeight:600,
+                    fontFamily:"'JetBrains Mono',monospace",
+                    letterSpacing:"1.5px",textTransform:"uppercase",
+                    fontVariantNumeric:"tabular-nums"}}>
+                    {catUploads}<span style={{opacity:.5,margin:"0 3px"}}>/</span>{cat.types.length} UP
                   </div>
-                  <div style={{color:MU,fontSize:18,transition:"transform .2s",transform:isOpen?"rotate(180deg)":"none"}}>▾</div>
+                  <div style={{color:TERM_FG_DIM,fontSize:11,
+                    fontFamily:"'JetBrains Mono',monospace",fontWeight:600,
+                    transition:"transform .2s",transform:isOpen?"rotate(180deg)":"none",
+                    width:18,textAlign:"center"}}>▾</div>
                 </div>
               </div>
               {isOpen&&(
@@ -392,59 +511,113 @@ function AdminPanel({onLogout,uploads,setUploads,setStats}){
                     const uploaded=uploads[key];
                     return(
                       <div key={pt.id} className="adm-row"
-                        style={{padding:"14px 24px",borderBottom:i<cat.types.length-1?`1px solid ${BD}`:"none",
-                          display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:10,background:W}}>
-                        <div style={{flex:"1 1 180px"}}>
-                          <div style={{fontWeight:700,fontSize:13,color:D}}>{pt.label}</div>
-                          <div style={{fontSize:11,color:MU,marginTop:2}}>{pt.note}</div>
+                        style={{padding:"14px 22px",
+                          borderBottom:i<cat.types.length-1?`1px solid ${TERM_GRID}`:"none",
+                          display:"flex",alignItems:"center",justifyContent:"space-between",
+                          flexWrap:"wrap",gap:12,background:"transparent"}}>
+                        <div style={{flex:"1 1 200px",minWidth:0}}>
+                          <div style={{display:"flex",alignItems:"baseline",gap:10}}>
+                            <span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:9.5,
+                              color:TERM_FG_MUTE,letterSpacing:"1.5px",fontWeight:500,
+                              textTransform:"uppercase"}}>{String(i+1).padStart(2,"0")}</span>
+                            <div>
+                              <div style={{fontFamily:"'Onest',sans-serif",fontWeight:600,
+                                fontSize:13.5,color:TERM_FG}}>{pt.label}</div>
+                              <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:10,
+                                color:TERM_FG_DIM,marginTop:2,letterSpacing:".5px",
+                                textTransform:"uppercase"}}>{pt.note}</div>
+                            </div>
+                          </div>
                         </div>
                         {uploaded?.loading?(
-                          <div style={{display:"flex",alignItems:"center",gap:10,minWidth:220,flex:"1 1 auto",justifyContent:"flex-end"}}>
-                            <div style={{flex:"0 1 180px"}}>
-                              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",fontSize:11,color:MU,marginBottom:5}}>
+                          <div style={{display:"flex",alignItems:"center",gap:10,
+                            minWidth:240,flex:"1 1 auto",justifyContent:"flex-end"}}>
+                            <div style={{flex:"0 1 200px"}}>
+                              <div style={{display:"flex",justifyContent:"space-between",
+                                alignItems:"center",fontSize:9.5,color:TERM_FG_DIM,marginBottom:5,
+                                fontFamily:"'JetBrains Mono',monospace",
+                                letterSpacing:"1.5px",textTransform:"uppercase",fontWeight:500}}>
                                 <span style={{display:"flex",alignItems:"center",gap:6}}>
-                                  <div style={{width:11,height:11,borderRadius:"50%",border:`2px solid ${BD}`,
-                                    borderTopColor:M,animation:"spin .8s linear infinite"}}/>
-                                  Uploading
+                                  <div style={{width:9,height:9,border:`2px solid ${TERM_BORDER}`,
+                                    borderTopColor:PHOSPHOR,
+                                    animation:"spin .8s linear infinite"}}/>
+                                  UPLOADING
                                 </span>
-                                <span style={{fontWeight:700,color:D}}>{uploaded.progress??0}%</span>
+                                <span style={{fontWeight:600,color:PHOSPHOR,
+                                  fontVariantNumeric:"tabular-nums"}}>{uploaded.progress??0}%</span>
                               </div>
-                              <div style={{height:5,background:PL,borderRadius:3,overflow:"hidden"}}>
+                              <div style={{height:4,background:TERM_BG,
+                                border:`1px solid ${TERM_BORDER}`,overflow:"hidden"}}>
                                 <div style={{height:"100%",width:`${uploaded.progress??0}%`,
-                                  background:`linear-gradient(90deg,${M},${BR})`,
-                                  transition:"width .2s ease",borderRadius:3}}/>
+                                  background:`linear-gradient(90deg,${PHOSPHOR_DIM},${PHOSPHOR})`,
+                                  transition:"width .2s ease"}}/>
                               </div>
                             </div>
                             <div onClick={()=>handleCancel(key)}
-                              style={{background:"#FEF2F2",border:"1px solid #FCA5A5",borderRadius:8,
-                                padding:"6px 12px",fontSize:11,fontWeight:600,color:"#B91C1C",cursor:"pointer",whiteSpace:"nowrap"}}>
-                              Cancel
+                              style={{border:`1px solid ${SIG_DOWN}`,
+                                background:"rgba(230,102,96,.08)",
+                                padding:"7px 12px",fontSize:10,fontWeight:600,
+                                color:SIG_DOWN,cursor:"pointer",whiteSpace:"nowrap",
+                                fontFamily:"'JetBrains Mono',monospace",
+                                letterSpacing:"2px",textTransform:"uppercase"}}>
+                              ABORT
                             </div>
                           </div>
                         ):uploaded?(
-                          <div style={{display:"flex",alignItems:"center",gap:10,flex:"1 1 auto",justifyContent:"flex-end",flexWrap:"wrap"}}>
-                            <div style={{background:"#F0FDF4",border:"1px solid #86EFAC",borderRadius:8,padding:"6px 12px",fontSize:11}}>
-                              <div style={{color:"#15803D",fontWeight:700}}>{uploaded.name}</div>
-                              <div style={{color:"#4ADE80",marginTop:1}}>{uploaded.size} · {uploaded.date}</div>
+                          <div style={{display:"flex",alignItems:"center",gap:8,
+                            flex:"1 1 auto",justifyContent:"flex-end",flexWrap:"wrap"}}>
+                            <div style={{
+                              border:`1px solid ${PHOSPHOR}`,
+                              background:"rgba(0,200,150,.06)",
+                              padding:"7px 12px",fontSize:10.5,
+                              fontFamily:"'JetBrains Mono',monospace",
+                              letterSpacing:".5px",
+                              display:"flex",alignItems:"center",gap:10,maxWidth:280}}>
+                              <span style={{width:6,height:6,background:PHOSPHOR,
+                                boxShadow:`0 0 4px ${PHOSPHOR}`,flexShrink:0}}/>
+                              <div style={{minWidth:0}}>
+                                <div style={{color:PHOSPHOR,fontWeight:600,
+                                  overflow:"hidden",textOverflow:"ellipsis",
+                                  whiteSpace:"nowrap"}}>{uploaded.name}</div>
+                                <div style={{color:TERM_FG_DIM,marginTop:2,fontSize:9.5,
+                                  letterSpacing:"1px",textTransform:"uppercase",fontWeight:500}}>
+                                  {uploaded.size} · {uploaded.date}
+                                </div>
+                              </div>
                             </div>
                             <label style={{cursor:"pointer"}}>
                               <input type="file" accept=".xlsx,.xls" style={{display:"none"}}
                                 onChange={e=>handleFileChange(cat.id,pt.id,pt.label,e)}/>
-                              <div style={{background:PLR,border:`1px solid ${BD}`,borderRadius:8,
-                                padding:"7px 13px",fontSize:11,fontWeight:600,color:M,cursor:"pointer"}}>Replace</div>
+                              <div className="btn-o"
+                                style={{border:`1px solid ${TERM_BORDER}`,
+                                  padding:"7px 12px",fontSize:10,fontWeight:600,
+                                  color:TERM_FG_DIM,cursor:"pointer",
+                                  fontFamily:"'JetBrains Mono',monospace",
+                                  letterSpacing:"2px",textTransform:"uppercase"}}>
+                                ↻ Replace
+                              </div>
                             </label>
-                            <div onClick={()=>handleRemove(key)}
-                              style={{background:"#FEF2F2",border:"1px solid #FCA5A5",borderRadius:8,
-                                padding:"7px 13px",fontSize:11,fontWeight:600,color:"#B91C1C",cursor:"pointer"}}>Remove</div>
+                            <div onClick={()=>handleRemove(key)} className="btn-o"
+                              style={{border:`1px solid ${TERM_BORDER}`,
+                                padding:"7px 12px",fontSize:10,fontWeight:600,
+                                color:TERM_FG_DIM,cursor:"pointer",
+                                fontFamily:"'JetBrains Mono',monospace",
+                                letterSpacing:"2px",textTransform:"uppercase"}}>
+                              × Remove
+                            </div>
                           </div>
                         ):(
                           <label style={{cursor:"pointer",flex:"0 0 auto"}}>
                             <input type="file" accept=".xlsx,.xls" style={{display:"none"}}
                               onChange={e=>handleFileChange(cat.id,pt.id,pt.label,e)}/>
                             <div className="upload-zone"
-                              style={{border:`1.5px dashed ${BD}`,borderRadius:9,padding:"9px 18px",
-                                display:"flex",alignItems:"center",gap:8,fontSize:12,fontWeight:600,color:M}}>
-                              <span style={{fontSize:15}}>+</span> Upload .xlsx
+                              style={{border:`1px dashed ${TERM_BORDER}`,
+                                padding:"9px 18px",
+                                display:"flex",alignItems:"center",gap:10,fontSize:10.5,
+                                fontWeight:600,color:TERM_FG_DIM,
+                                fontFamily:"'JetBrains Mono',monospace",
+                                letterSpacing:"2px",textTransform:"uppercase"}}>
+                              <span style={{fontSize:13,fontWeight:700}}>+</span> Upload .xlsx
                             </div>
                           </label>
                         )}
@@ -458,12 +631,16 @@ function AdminPanel({onLogout,uploads,setUploads,setStats}){
         })}
       </div>
       {uploadToast&&(
-        <div style={{position:"fixed",bottom:24,right:24,zIndex:9999,background:W,
-          border:`2px solid ${BR}`,borderRadius:12,padding:"14px 18px",
-          display:"flex",alignItems:"center",gap:10,
-          boxShadow:"0 12px 40px rgba(0,63,45,.18)",animation:"toastIn .35s ease",maxWidth:320}}>
-          <div style={{width:8,height:8,borderRadius:"50%",background:BR,flexShrink:0}}/>
-          <div style={{fontSize:13,color:D,fontWeight:600}}>{uploadToast}</div>
+        <div style={{position:"fixed",bottom:24,right:24,zIndex:9999,
+          background:TERM_PANEL_S,border:`1px solid ${PHOSPHOR}`,
+          padding:"14px 18px",
+          display:"flex",alignItems:"flex-start",gap:12,
+          boxShadow:`0 0 24px rgba(0,200,150,.16),0 18px 40px rgba(0,0,0,.5)`,
+          animation:"toastIn .35s ease",maxWidth:340,
+          fontFamily:"'Onest',sans-serif"}}>
+          <span style={{width:7,height:7,background:PHOSPHOR,marginTop:6,flexShrink:0,
+            boxShadow:`0 0 8px ${PHOSPHOR}`,animation:"phosphorPulse 1.6s ease infinite"}}/>
+          <div style={{fontSize:13,color:TERM_FG,fontWeight:500,lineHeight:1.5}}>{uploadToast}</div>
         </div>
       )}
     </div>
@@ -1423,7 +1600,10 @@ function LandingPage({onEnter}){
   );
 }
 
-function TemplateCard({t,onDownload,downloading,uploads,stats}){
+/* ── TemplateCard — workbook tile, terminal styled ── */
+const CAT_CODES={residential:"RES",commercial:"COM",industrial:"IND",land:"LND"};
+
+function TemplateCard({t,onDownload,downloading,uploads,stats,idx=0}){
   const[ref,v]=useInView(.04);
   const[sel,setSel]=useState(null);
   const busy=downloading===t.id+(sel||"");
@@ -1431,87 +1611,141 @@ function TemplateCard({t,onDownload,downloading,uploads,stats}){
   const uploadInfo=sel?uploads[`${t.id}__${sel}`]:null;
   const hasFile=!!(uploadInfo?.url);
   const cs=computeCatStats(t.id,stats);
+  const code=CAT_CODES[t.id]||t.id.slice(0,3).toUpperCase();
+  const catNum=String(["residential","commercial","industrial","land"].indexOf(t.id)+1).padStart(2,"0");
 
   return(
     <div ref={ref} className="vf-card"
-      style={{background:W,border:`1px solid ${BD}`,borderRadius:20,overflow:"hidden",
-        boxShadow:"0 4px 22px rgba(0,63,45,.07)",
-        opacity:v?1:0,transform:v?"translateY(0)":"translateY(24px)",
-        transition:"opacity .55s ease,transform .55s cubic-bezier(.22,1,.36,1)",
-        display:"flex",flexDirection:"column",height:"100%"}}>
-      <div style={{background:PL,padding:"20px 24px 16px",borderBottom:`1px solid ${BD}`}}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
-          <div>
-            <div style={{display:"inline-block",background:D,borderRadius:100,
-              padding:"3px 12px",marginBottom:9,fontSize:10,color:W,fontWeight:700,letterSpacing:".4px"}}>{t.tag}</div>
-            <h2 style={{fontSize:18,fontWeight:900,letterSpacing:"-.4px",color:D,margin:"0 0 3px"}}>{t.title}</h2>
-            <p style={{color:MU,fontSize:12,margin:0}}>{t.sub}</p>
-          </div>
-          <div style={{textAlign:"right",fontSize:11,color:M,fontWeight:700,flexShrink:0,marginLeft:12}}>
-            <div>{cs.version}</div>
-            <div style={{color:MU,fontWeight:400,marginTop:2}}>{cs.updated}</div>
-          </div>
+      style={{background:TERM_PANEL_S,border:`1px solid ${TERM_BORDER}`,
+        overflow:"hidden",position:"relative",
+        opacity:v?1:0,transform:v?"translateY(0)":"translateY(20px)",
+        transition:`opacity .55s ease,transform .55s cubic-bezier(.22,1,.36,1)`,
+        display:"flex",flexDirection:"column",height:"100%",
+        fontFamily:"'Onest',sans-serif"}}>
+      <ScanLines opacity={.4}/>
+
+      {/* Header band */}
+      <div style={{padding:"18px 22px 16px",borderBottom:`1px solid ${TERM_BORDER}`,
+        background:"rgba(0,200,150,.04)",position:"relative",zIndex:1}}>
+        <div style={{display:"flex",alignItems:"baseline",justifyContent:"space-between",
+          marginBottom:12,fontFamily:"'JetBrains Mono',monospace",fontSize:10,
+          color:PHOSPHOR,letterSpacing:"2.5px",fontWeight:600,textTransform:"uppercase"}}>
+          <span style={{display:"flex",alignItems:"center",gap:10}}>
+            <span style={{color:PHOSPHOR}}>{catNum}</span>
+            <span style={{color:TERM_FG_MUTE}}>[{code}]</span>
+          </span>
+          <span style={{color:TERM_FG_DIM,fontSize:9.5,fontWeight:500,letterSpacing:"1.5px"}}>
+            {cs.version} · {cs.updated}
+          </span>
         </div>
+        <h2 style={{fontFamily:"'Onest',sans-serif",fontSize:22,fontWeight:600,
+          letterSpacing:"-.02em",color:TERM_FG,margin:"0 0 4px",lineHeight:1.1}}>
+          {t.title}
+        </h2>
+        <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:10,
+          color:TERM_FG_DIM,letterSpacing:"1.2px",fontWeight:500,
+          textTransform:"uppercase"}}>{t.sub}</div>
       </div>
-      <div style={{padding:"20px 24px",display:"flex",flexDirection:"column",flex:1}}>
-        <p style={{color:MU,fontSize:13,lineHeight:1.75,marginBottom:18}}>{t.desc}</p>
-        <div style={{fontSize:9,color:M,fontWeight:700,letterSpacing:"1.2px",textTransform:"uppercase",marginBottom:12}}>
-          Select Property Type
+
+      <div style={{padding:"18px 22px 22px",display:"flex",flexDirection:"column",flex:1,
+        position:"relative",zIndex:1}}>
+        <p style={{color:TERM_FG_DIM,fontSize:13.5,lineHeight:1.65,marginBottom:18,
+          marginTop:2,fontWeight:400}}>{t.desc}</p>
+
+        <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:9.5,
+          color:TERM_FG_MUTE,fontWeight:600,letterSpacing:"2px",
+          textTransform:"uppercase",marginBottom:12,
+          display:"flex",alignItems:"center",gap:8}}>
+          <span style={{color:PHOSPHOR}}>—</span> Select Property Type
         </div>
-        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(110px,1fr))",gap:8,marginBottom:20}}>
+
+        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(110px,1fr))",
+          gap:6,marginBottom:18}}>
           {t.types.map(pt=>{
             const active=sel===pt.id;
             const hasUpload=uploads[`${t.id}__${pt.id}`];
             return(
               <div key={pt.id} className="prop-card" onClick={()=>setSel(active?null:pt.id)}
-                style={{background:active?D:PLR,border:`1.5px solid ${active?D:BD}`,
-                  borderRadius:10,padding:"10px",position:"relative",minHeight:76,
-                  display:"flex",flexDirection:"column",justifyContent:"flex-start",
-                  boxShadow:active?"0 4px 14px rgba(0,63,45,.22)":"0 1px 4px rgba(0,63,45,.05)"}}>
-                {hasUpload&&<div style={{position:"absolute",top:6,right:6,width:7,height:7,
-                  borderRadius:"50%",background:BR}}/>}
-                <div style={{fontSize:12,fontWeight:700,color:active?W:D,marginBottom:3,lineHeight:1.3,paddingRight:8}}>
+                style={{
+                  background:active?"rgba(0,200,150,.12)":TERM_BG,
+                  border:`1px solid ${active?PHOSPHOR:TERM_BORDER}`,
+                  padding:"10px 11px",position:"relative",minHeight:74,
+                  display:"flex",flexDirection:"column",justifyContent:"flex-start"}}>
+                {hasUpload&&<div style={{position:"absolute",top:7,right:7,width:6,height:6,
+                  background:hasUpload.url?PHOSPHOR:AMBER,
+                  boxShadow:hasUpload.url?`0 0 6px ${PHOSPHOR}`:"none"}}/>}
+                <div style={{fontFamily:"'Onest',sans-serif",fontSize:12.5,fontWeight:600,
+                  color:active?PHOSPHOR:TERM_FG,marginBottom:3,lineHeight:1.25,
+                  paddingRight:hasUpload?12:0,letterSpacing:"-.005em"}}>
                   {pt.label}
                 </div>
-                <div style={{fontSize:10,color:active?"rgba(255,255,255,.65)":MU,lineHeight:1.3}}>{pt.note}</div>
+                <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:9.5,
+                  color:active?"rgba(0,200,150,.65)":TERM_FG_MUTE,
+                  letterSpacing:".3px",lineHeight:1.4,fontWeight:500}}>{pt.note}</div>
               </div>
             );
           })}
         </div>
+
         {selectedType&&(
-          <div style={{background:PL,border:`1px solid ${BD}`,borderRadius:10,
-            padding:"10px 14px",marginBottom:16,display:"flex",alignItems:"center",
+          <div style={{background:"rgba(0,200,150,.06)",border:`1px solid ${PHOSPHOR}`,
+            padding:"11px 14px",marginBottom:14,display:"flex",alignItems:"center",
             justifyContent:"space-between",animation:"expandIn .25s ease"}}>
             <div>
-              <div style={{fontSize:10,color:MU,letterSpacing:".4px",marginBottom:2}}>SELECTED</div>
-              <div style={{fontSize:13,fontWeight:700,color:D}}>{selectedType.label}</div>
-              {!hasFile&&<div style={{fontSize:11,color:"#B45309",marginTop:2}}>No template uploaded yet</div>}
+              <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:9,
+                color:PHOSPHOR,letterSpacing:"2px",fontWeight:600,
+                textTransform:"uppercase",marginBottom:2}}>SELECTED</div>
+              <div style={{fontFamily:"'Onest',sans-serif",fontSize:13.5,
+                fontWeight:600,color:TERM_FG}}>{selectedType.label}</div>
+              {!hasFile&&<div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:9.5,
+                color:AMBER,marginTop:3,letterSpacing:"1.5px",textTransform:"uppercase",fontWeight:500}}>! pending upload</div>}
             </div>
-            <div onClick={()=>setSel(null)} style={{color:MU,cursor:"pointer",fontSize:18,lineHeight:1,padding:"0 4px"}}>×</div>
+            <div onClick={()=>setSel(null)} style={{color:TERM_FG_DIM,cursor:"pointer",
+              fontSize:14,lineHeight:1,padding:"0 4px",
+              fontFamily:"'JetBrains Mono',monospace"}}>×</div>
           </div>
         )}
-        <div style={{display:"flex",gap:9,marginTop:"auto",marginBottom:16,flexWrap:"wrap"}}>
-          {[["Downloads",cs.downloads],["Version",cs.version],["Updated",cs.updated]].map(([k,v])=>(
-            <div key={k} style={{background:PLR,border:`1px solid ${BD}`,borderRadius:7,padding:"5px 12px"}}>
-              <div style={{fontSize:8,color:MU,letterSpacing:".4px"}}>{k.toUpperCase()}</div>
-              <div style={{fontSize:11,fontWeight:700,color:D,marginTop:1}}>{v}</div>
+
+        <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:0,
+          marginTop:"auto",marginBottom:14,
+          border:`1px solid ${TERM_BORDER}`,background:TERM_BG}}>
+          {[["Downloads",cs.downloads],["Version",cs.version],["Updated",cs.updated]].map(([k,v],i)=>(
+            <div key={k} style={{padding:"9px 12px",
+              borderRight:i<2?`1px solid ${TERM_BORDER}`:"none"}}>
+              <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:8.5,
+                color:TERM_FG_MUTE,letterSpacing:"1.5px",
+                textTransform:"uppercase",fontWeight:500}}>{k}</div>
+              <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:13,
+                fontWeight:600,color:TERM_FG,marginTop:3,
+                fontVariantNumeric:"tabular-nums",letterSpacing:".3px"}}>{v}</div>
             </div>
           ))}
         </div>
+
         <div className="dl-btn"
           onClick={()=>sel&&hasFile&&!downloading&&onDownload({id:t.id+sel,title:`${t.title} — ${selectedType?.label}`,url:uploadInfo.url,filename:uploadInfo.name,catId:t.id,typeId:sel})}
-          style={{background:sel&&hasFile?"#003F2D":sel&&!hasFile?"#92400E":"rgba(0,63,45,.13)",
-            color:sel?"#fff":"rgba(0,63,45,.38)",padding:"14px",borderRadius:10,textAlign:"center",
-            fontWeight:700,fontSize:13,boxShadow:sel&&hasFile?"0 4px 14px rgba(0,63,45,.28)":"none",
-            display:"flex",alignItems:"center",justifyContent:"center",gap:8,userSelect:"none",
-            cursor:sel&&hasFile&&!downloading?"pointer":"default",transition:"all .25s ease"}}>
-          {busy
-            ?<><div style={{width:13,height:13,borderRadius:"50%",
-                border:"2px solid rgba(255,255,255,.4)",borderTopColor:"#fff",
-                animation:"spin .8s linear infinite"}}/> Preparing download...</>
-            :sel&&hasFile?`Download ${selectedType?.label} DCF Template`
-            :sel&&!hasFile?"Template not yet available — check back soon"
-            :"Select a property type above"}
+          style={{
+            background:sel&&hasFile?PHOSPHOR:sel&&!hasFile?"rgba(255,198,64,.1)":TERM_BG,
+            color:sel&&hasFile?TERM_BG:sel&&!hasFile?AMBER:TERM_FG_MUTE,
+            border:`1px solid ${sel&&hasFile?PHOSPHOR:sel&&!hasFile?AMBER:TERM_BORDER}`,
+            padding:"13px 18px",
+            fontFamily:"'JetBrains Mono',monospace",
+            fontWeight:600,fontSize:11.5,letterSpacing:"1.5px",
+            textTransform:"uppercase",
+            display:"flex",alignItems:"center",justifyContent:"space-between",gap:8,
+            userSelect:"none",
+            cursor:sel&&hasFile&&!downloading?"pointer":"default"}}>
+          <span style={{display:"flex",alignItems:"center",gap:10}}>
+            {busy
+              ?<><div style={{width:11,height:11,
+                  border:`2px solid rgba(11,15,13,.3)`,borderTopColor:TERM_BG,
+                  animation:"spin .8s linear infinite"}}/> Preparing</>
+              :sel&&hasFile?<>$ download <span style={{opacity:.7}}>--{selectedType?.id}</span></>
+              :sel&&!hasFile?<>! workbook pending</>
+              :<>↳ select a property type</>}
+          </span>
+          {sel&&hasFile&&!busy&&<span>EXEC ▶</span>}
+          {!sel&&<span style={{opacity:.6}}>IDLE</span>}
         </div>
       </div>
     </div>
@@ -1531,52 +1765,127 @@ function Dashboard({onDownload,downloading,uploads,stats}){
   const totalUp=Object.keys(uploads).filter(k=>uploads[k]?.url).length;
   const totalDl=Object.values(stats?.downloads||{}).reduce((s,v)=>s+(v||0),0).toLocaleString();
   return(
-    <div style={{background:PLR,minHeight:"100vh",paddingTop:59}}>
-      <div style={{background:D}}>
-        <div style={{maxWidth:1200,margin:"0 auto",display:"flex",overflowX:"auto"}}>
-          {[["Templates","4"],["Total Downloads",totalDl],["Property Types","29"],["Available",`${totalUp}/29`]].map(([l,v],i)=>(
-            <div key={i} style={{padding:"16px 30px",borderRight:i<3?"1px solid rgba(255,255,255,.1)":"none",whiteSpace:"nowrap"}}>
-              <div style={{color:"rgba(255,255,255,.5)",fontSize:10,letterSpacing:".4px",marginBottom:4}}>{l.toUpperCase()}</div>
-              <div style={{fontSize:17,fontWeight:800,color:W}}>{v}</div>
+    <div style={{background:TERM_BG,minHeight:"100vh",paddingTop:56,position:"relative"}}>
+      <ScanLines opacity={.35}/>
+
+      {/* Status strip — like Hero's stats grid */}
+      <div style={{borderBottom:`1px solid ${TERM_BORDER}`,
+        background:"rgba(0,200,150,.025)",position:"relative",zIndex:1}}>
+        <div style={{maxWidth:1280,margin:"0 auto",
+          display:"grid",gridTemplateColumns:"repeat(4,1fr)"}}>
+          {[
+            ["Templates","04","unit",null],
+            ["Downloads",totalDl,"sum","up"],
+            ["Types","29","unit",null],
+            ["Available",`${totalUp}/29`,"frac",totalUp>0?"up":null],
+          ].map(([l,v,_,trend],i,a)=>(
+            <div key={i} style={{padding:"16px 24px",
+              borderRight:i<a.length-1?`1px solid ${TERM_BORDER}`:"none",
+              display:"flex",alignItems:"center",justifyContent:"space-between",gap:10}}>
+              <div>
+                <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:9.5,
+                  color:TERM_FG_MUTE,letterSpacing:"2px",fontWeight:500,
+                  textTransform:"uppercase",marginBottom:5}}>{l}</div>
+                <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:18,
+                  color:TERM_FG,fontWeight:600,fontVariantNumeric:"tabular-nums",
+                  letterSpacing:"-.3px"}}>{v}</div>
+              </div>
+              {trend==="up"&&<span style={{width:5,height:5,background:SIG_UP,
+                boxShadow:`0 0 4px ${SIG_UP}`,
+                animation:"phosphorPulse 1.8s ease infinite"}}/>}
             </div>
           ))}
         </div>
       </div>
-      <div style={{maxWidth:1200,margin:"0 auto",padding:"36px 36px"}}>
-        <h1 style={{fontSize:26,fontWeight:900,letterSpacing:"-1px",marginBottom:6,color:D}}>
-          DCF Template <span style={{color:M}}>Library</span>
+
+      <div style={{maxWidth:1280,margin:"0 auto",padding:"56px 32px 40px",
+        position:"relative",zIndex:1}}>
+        {/* Section eyebrow */}
+        <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:24,
+          fontFamily:"'JetBrains Mono',monospace",fontSize:10,
+          color:PHOSPHOR,letterSpacing:"2.5px",fontWeight:600,textTransform:"uppercase"}}>
+          <span style={{color:PHOSPHOR}}>[</span>
+          <span>DCF/04 · MODEL LIBRARY</span>
+          <span style={{color:PHOSPHOR}}>]</span>
+          <span style={{flex:1,height:1,background:TERM_BORDER}}/>
+          <span style={{color:TERM_FG_MUTE}}>v01.4</span>
+        </div>
+
+        <h1 style={{fontFamily:"'Onest',sans-serif",
+          fontSize:"clamp(32px,4.6vw,52px)",fontWeight:600,
+          letterSpacing:"-.03em",margin:"0 0 14px",
+          color:TERM_FG,lineHeight:1.02}}>
+          DCF Template <span style={{color:PHOSPHOR}}>Library</span>
         </h1>
-        <p style={{color:MU,fontSize:14,marginBottom:24}}>
-          Select a property category, then choose your specific property type to download the right DCF template.
+        <p style={{color:TERM_FG_DIM,fontSize:15.5,marginBottom:32,
+          maxWidth:620,lineHeight:1.6}}>
+          Pick a property category, drill down to your asset type, and download the workbook. Each entry is calibrated against current CBRE Research data.
         </p>
-        <div style={{display:"flex",gap:10,marginBottom:24,flexWrap:"wrap",alignItems:"center"}}>
-          <input value={search} onChange={e=>setSrc(e.target.value)} placeholder="Search property types..."
-            style={{flex:"1 1 200px",minWidth:160,background:W,border:`1px solid ${BD}`,borderRadius:8,
-              padding:"10px 14px",color:D,fontSize:13,fontFamily:"inherit",boxSizing:"border-box"}}/>
-          <div style={{display:"flex",gap:7,flexWrap:"wrap"}}>
-            {filters.map(f=>(
+
+        {/* Filter bar — terminal command + tabs */}
+        <div style={{marginBottom:28,
+          border:`1px solid ${TERM_BORDER}`,background:TERM_PANEL_S,
+          display:"flex",flexWrap:"wrap",alignItems:"stretch"}}>
+          <div style={{display:"flex",alignItems:"center",flex:"1 1 240px",minWidth:200,
+            borderRight:`1px solid ${TERM_BORDER}`,padding:"0 16px"}}>
+            <span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:13,
+              color:PHOSPHOR,fontWeight:700,marginRight:10}}>$</span>
+            <span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:10,
+              color:TERM_FG_MUTE,letterSpacing:"1.5px",
+              textTransform:"uppercase",marginRight:12,whiteSpace:"nowrap"}}>filter --type=</span>
+            <input value={search} onChange={e=>setSrc(e.target.value)}
+              placeholder="condo, warehouse, ..."
+              style={{flex:1,minWidth:80,background:"transparent",border:"none",
+                padding:"13px 0",color:TERM_FG,fontSize:13,
+                fontFamily:"'JetBrains Mono',monospace",letterSpacing:".5px",
+                boxSizing:"border-box"}}/>
+          </div>
+          <div style={{display:"flex",flexWrap:"wrap"}}>
+            {filters.map((f,i)=>(
               <button key={f} onClick={()=>setFilter(f)} className="fltr"
-                style={{padding:"9px 15px",borderRadius:8,fontWeight:filter===f?700:500,fontSize:12,
-                  textTransform:"capitalize",background:filter===f?D:W,color:filter===f?W:MU,
-                  border:filter===f?"none":`1px solid ${BD}`}}>
-                {f==="all"?"All Categories":f}
+                style={{padding:"13px 18px",borderRadius:0,
+                  borderLeft:i>0?`1px solid ${TERM_BORDER}`:"none",
+                  fontWeight:filter===f?600:500,fontSize:10.5,
+                  textTransform:"uppercase",letterSpacing:"2px",
+                  background:filter===f?PHOSPHOR:"transparent",
+                  color:filter===f?TERM_BG:TERM_FG_DIM,
+                  fontFamily:"'JetBrains Mono',monospace"}}>
+                {f==="all"?"[ALL]":`[${(CAT_CODES[f]||f.slice(0,3)).toUpperCase()}]`}
               </button>
             ))}
           </div>
         </div>
-        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(480px,1fr))",gap:20,alignItems:"stretch"}}>
-          {filtered.map(t=>(
-            <TemplateCard key={t.id} t={t} onDownload={onDownload} downloading={downloading} uploads={uploads} stats={stats}/>
+
+        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(440px,1fr))",
+          gap:18,alignItems:"stretch"}}>
+          {filtered.map((t,i)=>(
+            <TemplateCard key={t.id} t={t} idx={i} onDownload={onDownload} downloading={downloading} uploads={uploads} stats={stats}/>
           ))}
         </div>
+
         {filtered.length===0&&(
-          <div style={{textAlign:"center",padding:"72px 0",color:MU}}>
-            <p style={{fontSize:14}}>No templates match your search.</p>
+          <div style={{textAlign:"center",padding:"72px 16px",
+            border:`1px dashed ${TERM_BORDER}`,
+            color:TERM_FG_DIM}}>
+            <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:11,
+              letterSpacing:"2.5px",color:AMBER,fontWeight:600,
+              textTransform:"uppercase",marginBottom:8}}>! No matches</div>
+            <p style={{fontSize:13.5,margin:0}}>No workbooks match your filter.</p>
           </div>
         )}
       </div>
-      <footer style={{borderTop:`1px solid ${BD}`,padding:"22px 36px",textAlign:"center",background:W,marginTop:16}}>
-        <p style={{color:MU,fontSize:12}}>CBRE Valorem © 2025 · All templates for professional property valuation use</p>
+
+      <footer style={{borderTop:`1px solid ${TERM_BORDER}`,
+        padding:"22px 32px",background:"rgba(0,0,0,.3)",
+        position:"relative",zIndex:1,
+        display:"flex",justifyContent:"space-between",alignItems:"center",
+        flexWrap:"wrap",gap:14,
+        fontFamily:"'JetBrains Mono',monospace",fontSize:9.5,
+        color:TERM_FG_MUTE,letterSpacing:"1.5px",
+        textTransform:"uppercase",fontWeight:500}}>
+        <span>↳ VALOREM · CBRE Malaysia · MMXXVI</span>
+        <span style={{color:PHOSPHOR}}>SYS:OK · SRC:CBRE.RES</span>
+        <span>For professional property valuation use</span>
       </footer>
     </div>
   );
@@ -1636,8 +1945,8 @@ export default function App(){
   return(
     <div ref={scrollRef} onScroll={onScroll} onMouseMove={onMouse}
       style={{height:"100vh",overflowY:"auto",overflowX:"hidden",
-        background:page==="landing"?TERM_BG:PLR,
-        fontFamily:page==="landing"?"'Onest',sans-serif":"-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif"}}>
+        background:TERM_BG,
+        fontFamily:"'Onest',sans-serif"}}>
       <style>{CSS}</style>
       <ProgressBar scrollRef={scrollRef}/>
       <Nav page={page} onBack={()=>go("landing")} onAdminClick={()=>setShowLogin(true)}/>
