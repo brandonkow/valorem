@@ -42,6 +42,39 @@ const CSS = `
   .ed-link{position:relative;display:inline-block}
   .ed-link::after{content:"";position:absolute;left:0;right:0;bottom:-2px;height:1px;background:currentColor;transform:scaleX(0);transform-origin:left center;transition:transform .35s cubic-bezier(.22,1,.36,1)}
   .ed-link:hover::after{transform:scaleX(1)}
+  .lp-card{transition:border-color .22s ease,background .22s ease,box-shadow .25s ease,transform .25s ease;cursor:default}
+  .lp-card:hover{border-color:#00C896!important;background:rgba(0,200,150,.045)!important;box-shadow:inset 0 0 0 1px rgba(0,200,150,.18),0 18px 40px rgba(0,0,0,.45);transform:translateY(-2px)}
+  .lp-card:hover .lp-card-num{color:#38EFA6!important;text-shadow:0 0 10px rgba(56,239,166,.5)}
+  .lp-card:hover .lp-card-arrow{opacity:1!important;transform:translateX(0)!important;color:#00C896!important}
+  .lp-card:hover .lp-card-name{color:#FFFFFF!important}
+  .lp-chip{transition:border-color .15s ease,color .15s ease,background .15s ease,transform .15s ease;cursor:default}
+  .lp-chip:hover{border-color:rgba(0,200,150,.6)!important;color:#00C896!important;background:rgba(0,200,150,.08)!important;transform:translateY(-1px)}
+  .lp-stat{transition:background .2s ease;cursor:default}
+  .lp-stat:hover{background:rgba(0,200,150,.03)}
+  .lp-stat:hover .lp-stat-num{color:#00C896!important;text-shadow:0 0 10px rgba(0,200,150,.4)}
+  .lp-stat:hover .lp-stat-label{color:#7C8881!important}
+  .lp-formula{transition:border-color .2s ease,background .2s ease;cursor:default}
+  .lp-formula:hover{border-color:#00C896!important;background:rgba(0,200,150,.025)!important;box-shadow:inset 0 0 0 1px rgba(0,200,150,.15)}
+  .lp-formula:hover .lp-formula-eq{border-color:rgba(0,200,150,.55)!important;background:#0C1411!important;color:#00C896!important}
+  .lp-formula:hover .lp-formula-key{color:#38EFA6!important;text-shadow:0 0 10px rgba(56,239,166,.45)}
+  .lp-ticker:hover .lp-ticker-track{animation-play-state:paused}
+  .lp-ticker-item{transition:filter .15s ease,opacity .15s ease}
+  .lp-ticker:hover .lp-ticker-item{opacity:.45}
+  .lp-ticker:hover .lp-ticker-item:hover{opacity:1;filter:brightness(1.4)}
+  .lp-dcf-row{transition:background .15s ease;cursor:default}
+  .lp-dcf-row:hover{background:rgba(0,200,150,.07)!important}
+  .lp-dcf-result{transition:border-color .18s ease,background .18s ease;cursor:default}
+  .lp-dcf-result:hover{background:rgba(0,200,150,.06)!important;border-left-color:#00C896!important}
+  .lp-dcf-result:hover .lp-dcf-result-val{text-shadow:0 0 14px rgba(0,200,150,.5)}
+  .lp-bar{transition:filter .2s ease;cursor:default}
+  .lp-bar:hover .lp-bar-pv{filter:brightness(1.25);box-shadow:inset 0 1px 0 rgba(56,239,166,.6),0 0 20px rgba(0,200,150,.3)!important}
+  .lp-bar:hover .lp-bar-noi{border-color:rgba(0,200,150,.55)!important;background:rgba(0,200,150,.04)}
+  .lp-bar:hover .lp-bar-label{color:#00C896!important;text-shadow:0 0 10px rgba(0,200,150,.45)}
+  .lp-bar:hover .lp-bar-x{color:#FFFFFF!important}
+  .lp-sys-pill{transition:background .15s ease,border-color .15s ease;cursor:default}
+  .lp-sys-pill:hover{background:rgba(0,200,150,.06)}
+  .lp-sys-pill:hover .lp-sys-val{text-shadow:0 0 8px rgba(0,200,150,.45)}
+  .lp-execute:hover{border-color:rgba(0,200,150,.55)!important;box-shadow:0 0 18px rgba(0,200,150,.1)!important}
   ::-webkit-scrollbar{width:6px}
   ::-webkit-scrollbar-track{background:#0F1411}
   ::-webkit-scrollbar-thumb{background:#283129;border-radius:0}
@@ -786,6 +819,7 @@ function ExecuteBar({onComplete,duration=900,command="initiate --library --regio
       onPointerDown={start} onPointerUp={stop} onPointerLeave={stop} onPointerCancel={stop}
       onClick={e=>e.stopPropagation()} onContextMenu={e=>e.preventDefault()}
       aria-label="Hold to execute"
+      className="lp-execute"
       style={{position:"relative",display:"block",width:"100%",maxWidth:width,
         background:TERM_PANEL_S,
         border:`1px solid ${holding?PHOSPHOR:TERM_BORDER}`,
@@ -817,7 +851,7 @@ function ExecuteBar({onComplete,duration=900,command="initiate --library --regio
 function LiveYieldTicker(){
   const seq=[...BENCHMARKS,...BENCHMARKS];
   return(
-    <section style={{background:"#070A09",
+    <section className="lp-ticker" style={{background:"#070A09",
       borderBottom:`1px solid ${TERM_BORDER}`,borderTop:`1px solid ${TERM_BORDER}`,
       padding:"10px 0",position:"relative",overflow:"hidden"}}>
       <div style={{position:"absolute",inset:0,
@@ -833,15 +867,16 @@ function LiveYieldTicker(){
           animation:"phosphorPulse 1.6s ease infinite"}}/>
         LIVE · YIELDS
       </div>
-      <div style={{display:"flex",animation:"tickerScroll 110s linear infinite",
+      <div className="lp-ticker-track" style={{display:"flex",animation:"tickerScroll 110s linear infinite",
         whiteSpace:"nowrap",width:"max-content",willChange:"transform",paddingLeft:140}}>
         {seq.map((r,i)=>{
           const sign=r.d<0?"down":r.d>0?"up":"flat";
           const arrow=sign==="down"?"↓":sign==="up"?"↑":"→";
           const col=sign==="down"?SIG_UP:sign==="up"?SIG_DOWN:TERM_FG_MUTE;
           return(
-            <span key={i} style={{display:"inline-flex",alignItems:"baseline",gap:10,marginRight:44,
-              fontFamily:"'JetBrains Mono', monospace",fontSize:10.5,letterSpacing:"1px",fontWeight:500}}>
+            <span key={i} className="lp-ticker-item" style={{display:"inline-flex",alignItems:"baseline",gap:10,marginRight:44,
+              fontFamily:"'JetBrains Mono', monospace",fontSize:10.5,letterSpacing:"1px",fontWeight:500,
+              padding:"3px 6px",margin:"-3px 38px -3px -6px"}}>
               <span style={{color:TERM_FG,fontWeight:600}}>{r.code}</span>
               <span style={{color:TERM_FG_DIM,fontSize:9.5,letterSpacing:".8px"}}>{r.label}</span>
               <span style={{color:TERM_FG,fontWeight:600,fontSize:12,fontVariantNumeric:"tabular-nums"}}>{r.y.toFixed(2)}%</span>
@@ -941,7 +976,7 @@ function DCFViewport(){
         {label:"DF",values:years.map(r=>r.df),fmt:v=>v.toFixed(3),mute:true},
         {label:"PV",values:years.map(r=>r.pv),fmt:v=>fmtM(v),highlight:true},
       ].map((row)=>(
-        <div key={row.label} style={{
+        <div key={row.label} className="lp-dcf-row" style={{
           display:"grid",gridTemplateColumns:"66px repeat(5,1fr)",
           padding:"11px 16px",borderBottom:`1px solid ${TERM_GRID}`,
           background:row.highlight?"rgba(0,200,150,.04)":"transparent",
@@ -987,18 +1022,19 @@ function DCFViewport(){
           {label:"IRR",sub:"",value:"8.40%",unit:"",trend:"up",delta:"+12 bps"},
           {label:"CAP",sub:"RATE",value:"5.75%",unit:"",trend:"flat",delta:"flat"},
         ].map((r,i)=>(
-          <div key={r.label} style={{
+          <div key={r.label} className="lp-dcf-result" style={{
             borderLeft:i>0?`1px solid ${TERM_BORDER}`:"none",
-            paddingLeft:i>0?14:0}}>
+            paddingLeft:i>0?14:6,paddingTop:4,paddingBottom:4,marginTop:-4,marginBottom:-4}}>
             <div style={{fontSize:9,color:TERM_FG_DIM,letterSpacing:"1.5px",
               textTransform:"uppercase",fontWeight:500,marginBottom:6,
               display:"flex",justifyContent:"space-between",alignItems:"baseline"}}>
               <span>{r.label}{r.sub&&<span style={{color:TERM_FG_MUTE,marginLeft:6}}>{r.sub}</span>}</span>
               {r.unit&&<span style={{opacity:.6,fontSize:8}}>{r.unit}</span>}
             </div>
-            <div style={{fontSize:22,fontWeight:600,
+            <div className="lp-dcf-result-val" style={{fontSize:22,fontWeight:600,
               color:r.trend==="flat"?TERM_FG:PHOSPHOR,
-              fontVariantNumeric:"tabular-nums",letterSpacing:"-.5px",lineHeight:1}}>
+              fontVariantNumeric:"tabular-nums",letterSpacing:"-.5px",lineHeight:1,
+              transition:"text-shadow .2s ease"}}>
               {r.value}
             </div>
             <div style={{fontSize:9.5,color:r.trend==="up"?SIG_UP:r.trend==="down"?SIG_DOWN:TERM_FG_MUTE,
@@ -1106,17 +1142,19 @@ function Hero({onEnter}){
               ["Format","XLSX"],
               ["Region","MY"],
             ].map(([k,v],i,a)=>(
-              <div key={k} style={{
+              <div key={k} className="lp-stat" style={{
                 borderRight:i<a.length-1?`1px solid ${TERM_BORDER}`:"none",
-                paddingRight:14,paddingLeft:i===0?0:14}}>
-                <div style={{fontFamily:"'JetBrains Mono', monospace",
+                padding:i===0?"6px 14px 6px 0":"6px 14px",margin:"-6px 0"}}>
+                <div className="lp-stat-label" style={{fontFamily:"'JetBrains Mono', monospace",
                   fontSize:9,color:TERM_FG_MUTE,letterSpacing:"1.8px",
-                  textTransform:"uppercase",fontWeight:500,marginBottom:6}}>
+                  textTransform:"uppercase",fontWeight:500,marginBottom:6,
+                  transition:"color .2s ease"}}>
                   {k}
                 </div>
-                <div style={{fontFamily:"'JetBrains Mono', monospace",
+                <div className="lp-stat-num" style={{fontFamily:"'JetBrains Mono', monospace",
                   fontSize:22,color:TERM_FG,fontWeight:600,
-                  fontVariantNumeric:"tabular-nums",letterSpacing:"-.5px"}}>
+                  fontVariantNumeric:"tabular-nums",letterSpacing:"-.5px",
+                  transition:"color .2s ease,text-shadow .2s ease"}}>
                   {v}
                 </div>
               </div>
@@ -1220,29 +1258,30 @@ function WaterfallSection(){
               const noiH=(y.noi/maxNOI)*100;
               const pvH=(y.pv/maxNOI)*100;
               return(
-                <div key={y.t} style={{position:"relative",height:"100%"}}>
+                <div key={y.t} className="lp-bar" style={{position:"relative",height:"100%"}}>
                   {/* NOI outline (full height) */}
-                  <div style={{position:"absolute",bottom:0,left:0,right:0,
+                  <div className="lp-bar-noi" style={{position:"absolute",bottom:0,left:0,right:0,
                     height:`${noiH}%`,
                     border:`1px dashed ${TERM_BORDER}`,borderBottom:"none",
                     transformOrigin:"bottom",
                     transform:v?"scaleY(1)":"scaleY(0)",
-                    transition:`transform .8s cubic-bezier(.22,1,.36,1) ${i*.1}s`}}/>
+                    transition:`transform .8s cubic-bezier(.22,1,.36,1) ${i*.1}s,border-color .2s ease,background .2s ease`}}/>
                   {/* PV fill */}
-                  <div style={{position:"absolute",bottom:0,left:0,right:0,
+                  <div className="lp-bar-pv" style={{position:"absolute",bottom:0,left:0,right:0,
                     height:`${pvH}%`,
                     background:`linear-gradient(180deg,${PHOSPHOR} 0%,${PHOSPHOR_DIM} 100%)`,
                     transformOrigin:"bottom",
                     transform:v?"scaleY(1)":"scaleY(0)",
-                    transition:`transform .9s cubic-bezier(.22,1,.36,1) ${.15+i*.1}s`,
+                    transition:`transform .9s cubic-bezier(.22,1,.36,1) ${.15+i*.1}s,filter .2s ease,box-shadow .2s ease`,
                     boxShadow:`inset 0 1px 0 rgba(56,239,166,.45)`}}/>
                   {wide && (
-                    <div style={{position:"absolute",
+                    <div className="lp-bar-label" style={{position:"absolute",
                       top:`${100-noiH}%`,marginTop:-22,
                       left:0,right:0,textAlign:"center",pointerEvents:"none",
                       fontFamily:"'JetBrains Mono', monospace",fontSize:10,
                       color:TERM_FG,letterSpacing:".5px",fontWeight:600,
-                      fontVariantNumeric:"tabular-nums"}}>
+                      fontVariantNumeric:"tabular-nums",
+                      transition:"color .2s ease,text-shadow .2s ease"}}>
                       {Math.round(y.noi).toLocaleString()}
                     </div>
                   )}
@@ -1250,21 +1289,22 @@ function WaterfallSection(){
               );
             })}
             {/* Terminal value bar */}
-            <div style={{position:"relative",height:"100%"}}>
-              <div style={{position:"absolute",bottom:0,left:0,right:0,
+            <div className="lp-bar" style={{position:"relative",height:"100%"}}>
+              <div className="lp-bar-pv" style={{position:"absolute",bottom:0,left:0,right:0,
                 height:`${Math.min(98,(tvPv/maxNOI)*100*.5)}%`,
                 background:`linear-gradient(180deg,${AMBER} 0%,#9F7A1A 100%)`,
                 transformOrigin:"bottom",
                 transform:v?"scaleY(1)":"scaleY(0)",
-                transition:`transform 1s cubic-bezier(.22,1,.36,1) .65s`,
+                transition:`transform 1s cubic-bezier(.22,1,.36,1) .65s,filter .2s ease,box-shadow .2s ease`,
                 boxShadow:`inset 0 1px 0 rgba(255,198,64,.5)`}}/>
               {wide && (
-                <div style={{position:"absolute",
+                <div className="lp-bar-label" style={{position:"absolute",
                   top:`${100-Math.min(98,(tvPv/maxNOI)*100*.5)}%`,marginTop:-22,
                   left:0,right:0,textAlign:"center",pointerEvents:"none",
                   fontFamily:"'JetBrains Mono', monospace",fontSize:10,
                   color:AMBER,letterSpacing:".5px",fontWeight:600,
-                  fontVariantNumeric:"tabular-nums"}}>
+                  fontVariantNumeric:"tabular-nums",
+                  transition:"color .2s ease,text-shadow .2s ease"}}>
                   {Math.round(tvPv).toLocaleString()}
                 </div>
               )}
@@ -1356,20 +1396,21 @@ function IndexSection(){
           gridTemplateColumns:wide?"repeat(2,1fr)":"1fr",gap:0,
           border:`1px solid ${TERM_BORDER}`,background:TERM_PANEL_S}}>
           {CATEGORIES.map((c,i)=>(
-            <div key={c.code} style={{
+            <div key={c.code} className="lp-card" style={{
               padding:wide?"36px 30px 36px":"26px 20px",
               borderRight:wide&&i%2===0?`1px solid ${TERM_BORDER}`:"none",
               borderBottom:wide?(i<CATEGORIES.length-2?`1px solid ${TERM_BORDER}`:"none"):(i<CATEGORIES.length-1?`1px solid ${TERM_BORDER}`:"none"),
               position:"relative",
               opacity:v?1:0,transform:v?"translateY(0)":"translateY(14px)",
-              transition:`opacity .6s ease ${i*.1}s,transform .6s cubic-bezier(.22,1,.36,1) ${i*.1}s`}}>
+              transition:`opacity .6s ease ${i*.1}s,transform .6s cubic-bezier(.22,1,.36,1) ${i*.1}s,border-color .22s ease,background .22s ease,box-shadow .25s ease`}}>
 
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",
                 marginBottom:16}}>
                 <div style={{display:"flex",alignItems:"baseline",gap:12}}>
-                  <span style={{fontFamily:"'JetBrains Mono', monospace",fontSize:11,
+                  <span className="lp-card-num" style={{fontFamily:"'JetBrains Mono', monospace",fontSize:11,
                     color:PHOSPHOR,letterSpacing:"2.5px",fontWeight:600,
-                    textTransform:"uppercase"}}>{c.n}</span>
+                    textTransform:"uppercase",
+                    transition:"color .2s ease,text-shadow .2s ease"}}>{c.n}</span>
                   <span style={{fontFamily:"'JetBrains Mono', monospace",fontSize:9.5,
                     color:TERM_FG_MUTE,letterSpacing:"2px",fontWeight:500,
                     textTransform:"uppercase"}}>[{c.code}]</span>
@@ -1384,9 +1425,17 @@ function IndexSection(){
                 </div>
               </div>
 
-              <h3 style={{fontFamily:"'Onest', sans-serif",fontSize:26,
+              <h3 className="lp-card-name" style={{fontFamily:"'Onest', sans-serif",fontSize:26,
                 fontWeight:600,letterSpacing:"-.02em",lineHeight:1.05,
-                color:TERM_FG,margin:"0 0 6px"}}>{c.name}</h3>
+                color:TERM_FG,margin:"0 0 6px",
+                transition:"color .2s ease",
+                display:"flex",alignItems:"center",gap:14}}>
+                {c.name}
+                <span className="lp-card-arrow" style={{
+                  fontFamily:"'JetBrains Mono', monospace",fontSize:18,fontWeight:500,
+                  color:TERM_FG_MUTE,opacity:0,transform:"translateX(-8px)",
+                  transition:"opacity .25s ease,transform .25s ease,color .2s ease"}}>→</span>
+              </h3>
 
               <div style={{fontFamily:"'JetBrains Mono', monospace",fontSize:10,
                 color:TERM_FG_DIM,letterSpacing:"1.2px",fontWeight:500,
@@ -1394,7 +1443,7 @@ function IndexSection(){
 
               <div style={{display:"flex",flexWrap:"wrap",gap:5}}>
                 {c.sample.map(s=>(
-                  <span key={s} style={{
+                  <span key={s} className="lp-chip" style={{
                     fontFamily:"'JetBrains Mono', monospace",fontSize:10,
                     padding:"4px 10px",border:`1px solid ${TERM_BORDER}`,
                     color:TERM_FG_DIM,letterSpacing:".5px",
@@ -1449,18 +1498,19 @@ function MethodologySection(){
           gridTemplateColumns:wide?"repeat(3,1fr)":"1fr",gap:0,
           border:`1px solid ${TERM_BORDER}`,background:TERM_PANEL_S}}>
           {FORMULAS.map((f,i)=>(
-            <div key={f.key} style={{
+            <div key={f.key} className="lp-formula" style={{
               padding:wide?"32px 26px":"24px 18px",
               borderRight:wide&&i<FORMULAS.length-1?`1px solid ${TERM_BORDER}`:"none",
               borderBottom:!wide&&i<FORMULAS.length-1?`1px solid ${TERM_BORDER}`:"none",
               opacity:v?1:0,transform:v?"translateY(0)":"translateY(12px)",
-              transition:`opacity .6s ease ${i*.12}s,transform .6s cubic-bezier(.22,1,.36,1) ${i*.12}s`}}>
+              transition:`opacity .6s ease ${i*.12}s,transform .6s cubic-bezier(.22,1,.36,1) ${i*.12}s,border-color .2s ease,background .2s ease,box-shadow .2s ease`}}>
 
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",
                 marginBottom:20}}>
-                <span style={{fontFamily:"'JetBrains Mono', monospace",fontSize:11,
+                <span className="lp-formula-key" style={{fontFamily:"'JetBrains Mono', monospace",fontSize:11,
                   color:PHOSPHOR,letterSpacing:"2.5px",fontWeight:600,
-                  textTransform:"uppercase"}}>{f.key}</span>
+                  textTransform:"uppercase",
+                  transition:"color .2s ease,text-shadow .2s ease"}}>{f.key}</span>
                 <span style={{fontFamily:"'JetBrains Mono', monospace",fontSize:9.5,
                   color:TERM_FG_MUTE,letterSpacing:"1.5px",fontWeight:500,
                   textTransform:"uppercase"}}>F · 0{i+1}</span>
@@ -1470,11 +1520,12 @@ function MethodologySection(){
                 fontWeight:600,letterSpacing:"-.015em",
                 color:TERM_FG,margin:"0 0 18px"}}>{f.label}</h3>
 
-              <div style={{padding:"16px 14px",background:TERM_BG,
+              <div className="lp-formula-eq" style={{padding:"16px 14px",background:TERM_BG,
                 border:`1px solid ${TERM_BORDER}`,marginBottom:18,
                 fontFamily:"'JetBrains Mono', monospace",fontSize:13,
                 color:TERM_FG,letterSpacing:".3px",fontWeight:500,
-                wordBreak:"break-word",lineHeight:1.55}}>
+                wordBreak:"break-word",lineHeight:1.55,
+                transition:"border-color .2s ease,background .2s ease,color .2s ease"}}>
                 {f.eq}
               </div>
 
@@ -1566,13 +1617,14 @@ function DeploySection({onEnter}){
             ["SRC","CBRE.RES",""],
             ["HOST","VAL.MY",""],
           ].map(([k,v,t],i,a)=>(
-            <div key={k} style={{
+            <div key={k} className="lp-sys-pill" style={{
               padding:wide?"14px 18px":"14px 12px",
               borderRight:wide?(i<a.length-1?`1px solid ${TERM_BORDER}`:"none"):(i%2===0?`1px solid ${TERM_BORDER}`:"none"),
               borderBottom:!wide&&i<a.length-2?`1px solid ${TERM_BORDER}`:"none",
               display:"flex",alignItems:"baseline",gap:10}}>
               <span style={{color:TERM_FG_MUTE}}>{k}</span>
-              <span style={{color:t==="up"?SIG_UP:TERM_FG,fontWeight:600}}>{v}</span>
+              <span className="lp-sys-val" style={{color:t==="up"?SIG_UP:TERM_FG,fontWeight:600,
+                transition:"text-shadow .2s ease"}}>{v}</span>
               {t==="up"&&<span style={{
                 width:5,height:5,background:SIG_UP,
                 boxShadow:`0 0 4px ${SIG_UP}`,
