@@ -13,6 +13,10 @@ const CSS = `
   @keyframes glowPulse{0%,100%{opacity:.5}50%{opacity:1}}
   @keyframes scanLine{0%{transform:translateY(-100%)}100%{transform:translateY(1000%)}}
   @keyframes hoverWave{0%{transform:translateZ(0) scale(1);opacity:.65}100%{transform:translateZ(0) scale(7);opacity:0}}
+  @keyframes marquee{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+  @keyframes scrollCue{0%,100%{transform:translateY(0);opacity:.4}50%{transform:translateY(6px);opacity:.95}}
+  @keyframes glowDrift{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(24px,-18px) scale(1.06)}}
+  @keyframes featureGlow{0%,100%{opacity:.45}50%{opacity:.85}}
   .btn-p{transition:all .2s ease;cursor:pointer;border:none;font-family:inherit}
   .btn-p:hover{opacity:.88;transform:translateY(-2px)}
   .btn-o{transition:all .2s ease;cursor:pointer;font-family:inherit;border:none}
@@ -617,37 +621,258 @@ function HoldButton({onComplete,label,duration=800,style,className}){
   );
 }
 
-function LandingPage({scrollY,mouse,onEnter}){
-  const op=Math.max(0,1-scrollY/480);
+const MARQUEE_TERMS=["IRR","NPV","WACC","Cap Rate","DCF","Cash Flow","NOI","Yield %","Exit Value","Disc. Rate","GDV","PV Factor","Sensitivity","Terminal Value"];
+
+const FEATURES=[
+  {icon:"chart",title:"Industry-Standard DCF",
+   desc:"WACC, IRR, NPV and cap-rate logic wired up correctly across every workbook — the metrics professional valuers expect, with the maths already proven."},
+  {icon:"map",title:"Malaysian-Tuned",
+   desc:"RM currency, local rental tiers, MSC office grades and statutory considerations baked into every model so you start from the right baseline, not a US template."},
+  {icon:"refresh",title:"Continuously Updated",
+   desc:"New revisions reflect the latest yields, rentals and absorption rates. Stay current on the market without rebuilding spreadsheets from scratch."},
+];
+
+const STEPS=[
+  {n:"01",title:"Pick a Category",desc:"Residential, Commercial, Industrial or Land — each grouped by asset class."},
+  {n:"02",title:"Choose a Property Type",desc:"Terrace, warehouse, office tower, shophouse — drill down to the exact sub-class."},
+  {n:"03",title:"Download & Value",desc:"Open the Excel workbook, plug in your deal, and present the numbers."},
+];
+
+function FeatureIcon({name}){
+  const p={fill:"none",stroke:W,strokeWidth:1.8,strokeLinecap:"round",strokeLinejoin:"round"};
+  if(name==="chart")return(<svg width="22" height="22" viewBox="0 0 24 24" {...p}><path d="M3 3v18h18"/><path d="M7 16l4-6 4 3 5-8"/></svg>);
+  if(name==="map")return(<svg width="22" height="22" viewBox="0 0 24 24" {...p}><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>);
+  if(name==="refresh")return(<svg width="22" height="22" viewBox="0 0 24 24" {...p}><path d="M3 12a9 9 0 0115.5-6.3L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 01-15.5 6.3L3 16"/><path d="M3 21v-5h5"/></svg>);
+  return null;
+}
+
+function CapabilitiesStrip(){
+  const seq=[...MARQUEE_TERMS,...MARQUEE_TERMS];
   return(
-    <section style={{position:"relative",height:"100vh",background:BG,
-      display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden"}}>
-      <HeroBg mouse={mouse} scrollY={scrollY}/>
-      <div style={{position:"relative",zIndex:1,textAlign:"center",maxWidth:740,padding:"0 28px",
-        opacity:op,transform:`translateY(${-scrollY*.22}px)`}}>
-        <div style={{display:"inline-flex",background:"rgba(255,255,255,.07)",
-          border:"1px solid rgba(255,255,255,.14)",borderRadius:100,padding:"5px 18px",
-          marginBottom:26,fontSize:12,color:"rgba(255,255,255,.7)",fontWeight:600,letterSpacing:".5px"}}>
-          Professional DCF Templates · Malaysian Property Market
+    <section style={{background:BG,padding:"32px 0",overflow:"hidden",position:"relative",
+      borderTop:"1px solid rgba(29,184,123,.1)",borderBottom:"1px solid rgba(29,184,123,.1)"}}>
+      <div style={{position:"absolute",inset:0,
+        background:"linear-gradient(90deg,#020D07 0%,transparent 8%,transparent 92%,#020D07 100%)",
+        zIndex:2,pointerEvents:"none"}}/>
+      <div style={{display:"flex",animation:"marquee 38s linear infinite",
+        whiteSpace:"nowrap",width:"max-content",willChange:"transform"}}>
+        {seq.map((t,i)=>(
+          <span key={i} style={{color:"rgba(255,255,255,.35)",
+            fontSize:14,fontWeight:700,letterSpacing:".22em",
+            fontFamily:"monospace",textTransform:"uppercase",
+            display:"inline-flex",alignItems:"center",gap:64,marginRight:64}}>
+            {t}
+            <span style={{width:6,height:6,borderRadius:"50%",background:`${BR}`,opacity:.4}}/>
+          </span>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function FeatureCard({icon,title,desc,idx}){
+  const[ref,v]=useInView(.12);
+  const[hov,setHov]=useState(false);
+  return(
+    <div ref={ref}
+      onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}
+      style={{position:"relative",
+        background:"rgba(255,255,255,.03)",
+        border:"1px solid rgba(255,255,255,.08)",
+        borderRadius:18,padding:"30px 28px 32px",overflow:"hidden",
+        opacity:v?1:0,transform:v?"translateY(0)":"translateY(28px)",
+        transition:`opacity .65s ease ${idx*.1}s,transform .65s cubic-bezier(.22,1,.36,1) ${idx*.1}s,background .3s ease,border-color .3s ease`,
+        ...(hov?{background:"rgba(255,255,255,.05)",borderColor:"rgba(29,184,123,.3)"}:{}),
+      }}>
+      <div style={{position:"absolute",top:-60,right:-60,width:160,height:160,borderRadius:"50%",
+        background:`radial-gradient(circle,rgba(29,184,123,${hov?.18:.08}) 0%,transparent 70%)`,
+        transition:"background .4s ease",pointerEvents:"none"}}/>
+      <div style={{width:46,height:46,borderRadius:12,
+        background:`linear-gradient(135deg,${M},${BR})`,
+        display:"inline-flex",alignItems:"center",justifyContent:"center",
+        marginBottom:20,boxShadow:`0 8px 22px rgba(29,184,123,${hov?.35:.2})`,
+        transition:"box-shadow .3s ease",position:"relative"}}>
+        <FeatureIcon name={icon}/>
+      </div>
+      <h3 style={{fontSize:18,fontWeight:800,letterSpacing:"-.4px",color:W,margin:"0 0 10px",position:"relative"}}>{title}</h3>
+      <p style={{fontSize:14,color:"rgba(255,255,255,.55)",lineHeight:1.7,margin:0,position:"relative"}}>{desc}</p>
+    </div>
+  );
+}
+
+function SectionEyebrow({children}){
+  return(<div style={{display:"inline-block",fontSize:11,letterSpacing:".42em",fontWeight:700,
+    color:BR,marginBottom:14,fontFamily:"monospace",textTransform:"uppercase"}}>{children}</div>);
+}
+
+function FeaturesSection(){
+  const[ref,v]=useInView(.08);
+  return(
+    <section style={{background:BG,padding:"110px 28px 90px",position:"relative",overflow:"hidden"}}>
+      <div style={{position:"absolute",top:"15%",left:"-10%",width:480,height:480,borderRadius:"50%",
+        background:`radial-gradient(circle,rgba(29,184,123,.12) 0%,transparent 65%)`,
+        animation:"glowDrift 14s ease-in-out infinite",pointerEvents:"none"}}/>
+      <div style={{position:"absolute",bottom:"5%",right:"-12%",width:520,height:520,borderRadius:"50%",
+        background:`radial-gradient(circle,rgba(0,106,77,.18) 0%,transparent 65%)`,
+        animation:"glowDrift 18s ease-in-out infinite reverse",pointerEvents:"none"}}/>
+      <div ref={ref} style={{maxWidth:1180,margin:"0 auto",position:"relative"}}>
+        <div style={{textAlign:"center",marginBottom:58,
+          opacity:v?1:0,transform:v?"translateY(0)":"translateY(16px)",
+          transition:"opacity .6s ease,transform .6s cubic-bezier(.22,1,.36,1)"}}>
+          <SectionEyebrow>WHY VALOREM</SectionEyebrow>
+          <h2 style={{fontSize:"clamp(28px,4vw,42px)",fontWeight:900,letterSpacing:"-1.4px",
+            color:W,margin:"0 auto 14px",lineHeight:1.1,maxWidth:720}}>
+            Built for serious<br/>valuation work.
+          </h2>
+          <p style={{fontSize:15,color:"rgba(255,255,255,.5)",lineHeight:1.7,maxWidth:560,margin:"0 auto"}}>
+            Every workbook is reviewed by practicing valuers, calibrated to Malaysian market conditions, and kept current as yields move.
+          </p>
         </div>
-        <h1 style={{fontSize:"clamp(32px,5.5vw,60px)",fontWeight:900,lineHeight:1.1,
-          letterSpacing:"-2px",marginBottom:20,color:W}}>
-          Stop Rebuilding.<br/>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(280px,1fr))",gap:22}}>
+          {FEATURES.map((f,i)=>(<FeatureCard key={i} idx={i} {...f}/>))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function ProcessSection(){
+  const[ref,v]=useInView(.08);
+  return(
+    <section style={{background:"#03150E",padding:"100px 28px",position:"relative",overflow:"hidden",
+      borderTop:"1px solid rgba(29,184,123,.08)",borderBottom:"1px solid rgba(29,184,123,.08)"}}>
+      <div style={{position:"absolute",inset:0,
+        backgroundImage:`linear-gradient(rgba(29,184,123,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(29,184,123,.06) 1px,transparent 1px)`,
+        backgroundSize:"56px 56px",opacity:.6,pointerEvents:"none",
+        maskImage:"radial-gradient(ellipse 70% 80% at 50% 50%,#000 30%,transparent 80%)",
+        WebkitMaskImage:"radial-gradient(ellipse 70% 80% at 50% 50%,#000 30%,transparent 80%)"}}/>
+      <div ref={ref} style={{maxWidth:1100,margin:"0 auto",position:"relative"}}>
+        <div style={{textAlign:"center",marginBottom:56,
+          opacity:v?1:0,transform:v?"translateY(0)":"translateY(16px)",
+          transition:"opacity .6s ease,transform .6s cubic-bezier(.22,1,.36,1)"}}>
+          <SectionEyebrow>HOW IT WORKS</SectionEyebrow>
+          <h2 style={{fontSize:"clamp(28px,4vw,42px)",fontWeight:900,letterSpacing:"-1.4px",
+            color:W,margin:0,lineHeight:1.1}}>
+            Three steps to your<br/>next valuation.
+          </h2>
+        </div>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(240px,1fr))",
+          gap:32,position:"relative"}}>
+          {STEPS.map((s,i)=>(
+            <div key={i} style={{position:"relative",
+              opacity:v?1:0,transform:v?"translateY(0)":"translateY(20px)",
+              transition:`opacity .6s ease ${i*.14}s,transform .6s cubic-bezier(.22,1,.36,1) ${i*.14}s`}}>
+              <div style={{display:"flex",alignItems:"baseline",gap:12,marginBottom:14}}>
+                <span style={{fontSize:38,fontWeight:900,letterSpacing:"-1.5px",
+                  color:"transparent",WebkitTextStroke:`1.4px ${BR}`,
+                  fontFamily:"monospace",lineHeight:1,opacity:.85}}>{s.n}</span>
+                <span style={{flex:1,height:1,background:"linear-gradient(90deg,rgba(29,184,123,.35),transparent)"}}/>
+              </div>
+              <h3 style={{fontSize:18,fontWeight:800,letterSpacing:"-.4px",color:W,margin:"0 0 10px"}}>{s.title}</h3>
+              <p style={{fontSize:14,color:"rgba(255,255,255,.55)",lineHeight:1.7,margin:0}}>{s.desc}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function FinalCTA({onEnter}){
+  const[ref,v]=useInView(.12);
+  return(
+    <section style={{background:BG,padding:"120px 28px",position:"relative",overflow:"hidden"}}>
+      <div style={{position:"absolute",inset:0,
+        background:`radial-gradient(ellipse 55% 60% at 50% 50%,rgba(29,184,123,.22) 0%,rgba(29,184,123,.05) 40%,transparent 75%)`,
+        animation:"featureGlow 6s ease-in-out infinite",pointerEvents:"none"}}/>
+      <div style={{position:"absolute",left:"50%",top:"50%",width:520,height:520,marginLeft:-260,marginTop:-260,
+        borderRadius:"50%",border:"1px solid rgba(29,184,123,.12)",pointerEvents:"none",
+        animation:"rotateSlow 80s linear infinite"}}/>
+      <div style={{position:"absolute",left:"50%",top:"50%",width:760,height:760,marginLeft:-380,marginTop:-380,
+        borderRadius:"50%",border:"1px solid rgba(29,184,123,.08)",pointerEvents:"none",
+        animation:"rotateSlowR 110s linear infinite"}}/>
+      <div ref={ref} style={{maxWidth:780,margin:"0 auto",textAlign:"center",position:"relative",
+        opacity:v?1:0,transform:v?"translateY(0)":"translateY(24px)",
+        transition:"opacity .7s ease,transform .7s cubic-bezier(.22,1,.36,1)"}}>
+        <SectionEyebrow>READY WHEN YOU ARE</SectionEyebrow>
+        <h2 style={{fontSize:"clamp(32px,5vw,52px)",fontWeight:900,letterSpacing:"-1.8px",
+          color:W,margin:"0 0 18px",lineHeight:1.08}}>
+          Start your next<br/>
           <span style={{background:"linear-gradient(90deg,#aee8cc,#ffffff,#1DB87B,#ffffff)",
             backgroundSize:"300% auto",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",
-            animation:"shimmer 5s linear infinite"}}>Start Valuing.</span>
-        </h1>
-        <p style={{fontSize:16,color:"rgba(255,255,255,.55)",lineHeight:1.78,maxWidth:520,margin:"0 auto 36px"}}>
-          Pre-built Discounted Cash Flow templates for Residential, Commercial, Industrial and Land properties. Built for Malaysian valuers. Designed for accuracy.
+            animation:"shimmer 5s linear infinite"}}>valuation in minutes.</span>
+        </h2>
+        <p style={{fontSize:15,color:"rgba(255,255,255,.55)",lineHeight:1.78,maxWidth:500,margin:"0 auto 36px"}}>
+          Hold the button below to enter the template library. Free to download. No signup required.
         </p>
-        <HoldButton
-          onComplete={onEnter}
-          label="Hold to Access Templates"
-          className="btn-p"
+        <HoldButton onComplete={onEnter} label="Hold to Access Templates" className="btn-p"
           style={{background:W,color:D,padding:"14px 34px",borderRadius:10,fontWeight:800,fontSize:15,
             boxShadow:"0 10px 32px rgba(0,0,0,.4)"}}/>
       </div>
     </section>
+  );
+}
+
+function LandingPage({scrollY,mouse,onEnter}){
+  const op=Math.max(0,1-scrollY/480);
+  const cueOp=Math.max(0,1-scrollY/200);
+  return(
+    <div>
+      <section style={{position:"relative",height:"100vh",background:BG,
+        display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden"}}>
+        <HeroBg mouse={mouse} scrollY={scrollY}/>
+        <div style={{position:"relative",zIndex:1,textAlign:"center",maxWidth:740,padding:"0 28px",
+          opacity:op,transform:`translateY(${-scrollY*.22}px)`}}>
+          <div style={{display:"inline-flex",background:"rgba(255,255,255,.07)",
+            border:"1px solid rgba(255,255,255,.14)",borderRadius:100,padding:"5px 18px",
+            marginBottom:26,fontSize:12,color:"rgba(255,255,255,.7)",fontWeight:600,letterSpacing:".5px"}}>
+            Professional DCF Templates · Malaysian Property Market
+          </div>
+          <h1 style={{fontSize:"clamp(32px,5.5vw,60px)",fontWeight:900,lineHeight:1.1,
+            letterSpacing:"-2px",marginBottom:20,color:W}}>
+            Stop Rebuilding.<br/>
+            <span style={{background:"linear-gradient(90deg,#aee8cc,#ffffff,#1DB87B,#ffffff)",
+              backgroundSize:"300% auto",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",
+              animation:"shimmer 5s linear infinite"}}>Start Valuing.</span>
+          </h1>
+          <p style={{fontSize:16,color:"rgba(255,255,255,.55)",lineHeight:1.78,maxWidth:520,margin:"0 auto 36px"}}>
+            Pre-built Discounted Cash Flow templates for Residential, Commercial, Industrial and Land properties. Built for Malaysian valuers. Designed for accuracy.
+          </p>
+          <HoldButton
+            onComplete={onEnter}
+            label="Hold to Access Templates"
+            className="btn-p"
+            style={{background:W,color:D,padding:"14px 34px",borderRadius:10,fontWeight:800,fontSize:15,
+              boxShadow:"0 10px 32px rgba(0,0,0,.4)"}}/>
+          <div style={{marginTop:42,display:"flex",justifyContent:"center",alignItems:"baseline",
+            gap:22,flexWrap:"wrap",
+            fontSize:11,color:"rgba(255,255,255,.45)",fontWeight:600,letterSpacing:".5px"}}>
+            {[["4","CATEGORIES"],["29","PROPERTY TYPES"],["RM","MALAYSIAN MARKET"]].flatMap(([n,l],i)=>{
+              const item=(
+                <span key={`i${i}`} style={{display:"inline-flex",alignItems:"baseline",gap:7}}>
+                  <strong style={{color:"rgba(255,255,255,.92)",fontSize:15,fontWeight:800,letterSpacing:"-.3px"}}>{n}</strong>
+                  {l}
+                </span>
+              );
+              return i===0?[item]:[<span key={`s${i}`} style={{opacity:.3}}>·</span>,item];
+            })}
+          </div>
+        </div>
+        <div style={{position:"absolute",bottom:28,left:"50%",transform:"translateX(-50%)",
+          opacity:cueOp,pointerEvents:"none",transition:"opacity .25s ease"}}>
+          <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:8,
+            color:"rgba(255,255,255,.6)",fontSize:9,letterSpacing:".5em",fontWeight:700,
+            animation:"scrollCue 2.2s ease infinite"}}>
+            <span>SCROLL</span>
+            <div style={{width:1,height:28,background:"linear-gradient(to bottom,rgba(255,255,255,.5),transparent)"}}/>
+          </div>
+        </div>
+      </section>
+      <CapabilitiesStrip/>
+      <FeaturesSection/>
+      <ProcessSection/>
+      <FinalCTA onEnter={onEnter}/>
+    </div>
   );
 }
 
