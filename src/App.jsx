@@ -1798,12 +1798,12 @@ function MethodologySection(){
 
 /* ── S04 Calibration — live market inputs wired into the workbooks ── */
 const CALIB_ROWS=[
-  {asset:"Office",seg:"KL · Prime",cap:5.85,growth:3.2,wacc:8.40,date:"12 May 26",status:"live"},
-  {asset:"Office",seg:"KL · Fringe",cap:6.40,growth:2.8,wacc:9.10,date:"12 May 26",status:"live"},
-  {asset:"Retail",seg:"Regional Mall",cap:7.10,growth:2.5,wacc:9.50,date:"28 Apr 26",status:"live"},
-  {asset:"Residential",seg:"Strata · KL",cap:4.70,growth:4.1,wacc:7.90,date:"12 May 26",status:"live"},
-  {asset:"Industrial",seg:"Logistics · Klang",cap:6.85,growth:5.4,wacc:8.80,date:"05 May 26",status:"live"},
-  {asset:"Hotel",seg:"4★ · Klang Valley",cap:7.80,growth:3.6,wacc:9.90,date:"18 Apr 26",status:"stale"},
+  {asset:"Office",seg:"Georgetown · CBD",cap:6.75,growth:2.6,wacc:8.90,date:"12 May 26",status:"live"},
+  {asset:"Office",seg:"Bayan Lepas",cap:7.20,growth:3.4,wacc:9.10,date:"12 May 26",status:"live"},
+  {asset:"Retail",seg:"Gurney · Queensbay",cap:7.40,growth:2.2,wacc:9.60,date:"28 Apr 26",status:"live"},
+  {asset:"Residential",seg:"Strata · Georgetown",cap:4.95,growth:3.7,wacc:8.10,date:"12 May 26",status:"live"},
+  {asset:"Industrial",seg:"Bayan Lepas · FIZ",cap:7.10,growth:5.8,wacc:8.90,date:"05 May 26",status:"live"},
+  {asset:"Hotel",seg:"Batu Ferringhi · 4★",cap:8.20,growth:3.2,wacc:10.10,date:"18 Apr 26",status:"stale"},
 ];
 function DeploySection(){
   const wide=useIsWide(900);
@@ -1829,19 +1829,19 @@ function DeploySection(){
               textTransform:"uppercase"}}>S04</div>
             <div style={{fontFamily:"'JetBrains Mono', monospace",fontSize:9.5,
               color:TERM_FG_DIM,letterSpacing:"1.5px",fontWeight:500,
-              marginTop:6,textTransform:"uppercase"}}>Calibration</div>
+              marginTop:6,textTransform:"uppercase"}}>Calibration · <span style={{color:PHOSPHOR}}>Penang</span></div>
           </div>
           <div style={{padding:wide?"0 56px":"0"}}>
             <h2 style={{fontFamily:"'Onest', sans-serif",
               fontSize:"clamp(28px,3.6vw,48px)",fontWeight:600,
               lineHeight:1.02,letterSpacing:"-.025em",
               color:TERM_FG,margin:"0 0 12px"}}>
-              Inputs wired to <br/>
-              <span style={{color:PHOSPHOR}}>live market data.</span>
+              Wired to the <br/>
+              <span style={{color:PHOSPHOR}}>Penang property market.</span>
             </h2>
             <p style={{fontFamily:"'Onest', sans-serif",fontSize:14,lineHeight:1.5,
               color:TERM_FG_DIM,maxWidth:520,margin:0}}>
-              Every workbook ships with the current calibration set. Cap rates, growth and WACC are reconciled against CBRE Research every quarter, and the next refresh is dated below.
+              Every workbook ships with the current Penang calibration set — Georgetown CBD, Bayan Lepas, Gurney and Batu Ferringhi reconciled against CBRE Research every quarter. The next refresh is dated below.
             </p>
           </div>
         </div>
@@ -1931,7 +1931,7 @@ function DeploySection(){
           fontFamily:"'JetBrains Mono', monospace",fontSize:9.5,
           color:TERM_FG_MUTE,letterSpacing:"1.5px",fontWeight:500,
           textTransform:"uppercase"}}>
-          <span>↳ Refresh cycle · Quarterly · Source CBRE Research MY</span>
+          <span>↳ Refresh cycle · Quarterly · Source CBRE Research · Penang Desk</span>
           <span style={{color:TERM_FG_DIM}}>
             Next refresh <span style={{color:PHOSPHOR,fontWeight:600}}>Q3 · 2026</span>
           </span>
@@ -1947,7 +1947,7 @@ const LP_SECTIONS=[
   {id:"lp-sec-1",num:"S01",label:"MECHANICS"},
   {id:"lp-sec-2",num:"S02",label:"INDEX"},
   {id:"lp-sec-3",num:"S03",label:"METHOD"},
-  {id:"lp-sec-4",num:"S04",label:"CALIBRATION"},
+  {id:"lp-sec-4",num:"S04",label:"PENANG"},
 ];
 const SCATTER_DUR=520;
 const ASSEMBLE_DUR=620;
