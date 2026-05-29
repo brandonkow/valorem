@@ -29,7 +29,6 @@ const CSS = `
   @keyframes bootFlicker{0%,100%{opacity:1}48%{opacity:1}49%{opacity:.4}50%{opacity:1}92%{opacity:1}93%{opacity:.6}94%{opacity:1}}
   @keyframes bootCoreThrob{0%,100%{transform:scale(1);box-shadow:0 0 24px rgba(0,200,150,.4)}50%{transform:scale(1.08);box-shadow:0 0 44px rgba(0,200,150,.7)}}
   @keyframes bootScan{0%{transform:translateY(0)}100%{transform:translateY(100%)}}
-  @keyframes sectionLand{0%{transform:translateY(16px);opacity:.45;filter:brightness(1.5)}60%{filter:brightness(1.12)}100%{transform:translateY(0);opacity:1;filter:brightness(1)}}
   @keyframes hintFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(3px)}}
   body{margin:0;font-family:'Onest',sans-serif;font-feature-settings:"ss01","cv11";color:#E5E9E7;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;background:#0B0F0D}
   .btn-p{transition:all .15s ease;cursor:pointer;border:none;font-family:inherit}
@@ -1267,7 +1266,7 @@ function Hero({onEnter}){
         {/* LEFT — command pane */}
         <div>
           {/* Breadcrumb / system path */}
-          <div style={{fontFamily:"'JetBrains Mono', monospace",fontSize:10,
+          <div data-morph style={{fontFamily:"'JetBrains Mono', monospace",fontSize:10,
             color:TERM_FG_DIM,letterSpacing:"2.2px",fontWeight:500,
             marginBottom:30,display:"flex",alignItems:"center",gap:10,
             textTransform:"uppercase"}}>
@@ -1280,7 +1279,7 @@ function Hero({onEnter}){
             <span style={{color:TERM_FG_MUTE}}>v01.4</span>
           </div>
 
-          <h1 style={{
+          <h1 data-morph style={{
             fontFamily:"'Onest', sans-serif",
             fontSize:"clamp(44px,6.5vw,86px)",
             fontWeight:600,
@@ -1298,22 +1297,23 @@ function Hero({onEnter}){
             </span>
           </h1>
 
-          <p style={{fontFamily:"'Onest', sans-serif",
+          <p data-morph style={{fontFamily:"'Onest', sans-serif",
             fontSize:16.5,lineHeight:1.6,color:TERM_FG_DIM,
             maxWidth:520,margin:"0 0 36px",fontWeight:400}}>
             A precision library of pre-built DCF workbooks for the Malaysian property market. Wired by practicing valuers, calibrated against current CBRE research, deployed by you.
           </p>
 
           {/* ExecuteBar CTA */}
-          <ExecuteBar onComplete={onEnter}/>
-
-          <div style={{marginTop:14,fontFamily:"'JetBrains Mono', monospace",fontSize:9.5,
-            color:TERM_FG_MUTE,letterSpacing:"1.8px",textTransform:"uppercase",fontWeight:500}}>
-            ↳ press &amp; hold the bar above to initiate
+          <div data-morph>
+            <ExecuteBar onComplete={onEnter}/>
+            <div style={{marginTop:14,fontFamily:"'JetBrains Mono', monospace",fontSize:9.5,
+              color:TERM_FG_MUTE,letterSpacing:"1.8px",textTransform:"uppercase",fontWeight:500}}>
+              ↳ press &amp; hold the bar above to initiate
+            </div>
           </div>
 
           {/* Stats row */}
-          <div style={{marginTop:36,paddingTop:24,borderTop:`1px solid ${TERM_BORDER}`,
+          <div data-morph style={{marginTop:36,paddingTop:24,borderTop:`1px solid ${TERM_BORDER}`,
             display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:0}}>
             {[
               ["Categories","04"],
@@ -1342,7 +1342,7 @@ function Hero({onEnter}){
         </div>
 
         {/* RIGHT — DCF viewport */}
-        <div style={{position:"relative"}}>
+        <div data-morph style={{position:"relative"}}>
           <div style={{fontFamily:"'JetBrains Mono', monospace",fontSize:9.5,
             color:TERM_FG_MUTE,letterSpacing:"2px",fontWeight:500,
             marginBottom:14,display:"flex",alignItems:"center",justifyContent:"space-between",
@@ -1382,7 +1382,7 @@ function WaterfallSection(){
       <ScanLines/>
       <div style={{maxWidth:1320,margin:"0 auto",position:"relative",zIndex:1}}>
         {/* Section header */}
-        <div style={{display:wide?"grid":"block",
+        <div data-morph style={{display:wide?"grid":"block",
           gridTemplateColumns:wide?"180px 1fr 240px":"1fr",
           gap:0,marginBottom:wide?60:36}}>
           <div style={{paddingRight:wide?28:0,marginBottom:wide?0:18}}>
@@ -1410,7 +1410,7 @@ function WaterfallSection(){
         </div>
 
         {/* Waterfall chart panel */}
-        <div style={{background:TERM_PANEL_S,border:`1px solid ${TERM_BORDER}`,
+        <div data-morph style={{background:TERM_PANEL_S,border:`1px solid ${TERM_BORDER}`,
           padding:wide?"36px 32px 28px":"24px 16px 22px",position:"relative"}}>
           <ScanLines opacity={.5}/>
 
@@ -1551,7 +1551,7 @@ function IndexSection(){
       borderBottom:`1px solid ${TERM_BORDER}`,position:"relative",overflow:"hidden"}}>
       <ScanLines/>
       <div style={{maxWidth:1320,margin:"0 auto",position:"relative",zIndex:1}}>
-        <div style={{display:wide?"grid":"block",
+        <div data-morph style={{display:wide?"grid":"block",
           gridTemplateColumns:wide?"180px 1fr 240px":"1fr",gap:0,marginBottom:wide?56:32}}>
           <div style={{paddingRight:wide?28:0,marginBottom:wide?0:18}}>
             <div style={{fontFamily:"'JetBrains Mono', monospace",fontSize:10.5,
@@ -1579,7 +1579,7 @@ function IndexSection(){
             const isOpen=opened===c.code;
             const fullTypes=(TMPLS.find(t=>t.id===c.id)?.types)||[];
             return(
-            <div key={c.code} className="lp-card"
+            <div key={c.code} className="lp-card" data-morph
               onClick={e=>{e.stopPropagation();setOpened(isOpen?null:c.code);}}
               style={{
                 padding:wide?"36px 30px 36px":"26px 20px",
@@ -1705,7 +1705,7 @@ function MethodologySection(){
       borderBottom:`1px solid ${TERM_BORDER}`,position:"relative",overflow:"hidden"}}>
       <ScanLines/>
       <div style={{maxWidth:1320,margin:"0 auto",position:"relative",zIndex:1}}>
-        <div style={{display:wide?"grid":"block",
+        <div data-morph style={{display:wide?"grid":"block",
           gridTemplateColumns:wide?"180px 1fr 240px":"1fr",gap:0,marginBottom:wide?48:32}}>
           <div style={{paddingRight:wide?28:0,marginBottom:wide?0:18}}>
             <div style={{fontFamily:"'JetBrains Mono', monospace",fontSize:10.5,
@@ -1730,7 +1730,7 @@ function MethodologySection(){
           gridTemplateColumns:wide?"repeat(3,1fr)":"1fr",gap:0,
           border:`1px solid ${TERM_BORDER}`,background:TERM_PANEL_S}}>
           {FORMULAS.map((f,i)=>(
-            <div key={f.key} className="lp-formula" style={{
+            <div key={f.key} className="lp-formula" data-morph style={{
               padding:wide?"32px 26px":"24px 18px",
               borderRight:wide&&i<FORMULAS.length-1?`1px solid ${TERM_BORDER}`:"none",
               borderBottom:!wide&&i<FORMULAS.length-1?`1px solid ${TERM_BORDER}`:"none",
@@ -1813,7 +1813,7 @@ function DeploySection({onEnter}){
         opacity:v?1:0,transform:v?"translateY(0)":"translateY(20px)",
         transition:"opacity .8s ease,transform .8s cubic-bezier(.22,1,.36,1)"}}>
 
-        <div style={{fontFamily:"'JetBrains Mono', monospace",fontSize:10,
+        <div data-morph style={{fontFamily:"'JetBrains Mono', monospace",fontSize:10,
           color:PHOSPHOR,letterSpacing:"3.5px",fontWeight:600,
           textTransform:"uppercase",marginBottom:28,
           display:"flex",alignItems:"center",gap:14}}>
@@ -1822,7 +1822,7 @@ function DeploySection({onEnter}){
           §04 · Deploy
         </div>
 
-        <h2 style={{fontFamily:"'Onest', sans-serif",
+        <h2 data-morph style={{fontFamily:"'Onest', sans-serif",
           fontSize:"clamp(40px,6vw,80px)",fontWeight:600,
           lineHeight:.98,letterSpacing:"-.032em",
           color:TERM_FG,margin:"0 0 22px",maxWidth:900}}>
@@ -1830,15 +1830,17 @@ function DeploySection({onEnter}){
           to your <span style={{color:PHOSPHOR}}>next valuation</span>.
         </h2>
 
-        <p style={{fontFamily:"'Onest', sans-serif",fontSize:16,lineHeight:1.62,
+        <p data-morph style={{fontFamily:"'Onest', sans-serif",fontSize:16,lineHeight:1.62,
           color:TERM_FG_DIM,maxWidth:560,margin:"0 0 36px"}}>
           Hold the command bar below to initiate. The library opens — free, current, traceable to CBRE source data.
         </p>
 
-        <ExecuteBar onComplete={onEnter} command="initiate --library --region=MY" width={640}/>
+        <div data-morph>
+          <ExecuteBar onComplete={onEnter} command="initiate --library --region=MY" width={640}/>
+        </div>
 
         {/* System metadata strip */}
-        <div style={{marginTop:64,paddingTop:24,borderTop:`1px solid ${TERM_BORDER}`,
+        <div data-morph style={{marginTop:64,paddingTop:24,borderTop:`1px solid ${TERM_BORDER}`,
           display:"grid",gridTemplateColumns:wide?"repeat(5,1fr)":"repeat(2,1fr)",gap:0,
           fontFamily:"'JetBrains Mono', monospace",fontSize:9.5,
           letterSpacing:"1.8px",textTransform:"uppercase",fontWeight:500}}>
@@ -1870,7 +1872,7 @@ function DeploySection({onEnter}){
   );
 }
 
-/* ── Section morph-jump · the whole page cross-zooms between sections ── */
+/* ── Section morph — elements within each section morph in/out per piece ── */
 const LP_SECTIONS=[
   {id:"lp-sec-0",num:"§00",label:"ACCESS"},
   {id:"lp-sec-1",num:"§01",label:"MECHANICS"},
@@ -1878,81 +1880,124 @@ const LP_SECTIONS=[
   {id:"lp-sec-3",num:"§03",label:"METHOD"},
   {id:"lp-sec-4",num:"§04",label:"DEPLOY"},
 ];
-const MORPH_DUR=900;
+const SCATTER_DUR=520;
+const ASSEMBLE_DUR=620;
+const SCROLL_DUR=720;
+
+function getMorphBlocks(secWrap){
+  if(!secWrap)return [];
+  // explicit per-section morph targets, ordered top→bottom of the DOM
+  return Array.from(secWrap.querySelectorAll("[data-morph]")).slice(0,12);
+}
+
+function clearMorph(el){
+  el.style.transition="";
+  el.style.transform="";
+  el.style.opacity="";
+  el.style.filter="";
+  el.style.willChange="";
+}
 
 function LandingPage({onEnter,scrollRef,active}){
   const[pinned,setPinned]=useState(null);
   const[hint,setHint]=useState(true);
-  const stageRef=useRef(null);
-  const labelRef=useRef(null);
   const busyRef=useRef(false);
-  const rafRef=useRef(0);
+  const trackedRef=useRef([]);
 
   const jump=useCallback(dir=>{
     if(busyRef.current)return;
-    const cont=scrollRef?.current;
-    const stage=stageRef.current;
-    if(!cont||!stage)return;
+    const cont=scrollRef?.current;if(!cont)return;
     const cTop=cont.getBoundingClientRect().top;
-    // current section = last one whose top sits at/above the fold
     let cur=0;
     LP_SECTIONS.forEach((s,i)=>{
       const el=document.getElementById(s.id);
       if(el && (el.getBoundingClientRect().top-cTop)<=80) cur=i;
     });
     const next=(cur+dir+LP_SECTIONS.length)%LP_SECTIONS.length;
-    const target=LP_SECTIONS[next];
-    const el=document.getElementById(target.id);
-    if(!el)return;
+    const srcWrap=document.getElementById(LP_SECTIONS[cur].id);
+    const dstWrap=document.getElementById(LP_SECTIONS[next].id);
+    if(!dstWrap)return;
     const dest=next===0?0
-      :(el.getBoundingClientRect().top-cTop+cont.scrollTop-54);
+      :(dstWrap.getBoundingClientRect().top-cTop+cont.scrollTop-54);
 
     busyRef.current=true;
     setHint(false);
 
-    // floating section label (plain glowing text, fades in only at morph peak)
-    const lbl=labelRef.current;
-    if(lbl){
-      const span=lbl.querySelector("[data-mlbl]");
-      if(span)span.textContent=`${target.num} · ${target.label}`;
-    }
+    const srcBlocks=getMorphBlocks(srcWrap);
+    const dstBlocks=getMorphBlocks(dstWrap);
+    const vh=cont.clientHeight;
+    const vc=cTop+vh/2; // viewport center (page coords)
+    const dirSign=dir>0?1:-1;
 
+    // ── PHASE 1: scatter source · pre-hide destination ──
+    srcBlocks.forEach((el,i)=>{
+      const r=el.getBoundingClientRect();
+      const ecy=r.top+r.height/2;
+      const dy=ecy-vc;
+      // direction of flight — opposite to travel direction so they "fall away"
+      const flyY=(dy<0?-1:1)*140 - dirSign*40;
+      const flyX=((i%2)?1:-1)*(60+i*4);
+      const delay=Math.min(120,i*22);
+      el.style.willChange="transform,opacity,filter";
+      el.style.transition=`transform ${SCATTER_DUR}ms cubic-bezier(.55,0,.4,1) ${delay}ms,opacity ${SCATTER_DUR-80}ms ease ${delay}ms,filter ${SCATTER_DUR-100}ms ease ${delay}ms`;
+      el.style.transform=`translate(${flyX}px,${flyY}px) scale(.92)`;
+      el.style.opacity="0";
+      el.style.filter="blur(8px)";
+    });
+    // hide destination items until assembly
+    dstBlocks.forEach(el=>{
+      el.style.willChange="transform,opacity,filter";
+      el.style.transition="none";
+      el.style.opacity="0";
+    });
+    trackedRef.current=[...srcBlocks,...dstBlocks];
+
+    // ── PHASE 2: scroll-tween ──
     const start=cont.scrollTop;
     const delta=dest-start;
-    const vh=cont.clientHeight;
     const t0=performance.now();
     const easeIO=x=>x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2;
-    stage.style.willChange="transform,filter,opacity";
-
-    const run=now=>{
-      const p=Math.min(1,(now-t0)/MORPH_DUR);
-      const e=easeIO(p);
-      const top=start+delta*e;
-      cont.scrollTop=top;
-      const m=Math.sin(p*Math.PI);               // 0 → 1 → 0  (morph intensity)
-      stage.style.transformOrigin=`50% ${(top+vh/2).toFixed(1)}px`;
-      stage.style.transform=`scale(${(1-0.06*m).toFixed(4)})`;
-      stage.style.filter=`blur(${(6*m).toFixed(2)}px)`;
-      stage.style.opacity=`${(1-0.5*m).toFixed(3)}`;
-      if(lbl)lbl.style.opacity=(m*0.92).toFixed(3);
-      if(p<1){rafRef.current=requestAnimationFrame(run);}
-      else{
-        // reset the page
-        stage.style.transform="none";
-        stage.style.filter="none";
-        stage.style.opacity="1";
-        stage.style.transformOrigin="";
-        stage.style.willChange="";
-        if(lbl)lbl.style.opacity="0";
-        // the destination section "drops into place" — its elements settle
-        el.style.animation="sectionLand .6s cubic-bezier(.22,1,.36,1)";
-        setTimeout(()=>{el.style.animation="";busyRef.current=false;},620);
-      }
+    const tweenScroll=now=>{
+      const p=Math.min(1,(now-t0)/SCROLL_DUR);
+      cont.scrollTop=start+delta*easeIO(p);
+      if(p<1)requestAnimationFrame(tweenScroll);
     };
-    rafRef.current=requestAnimationFrame(run);
+    requestAnimationFrame(tweenScroll);
+
+    // ── PHASE 3: assemble destination (overlaps the tail of scatter/scroll) ──
+    const assembleAt=Math.max(SCATTER_DUR-120,SCROLL_DUR-200);
+    setTimeout(()=>{
+      dstBlocks.forEach((el,i)=>{
+        const r=el.getBoundingClientRect();
+        const ecy=r.top+r.height/2;
+        const dy=ecy-(cTop+vh/2);
+        // arrive from the leading edge — opposite of how source left
+        const flyY=(dy<0?-1:1)*110 + dirSign*30;
+        const flyX=((i%2)?-1:1)*(50+i*4);
+        el.style.transition="none";
+        el.style.transform=`translate(${flyX}px,${flyY}px) scale(.93)`;
+        el.style.opacity="0";
+        el.style.filter="blur(8px)";
+        // force a reflow per element so the start state lands before the transition
+        void el.offsetHeight;
+        const delay=Math.min(180,i*40);
+        el.style.transition=`transform ${ASSEMBLE_DUR}ms cubic-bezier(.18,1.05,.32,1) ${delay}ms,opacity ${ASSEMBLE_DUR-80}ms ease ${delay}ms,filter ${ASSEMBLE_DUR-120}ms ease ${delay}ms`;
+        el.style.transform="";
+        el.style.opacity="";
+        el.style.filter="";
+      });
+    },assembleAt);
+
+    // ── CLEANUP ──
+    const total=assembleAt+ASSEMBLE_DUR+220;
+    setTimeout(()=>{
+      trackedRef.current.forEach(clearMorph);
+      trackedRef.current=[];
+      busyRef.current=false;
+    },total);
   },[scrollRef]);
 
-  useEffect(()=>()=>{ if(rafRef.current)cancelAnimationFrame(rafRef.current); },[]);
+  useEffect(()=>()=>{ trackedRef.current.forEach(clearMorph); },[]);
 
   useEffect(()=>{
     if(!active)return;
@@ -1969,27 +2014,14 @@ function LandingPage({onEnter,scrollRef,active}){
 
   return(
     <div style={{background:TERM_BG}}>
-      {/* stage — the whole page content; this is what morphs */}
-      <div ref={stageRef}>
-        <div aria-hidden style={{height:56,background:TERM_BG}}/>
-        <LiveYieldTicker pinnedCode={pinned?.code} onPin={setPinned}/>
-        {pinned&&<PinnedTickerPanel item={pinned} onClose={()=>setPinned(null)}/>}
-        <div id="lp-sec-0"><Hero onEnter={onEnter}/></div>
-        <div id="lp-sec-1"><WaterfallSection/></div>
-        <div id="lp-sec-2"><IndexSection/></div>
-        <div id="lp-sec-3"><MethodologySection/></div>
-        <div id="lp-sec-4"><DeploySection onEnter={onEnter}/></div>
-      </div>
-
-      {/* floating section label — outside the stage so it stays crisp */}
-      <div ref={labelRef} aria-hidden style={{position:"fixed",inset:0,zIndex:290,
-        display:"flex",alignItems:"center",justifyContent:"center",
-        pointerEvents:"none",opacity:0}}>
-        <span data-mlbl style={{fontFamily:"'JetBrains Mono', monospace",
-          fontSize:"clamp(22px,3.4vw,40px)",fontWeight:700,color:PHOSPHOR,
-          letterSpacing:"4px",textTransform:"uppercase",
-          textShadow:`0 0 28px rgba(0,200,150,.7),0 0 6px rgba(0,200,150,.5)`}}/>
-      </div>
+      <div aria-hidden style={{height:56,background:TERM_BG}}/>
+      <LiveYieldTicker pinnedCode={pinned?.code} onPin={setPinned}/>
+      {pinned&&<PinnedTickerPanel item={pinned} onClose={()=>setPinned(null)}/>}
+      <div id="lp-sec-0"><Hero onEnter={onEnter}/></div>
+      <div id="lp-sec-1"><WaterfallSection/></div>
+      <div id="lp-sec-2"><IndexSection/></div>
+      <div id="lp-sec-3"><MethodologySection/></div>
+      <div id="lp-sec-4"><DeploySection onEnter={onEnter}/></div>
 
       {/* spacebar affordance */}
       {active&&hint&&(
