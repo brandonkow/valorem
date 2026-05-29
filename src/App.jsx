@@ -319,7 +319,7 @@ function AdminLoginModal({onClose,onSuccess}){
           </div>
           <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:9,
             color:TERM_FG_MUTE,letterSpacing:"1.5px",fontWeight:500,textTransform:"uppercase"}}>
-            §/ADMIN
+            S/ADMIN
           </div>
         </div>
 
@@ -462,7 +462,7 @@ function AdminPanel({onLogout,uploads,setUploads,setStats}){
               <span style={{width:7,height:7,background:AMBER,
                 boxShadow:`0 0 8px ${AMBER}`,
                 animation:"phosphorPulse 1.8s ease infinite"}}/>
-              <span style={{color:AMBER}}>RESTRICTED · §/ADMIN</span>
+              <span style={{color:AMBER}}>RESTRICTED · S/ADMIN</span>
               <span style={{color:TERM_FG_MUTE}}>·</span>
               <span style={{color:TERM_FG_DIM}}>USER:ADMIN</span>
             </div>
@@ -1365,7 +1365,7 @@ function Hero({onEnter}){
   );
 }
 
-/* ── §01 Mechanics — cash flow waterfall ── */
+/* ── S01 Mechanics — cash flow waterfall ── */
 function WaterfallSection(){
   const wide=useIsWide(900);
   const[ref,v]=useInView(.12);
@@ -1390,7 +1390,7 @@ function WaterfallSection(){
           <div style={{paddingRight:wide?28:0,marginBottom:wide?0:18}}>
             <div style={{fontFamily:"'JetBrains Mono', monospace",fontSize:10.5,
               color:PHOSPHOR,letterSpacing:"2.5px",fontWeight:600,
-              textTransform:"uppercase"}}>§01</div>
+              textTransform:"uppercase"}}>S01</div>
             <div style={{fontFamily:"'JetBrains Mono', monospace",fontSize:9.5,
               color:TERM_FG_DIM,letterSpacing:"1.5px",fontWeight:500,
               marginTop:6,textTransform:"uppercase"}}>Mechanics</div>
@@ -1543,7 +1543,7 @@ function WaterfallSection(){
   );
 }
 
-/* ── §02 Index — workbook catalog grid ── */
+/* ── S02 Index — workbook catalog grid ── */
 function IndexSection(){
   const wide=useIsWide(800);
   const[ref,v]=useInView(.08);
@@ -1558,7 +1558,7 @@ function IndexSection(){
           <div style={{paddingRight:wide?28:0,marginBottom:wide?0:18}}>
             <div style={{fontFamily:"'JetBrains Mono', monospace",fontSize:10.5,
               color:PHOSPHOR,letterSpacing:"2.5px",fontWeight:600,
-              textTransform:"uppercase"}}>§02</div>
+              textTransform:"uppercase"}}>S02</div>
             <div style={{fontFamily:"'JetBrains Mono', monospace",fontSize:9.5,
               color:TERM_FG_DIM,letterSpacing:"1.5px",fontWeight:500,
               marginTop:6,textTransform:"uppercase"}}>Index · <span style={{color:PHOSPHOR}}>Tap a row</span></div>
@@ -1698,7 +1698,7 @@ function IndexSection(){
   );
 }
 
-/* ── §03 Methodology — formula notation ── */
+/* ── S03 Methodology — formula notation ── */
 function MethodologySection(){
   const wide=useIsWide(900);
   const[ref,v]=useInView(.1);
@@ -1712,7 +1712,7 @@ function MethodologySection(){
           <div style={{paddingRight:wide?28:0,marginBottom:wide?0:18}}>
             <div style={{fontFamily:"'JetBrains Mono', monospace",fontSize:10.5,
               color:PHOSPHOR,letterSpacing:"2.5px",fontWeight:600,
-              textTransform:"uppercase"}}>§03</div>
+              textTransform:"uppercase"}}>S03</div>
             <div style={{fontFamily:"'JetBrains Mono', monospace",fontSize:9.5,
               color:TERM_FG_DIM,letterSpacing:"1.5px",fontWeight:500,
               marginTop:6,textTransform:"uppercase"}}>Methodology</div>
@@ -1796,7 +1796,7 @@ function MethodologySection(){
   );
 }
 
-/* ── §04 Deploy — closing CTA ── */
+/* ── S04 Deploy — closing CTA ── */
 function DeploySection({onEnter}){
   const wide=useIsWide(900);
   const[ref,v]=useInView(.15);
@@ -1821,7 +1821,7 @@ function DeploySection({onEnter}){
           display:"flex",alignItems:"center",gap:14}}>
           <span style={{width:48,height:1,background:PHOSPHOR,
             boxShadow:`0 0 6px ${PHOSPHOR}`}}/>
-          §04 · Deploy
+          S04 · Deploy
         </div>
 
         <h2 data-morph style={{fontFamily:"'Onest', sans-serif",
@@ -1876,11 +1876,11 @@ function DeploySection({onEnter}){
 
 /* ── Section morph — elements within each section morph in/out per piece ── */
 const LP_SECTIONS=[
-  {id:"lp-sec-0",num:"§00",label:"ACCESS"},
-  {id:"lp-sec-1",num:"§01",label:"MECHANICS"},
-  {id:"lp-sec-2",num:"§02",label:"INDEX"},
-  {id:"lp-sec-3",num:"§03",label:"METHOD"},
-  {id:"lp-sec-4",num:"§04",label:"DEPLOY"},
+  {id:"lp-sec-0",num:"S00",label:"ACCESS"},
+  {id:"lp-sec-1",num:"S01",label:"MECHANICS"},
+  {id:"lp-sec-2",num:"S02",label:"INDEX"},
+  {id:"lp-sec-3",num:"S03",label:"METHOD"},
+  {id:"lp-sec-4",num:"S04",label:"DEPLOY"},
 ];
 const SCATTER_DUR=520;
 const ASSEMBLE_DUR=620;
@@ -1910,7 +1910,7 @@ function LandingPage({onEnter,scrollRef,active}){
     if(busyRef.current)return;
     const cont=scrollRef?.current;if(!cont)return;
     const cTop=cont.getBoundingClientRect().top;
-    // nearest-by-top so wrap-around §04→§00 always detects §04 correctly,
+    // nearest-by-top so wrap-around S04→S00 always detects S04 correctly,
     // even when the last section can't scroll its top fully to the container top.
     let cur=0,bestD=Infinity;
     LP_SECTIONS.forEach((s,i)=>{
