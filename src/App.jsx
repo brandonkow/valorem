@@ -29,11 +29,10 @@ const CSS = `
   @keyframes bootFlicker{0%,100%{opacity:1}48%{opacity:1}49%{opacity:.4}50%{opacity:1}92%{opacity:1}93%{opacity:.6}94%{opacity:1}}
   @keyframes bootCoreThrob{0%,100%{transform:scale(1);box-shadow:0 0 24px rgba(0,200,150,.4)}50%{transform:scale(1.08);box-shadow:0 0 44px rgba(0,200,150,.7)}}
   @keyframes bootScan{0%{transform:translateY(0)}100%{transform:translateY(100%)}}
-  @keyframes wipeCover{from{clip-path:inset(100% 0 0 0);-webkit-clip-path:inset(100% 0 0 0)}to{clip-path:inset(0 0 0 0);-webkit-clip-path:inset(0 0 0 0)}}
-  @keyframes wipeReveal{from{clip-path:inset(0 0 0 0);-webkit-clip-path:inset(0 0 0 0)}to{clip-path:inset(0 0 100% 0);-webkit-clip-path:inset(0 0 100% 0)}}
-  @keyframes wipeBeam{0%{top:-6%;opacity:0}12%{opacity:1}88%{opacity:1}100%{top:106%;opacity:0}}
-  @keyframes wipeHudIn{0%{opacity:0;transform:translateY(12px) scale(.96);filter:blur(4px)}100%{opacity:1;transform:translateY(0) scale(1);filter:blur(0)}}
-  @keyframes wipeGlitch{0%,100%{transform:translate(0,0);opacity:1}18%{transform:translate(-2px,0);opacity:.85}36%{transform:translate(2px,0)}54%{transform:translate(-1px,0);opacity:.9}72%{transform:translate(1px,0)}}
+  @keyframes glideIn{from{opacity:0}to{opacity:1}}
+  @keyframes glideOut{from{opacity:1}to{opacity:0}}
+  @keyframes glideHudIn{0%{opacity:0;transform:translateY(10px) scale(.985);filter:blur(2px)}100%{opacity:1;transform:translateY(0) scale(1);filter:blur(0)}}
+  @keyframes glideBar{from{width:0%}to{width:100%}}
   @keyframes hintFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(3px)}}
   body{margin:0;font-family:'Onest',sans-serif;font-feature-settings:"ss01","cv11";color:#E5E9E7;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;background:#0B0F0D}
   .btn-p{transition:all .15s ease;cursor:pointer;border:none;font-family:inherit}
@@ -1874,7 +1873,7 @@ function DeploySection({onEnter}){
   );
 }
 
-/* ── SectionWipe — terminal "channel change" jump overlay ── */
+/* ── SectionGlide — smooth eased section-jump overlay ── */
 const LP_SECTIONS=[
   {id:"lp-sec-0",num:"§00",label:"ACCESS"},
   {id:"lp-sec-1",num:"§01",label:"MECHANICS"},
@@ -1883,60 +1882,74 @@ const LP_SECTIONS=[
   {id:"lp-sec-4",num:"§04",label:"DEPLOY"},
 ];
 
-function SectionWipe({wipe}){
-  if(!wipe)return null;
-  const{num,label,index,phase,dir}=wipe;
+const GLIDE_DUR=820;
+function smoothScrollTo(cont,top,dur,onDone){
+  const start=cont.scrollTop;
+  const delta=top-start;
+  if(Math.abs(delta)<1){onDone&&onDone();return;}
+  const t0=performance.now();
+  const ease=x=>x<0.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2; // easeInOutCubic
+  const step=now=>{
+    const p=Math.min(1,(now-t0)/dur);
+    cont.scrollTop=start+delta*ease(p);
+    if(p<1)requestAnimationFrame(step);
+    else onDone&&onDone();
+  };
+  requestAnimationFrame(step);
+}
+
+function SectionGlide({glide}){
+  if(!glide)return null;
+  const{num,label,index,phase}=glide;
   const total=LP_SECTIONS.length;
   return(
     <div aria-hidden style={{position:"fixed",inset:0,zIndex:8000,pointerEvents:"none",
       display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden",
-      background:TERM_BG,fontFamily:"'JetBrains Mono', monospace",
-      animation:`${phase==="cover"?"wipeCover .4s":"wipeReveal .46s"} cubic-bezier(.55,0,.3,1) forwards`}}>
-      {/* grid + scanlines */}
-      <div style={{position:"absolute",inset:0,zIndex:0,
-        backgroundImage:`linear-gradient(${TERM_GRID} 1px,transparent 1px),linear-gradient(90deg,${TERM_GRID} 1px,transparent 1px)`,
-        backgroundSize:"56px 56px",opacity:.45,
-        maskImage:"radial-gradient(ellipse 55% 60% at 50% 50%,#000 0%,transparent 75%)",
-        WebkitMaskImage:"radial-gradient(ellipse 55% 60% at 50% 50%,#000 0%,transparent 75%)"}}/>
-      <ScanLines opacity={.5}/>
-      {/* sweeping phosphor beam */}
-      <div style={{position:"absolute",left:0,right:0,height:2,zIndex:1,
-        background:`linear-gradient(90deg,transparent,${PHOSPHOR},transparent)`,
-        boxShadow:`0 0 18px 2px rgba(0,200,150,.6)`,
-        animation:"wipeBeam .42s linear"}}/>
+      background:"radial-gradient(ellipse 70% 70% at 50% 50%,rgba(11,15,13,.52),rgba(11,15,13,.8))",
+      backdropFilter:"blur(2px)",WebkitBackdropFilter:"blur(2px)",
+      fontFamily:"'JetBrains Mono', monospace",
+      animation:`${phase==="leave"?"glideOut .36s ease forwards":"glideIn .28s ease both"}`}}>
+      <ScanLines opacity={.4}/>
 
-      {/* HUD */}
-      <div style={{position:"relative",zIndex:2,textAlign:"center",
-        animation:"wipeHudIn .42s cubic-bezier(.22,1,.36,1) both"}}>
+      <div style={{position:"relative",zIndex:1,textAlign:"center",
+        animation:"glideHudIn .5s cubic-bezier(.22,1,.36,1) both"}}>
         <div style={{fontSize:10,letterSpacing:"4px",color:PHOSPHOR,fontWeight:600,
-          textTransform:"uppercase",marginBottom:18,
+          textTransform:"uppercase",marginBottom:20,
           display:"flex",alignItems:"center",justifyContent:"center",gap:10}}>
-          <span>{dir<0?"◂":"▸"} JUMP</span>
+          <span style={{width:5,height:5,background:PHOSPHOR,borderRadius:"50%",
+            boxShadow:`0 0 8px ${PHOSPHOR}`,animation:"phosphorPulse 1.4s ease infinite"}}/>
+          <span>GLIDE</span>
           <span style={{color:TERM_FG_MUTE}}>·</span>
           <span style={{color:TERM_FG_DIM}}>SECTION {String(index+1).padStart(2,"0")} / {String(total).padStart(2,"0")}</span>
         </div>
 
-        <div style={{display:"flex",alignItems:"baseline",justifyContent:"center",gap:18,marginBottom:8}}>
-          <span style={{fontFamily:"'JetBrains Mono', monospace",fontSize:"clamp(34px,5vw,56px)",
+        <div style={{display:"flex",alignItems:"baseline",justifyContent:"center",gap:18,marginBottom:6}}>
+          <span style={{fontFamily:"'JetBrains Mono', monospace",fontSize:"clamp(30px,4.4vw,50px)",
             fontWeight:700,color:PHOSPHOR,letterSpacing:"-1px",lineHeight:1,
-            textShadow:`0 0 22px rgba(0,200,150,.6)`}}>{num}</span>
+            textShadow:`0 0 22px rgba(0,200,150,.55)`}}>{num}</span>
           <span style={{fontFamily:"'Onest', sans-serif",fontSize:"clamp(40px,7vw,84px)",
-            fontWeight:700,color:TERM_FG,letterSpacing:"-.03em",lineHeight:.9,
-            animation:"wipeGlitch .42s linear"}}>{label}</span>
+            fontWeight:700,color:TERM_FG,letterSpacing:"-.03em",lineHeight:.9}}>{label}</span>
+        </div>
+
+        {/* steady progress line — tracks the glide duration */}
+        <div style={{width:"min(280px,60vw)",height:2,margin:"24px auto 0",
+          background:TERM_BORDER,position:"relative",overflow:"hidden"}}>
+          <div style={{height:"100%",
+            background:`linear-gradient(90deg,${PHOSPHOR_DIM},${PHOSPHOR})`,
+            boxShadow:`0 0 10px rgba(0,200,150,.5)`,
+            animation:phase==="leave"?"none":`glideBar ${GLIDE_DUR}ms cubic-bezier(.45,0,.25,1) forwards`,
+            width:phase==="leave"?"100%":"0%"}}/>
         </div>
 
         {/* segment indicator */}
-        <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8,
-          marginTop:26}}>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8,marginTop:22}}>
           {LP_SECTIONS.map((s,i)=>{
             const on=i===index;
             return(
-              <div key={s.id} style={{display:"flex",alignItems:"center",gap:8}}>
-                <span style={{width:on?22:8,height:3,
-                  background:on?PHOSPHOR:TERM_BORDER,
-                  boxShadow:on?`0 0 10px ${PHOSPHOR}`:"none",
-                  transition:"all .2s ease"}}/>
-              </div>
+              <span key={s.id} style={{width:on?22:8,height:3,
+                background:on?PHOSPHOR:TERM_BORDER,
+                boxShadow:on?`0 0 10px ${PHOSPHOR}`:"none",
+                transition:"all .3s ease"}}/>
             );
           })}
         </div>
@@ -1947,7 +1960,7 @@ function SectionWipe({wipe}){
 
 function LandingPage({onEnter,scrollRef,active}){
   const[pinned,setPinned]=useState(null);
-  const[wipe,setWipe]=useState(null);
+  const[glide,setGlide]=useState(null);
   const[hint,setHint]=useState(true);
   const busyRef=useRef(false);
 
@@ -1963,22 +1976,18 @@ function LandingPage({onEnter,scrollRef,active}){
     });
     const next=(cur+dir+LP_SECTIONS.length)%LP_SECTIONS.length;
     const target=LP_SECTIONS[next];
+    const el=document.getElementById(target.id);
+    if(!el)return;
+    const dest=next===0?0
+      :(el.getBoundingClientRect().top-cont.getBoundingClientRect().top+cont.scrollTop-54);
     busyRef.current=true;
     setHint(false);
-    setWipe({...target,index:next,dir,phase:"cover"});
-    // at full cover, jump scroll instantly
-    setTimeout(()=>{
-      const el=document.getElementById(target.id);
-      if(el){
-        if(next===0)cont.scrollTo({top:0,behavior:"auto"});
-        else{
-          const top=el.getBoundingClientRect().top-cont.getBoundingClientRect().top+cont.scrollTop-54;
-          cont.scrollTo({top,behavior:"auto"});
-        }
-      }
-      setWipe(w=>w?{...w,phase:"reveal"}:null);
-      setTimeout(()=>{setWipe(null);busyRef.current=false;},480);
-    },400);
+    setGlide({...target,index:next,dir,phase:"enter"});
+    // smooth eased glide — the page visibly travels to the section
+    smoothScrollTo(cont,dest,GLIDE_DUR,()=>{
+      setGlide(g=>g?{...g,phase:"leave"}:null);
+      setTimeout(()=>{setGlide(null);busyRef.current=false;},360);
+    });
   },[scrollRef]);
 
   useEffect(()=>{
@@ -2005,10 +2014,10 @@ function LandingPage({onEnter,scrollRef,active}){
       <div id="lp-sec-3"><MethodologySection/></div>
       <div id="lp-sec-4"><DeploySection onEnter={onEnter}/></div>
 
-      <SectionWipe wipe={wipe}/>
+      <SectionGlide glide={glide}/>
 
       {/* spacebar affordance */}
-      {active&&!wipe&&hint&&(
+      {active&&!glide&&hint&&(
         <div style={{position:"fixed",bottom:22,left:"50%",transform:"translateX(-50%)",
           zIndex:280,pointerEvents:"none",
           display:"flex",alignItems:"center",gap:12,
