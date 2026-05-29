@@ -29,6 +29,12 @@ const CSS = `
   @keyframes bootFlicker{0%,100%{opacity:1}48%{opacity:1}49%{opacity:.4}50%{opacity:1}92%{opacity:1}93%{opacity:.6}94%{opacity:1}}
   @keyframes bootCoreThrob{0%,100%{transform:scale(1);box-shadow:0 0 24px rgba(0,200,150,.4)}50%{transform:scale(1.08);box-shadow:0 0 44px rgba(0,200,150,.7)}}
   @keyframes bootScan{0%{transform:translateY(0)}100%{transform:translateY(100%)}}
+  @keyframes wipeCover{from{clip-path:inset(100% 0 0 0);-webkit-clip-path:inset(100% 0 0 0)}to{clip-path:inset(0 0 0 0);-webkit-clip-path:inset(0 0 0 0)}}
+  @keyframes wipeReveal{from{clip-path:inset(0 0 0 0);-webkit-clip-path:inset(0 0 0 0)}to{clip-path:inset(0 0 100% 0);-webkit-clip-path:inset(0 0 100% 0)}}
+  @keyframes wipeBeam{0%{top:-6%;opacity:0}12%{opacity:1}88%{opacity:1}100%{top:106%;opacity:0}}
+  @keyframes wipeHudIn{0%{opacity:0;transform:translateY(12px) scale(.96);filter:blur(4px)}100%{opacity:1;transform:translateY(0) scale(1);filter:blur(0)}}
+  @keyframes wipeGlitch{0%,100%{transform:translate(0,0);opacity:1}18%{transform:translate(-2px,0);opacity:.85}36%{transform:translate(2px,0)}54%{transform:translate(-1px,0);opacity:.9}72%{transform:translate(1px,0)}}
+  @keyframes hintFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(3px)}}
   body{margin:0;font-family:'Onest',sans-serif;font-feature-settings:"ss01","cv11";color:#E5E9E7;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;background:#0B0F0D}
   .btn-p{transition:all .15s ease;cursor:pointer;border:none;font-family:inherit}
   .btn-p:hover{filter:brightness(1.1)}
@@ -1868,18 +1874,160 @@ function DeploySection({onEnter}){
   );
 }
 
-function LandingPage({onEnter}){
+/* ── SectionWipe — terminal "channel change" jump overlay ── */
+const LP_SECTIONS=[
+  {id:"lp-sec-0",num:"§00",label:"ACCESS"},
+  {id:"lp-sec-1",num:"§01",label:"MECHANICS"},
+  {id:"lp-sec-2",num:"§02",label:"INDEX"},
+  {id:"lp-sec-3",num:"§03",label:"METHOD"},
+  {id:"lp-sec-4",num:"§04",label:"DEPLOY"},
+];
+
+function SectionWipe({wipe}){
+  if(!wipe)return null;
+  const{num,label,index,phase,dir}=wipe;
+  const total=LP_SECTIONS.length;
+  return(
+    <div aria-hidden style={{position:"fixed",inset:0,zIndex:8000,pointerEvents:"none",
+      display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden",
+      background:TERM_BG,fontFamily:"'JetBrains Mono', monospace",
+      animation:`${phase==="cover"?"wipeCover .4s":"wipeReveal .46s"} cubic-bezier(.55,0,.3,1) forwards`}}>
+      {/* grid + scanlines */}
+      <div style={{position:"absolute",inset:0,zIndex:0,
+        backgroundImage:`linear-gradient(${TERM_GRID} 1px,transparent 1px),linear-gradient(90deg,${TERM_GRID} 1px,transparent 1px)`,
+        backgroundSize:"56px 56px",opacity:.45,
+        maskImage:"radial-gradient(ellipse 55% 60% at 50% 50%,#000 0%,transparent 75%)",
+        WebkitMaskImage:"radial-gradient(ellipse 55% 60% at 50% 50%,#000 0%,transparent 75%)"}}/>
+      <ScanLines opacity={.5}/>
+      {/* sweeping phosphor beam */}
+      <div style={{position:"absolute",left:0,right:0,height:2,zIndex:1,
+        background:`linear-gradient(90deg,transparent,${PHOSPHOR},transparent)`,
+        boxShadow:`0 0 18px 2px rgba(0,200,150,.6)`,
+        animation:"wipeBeam .42s linear"}}/>
+
+      {/* HUD */}
+      <div style={{position:"relative",zIndex:2,textAlign:"center",
+        animation:"wipeHudIn .42s cubic-bezier(.22,1,.36,1) both"}}>
+        <div style={{fontSize:10,letterSpacing:"4px",color:PHOSPHOR,fontWeight:600,
+          textTransform:"uppercase",marginBottom:18,
+          display:"flex",alignItems:"center",justifyContent:"center",gap:10}}>
+          <span>{dir<0?"◂":"▸"} JUMP</span>
+          <span style={{color:TERM_FG_MUTE}}>·</span>
+          <span style={{color:TERM_FG_DIM}}>SECTION {String(index+1).padStart(2,"0")} / {String(total).padStart(2,"0")}</span>
+        </div>
+
+        <div style={{display:"flex",alignItems:"baseline",justifyContent:"center",gap:18,marginBottom:8}}>
+          <span style={{fontFamily:"'JetBrains Mono', monospace",fontSize:"clamp(34px,5vw,56px)",
+            fontWeight:700,color:PHOSPHOR,letterSpacing:"-1px",lineHeight:1,
+            textShadow:`0 0 22px rgba(0,200,150,.6)`}}>{num}</span>
+          <span style={{fontFamily:"'Onest', sans-serif",fontSize:"clamp(40px,7vw,84px)",
+            fontWeight:700,color:TERM_FG,letterSpacing:"-.03em",lineHeight:.9,
+            animation:"wipeGlitch .42s linear"}}>{label}</span>
+        </div>
+
+        {/* segment indicator */}
+        <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8,
+          marginTop:26}}>
+          {LP_SECTIONS.map((s,i)=>{
+            const on=i===index;
+            return(
+              <div key={s.id} style={{display:"flex",alignItems:"center",gap:8}}>
+                <span style={{width:on?22:8,height:3,
+                  background:on?PHOSPHOR:TERM_BORDER,
+                  boxShadow:on?`0 0 10px ${PHOSPHOR}`:"none",
+                  transition:"all .2s ease"}}/>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function LandingPage({onEnter,scrollRef,active}){
   const[pinned,setPinned]=useState(null);
+  const[wipe,setWipe]=useState(null);
+  const[hint,setHint]=useState(true);
+  const busyRef=useRef(false);
+
+  const jump=useCallback(dir=>{
+    if(busyRef.current)return;
+    const cont=scrollRef?.current;if(!cont)return;
+    const cTop=cont.getBoundingClientRect().top;
+    // find current section (last one whose top sits at/above the fold)
+    let cur=0;
+    LP_SECTIONS.forEach((s,i)=>{
+      const el=document.getElementById(s.id);
+      if(el && (el.getBoundingClientRect().top-cTop)<=80) cur=i;
+    });
+    const next=(cur+dir+LP_SECTIONS.length)%LP_SECTIONS.length;
+    const target=LP_SECTIONS[next];
+    busyRef.current=true;
+    setHint(false);
+    setWipe({...target,index:next,dir,phase:"cover"});
+    // at full cover, jump scroll instantly
+    setTimeout(()=>{
+      const el=document.getElementById(target.id);
+      if(el){
+        if(next===0)cont.scrollTo({top:0,behavior:"auto"});
+        else{
+          const top=el.getBoundingClientRect().top-cont.getBoundingClientRect().top+cont.scrollTop-54;
+          cont.scrollTo({top,behavior:"auto"});
+        }
+      }
+      setWipe(w=>w?{...w,phase:"reveal"}:null);
+      setTimeout(()=>{setWipe(null);busyRef.current=false;},480);
+    },400);
+  },[scrollRef]);
+
+  useEffect(()=>{
+    if(!active)return;
+    const onKey=e=>{
+      if(e.code!=="Space"&&e.key!==" ")return;
+      const tag=(e.target&&e.target.tagName)||"";
+      if(tag==="INPUT"||tag==="TEXTAREA"||e.target?.isContentEditable)return;
+      e.preventDefault();
+      jump(e.shiftKey?-1:1);
+    };
+    window.addEventListener("keydown",onKey);
+    return()=>window.removeEventListener("keydown",onKey);
+  },[active,jump]);
+
   return(
     <div style={{background:TERM_BG}}>
       <div aria-hidden style={{height:56,background:TERM_BG}}/>
       <LiveYieldTicker pinnedCode={pinned?.code} onPin={setPinned}/>
       {pinned&&<PinnedTickerPanel item={pinned} onClose={()=>setPinned(null)}/>}
-      <Hero onEnter={onEnter}/>
-      <WaterfallSection/>
-      <IndexSection/>
-      <MethodologySection/>
-      <DeploySection onEnter={onEnter}/>
+      <div id="lp-sec-0"><Hero onEnter={onEnter}/></div>
+      <div id="lp-sec-1"><WaterfallSection/></div>
+      <div id="lp-sec-2"><IndexSection/></div>
+      <div id="lp-sec-3"><MethodologySection/></div>
+      <div id="lp-sec-4"><DeploySection onEnter={onEnter}/></div>
+
+      <SectionWipe wipe={wipe}/>
+
+      {/* spacebar affordance */}
+      {active&&!wipe&&hint&&(
+        <div style={{position:"fixed",bottom:22,left:"50%",transform:"translateX(-50%)",
+          zIndex:280,pointerEvents:"none",
+          display:"flex",alignItems:"center",gap:12,
+          background:"rgba(11,15,13,.82)",backdropFilter:"blur(10px)",
+          border:`1px solid ${TERM_BORDER}`,padding:"8px 16px",
+          fontFamily:"'JetBrains Mono', monospace",fontSize:9.5,
+          letterSpacing:"1.8px",textTransform:"uppercase",fontWeight:500,
+          color:TERM_FG_DIM,animation:"hintFloat 2.4s ease infinite"}}>
+          <span style={{width:6,height:6,background:PHOSPHOR,
+            boxShadow:`0 0 6px ${PHOSPHOR}`,animation:"phosphorPulse 1.6s ease infinite"}}/>
+          <span style={{color:TERM_FG,fontWeight:600,
+            border:`1px solid ${TERM_BORDER}`,padding:"2px 7px"}}>SPACE</span>
+          <span>jump section</span>
+          <span style={{color:TERM_FG_MUTE}}>·</span>
+          <span style={{color:TERM_FG,fontWeight:600,
+            border:`1px solid ${TERM_BORDER}`,padding:"2px 7px"}}>⇧ SPACE</span>
+          <span>back</span>
+        </div>
+      )}
     </div>
   );
 }
@@ -2427,7 +2575,7 @@ export default function App(){
       }}/>}
       <ProgressBar scrollRef={scrollRef}/>
       <Nav page={page} onBack={()=>go("landing")} onAdminClick={()=>setShowLogin(true)}/>
-      {page==="landing"&&<LandingPage onEnter={()=>go("dashboard")}/>}
+      {page==="landing"&&<LandingPage onEnter={()=>go("dashboard")} scrollRef={scrollRef} active={!booting}/>}
       {page==="dashboard"&&<Dashboard onDownload={handleDL} downloading={downloading} uploads={uploads} stats={stats}/>}
       {page==="admin"&&<AdminPanel onLogout={()=>go("landing")} uploads={uploads} setUploads={setUploads} setStats={setStats}/>}
       {showLogin&&(
