@@ -1796,10 +1796,18 @@ function MethodologySection(){
   );
 }
 
-/* ── S04 Deploy — closing CTA ── */
-function DeploySection({onEnter}){
+/* ── S04 Calibration — live market inputs wired into the workbooks ── */
+const CALIB_ROWS=[
+  {asset:"Office",seg:"KL · Prime",cap:5.85,growth:3.2,wacc:8.40,date:"12 May 26",status:"live"},
+  {asset:"Office",seg:"KL · Fringe",cap:6.40,growth:2.8,wacc:9.10,date:"12 May 26",status:"live"},
+  {asset:"Retail",seg:"Regional Mall",cap:7.10,growth:2.5,wacc:9.50,date:"28 Apr 26",status:"live"},
+  {asset:"Residential",seg:"Strata · KL",cap:4.70,growth:4.1,wacc:7.90,date:"12 May 26",status:"live"},
+  {asset:"Industrial",seg:"Logistics · Klang",cap:6.85,growth:5.4,wacc:8.80,date:"05 May 26",status:"live"},
+  {asset:"Hotel",seg:"4★ · Klang Valley",cap:7.80,growth:3.6,wacc:9.90,date:"18 Apr 26",status:"stale"},
+];
+function DeploySection(){
   const wide=useIsWide(900);
-  const[ref,v]=useInView(.15);
+  const[ref,v]=useInView(.12);
   return(
     <section ref={ref} style={{background:TERM_BG,padding:wide?"40px 36px":"32px 24px",
       borderTop:`1px solid ${TERM_BORDER}`,position:"relative",overflow:"hidden"}}>
@@ -1807,67 +1815,126 @@ function DeploySection({onEnter}){
       <div aria-hidden style={{position:"absolute",inset:0,zIndex:0,
         backgroundImage:`linear-gradient(${TERM_GRID} 1px,transparent 1px),linear-gradient(90deg,${TERM_GRID} 1px,transparent 1px)`,
         backgroundSize:"56px 56px",
-        maskImage:"radial-gradient(ellipse 50% 60% at 50% 50%,#000 0%,transparent 70%)",
-        WebkitMaskImage:"radial-gradient(ellipse 50% 60% at 50% 50%,#000 0%,transparent 70%)",
+        maskImage:"radial-gradient(ellipse 55% 65% at 50% 50%,#000 0%,transparent 75%)",
+        WebkitMaskImage:"radial-gradient(ellipse 55% 65% at 50% 50%,#000 0%,transparent 75%)",
         opacity:.7,pointerEvents:"none"}}/>
 
-      <div style={{maxWidth:1100,margin:"0 auto",width:"100%",position:"relative",zIndex:1,
-        opacity:v?1:0,transform:v?"translateY(0)":"translateY(20px)",
-        transition:"opacity .8s ease,transform .8s cubic-bezier(.22,1,.36,1)"}}>
-
-        <div data-morph style={{fontFamily:"'JetBrains Mono', monospace",fontSize:10,
-          color:PHOSPHOR,letterSpacing:"3.5px",fontWeight:600,
-          textTransform:"uppercase",marginBottom:18,
-          display:"flex",alignItems:"center",gap:14}}>
-          <span style={{width:48,height:1,background:PHOSPHOR,
-            boxShadow:`0 0 6px ${PHOSPHOR}`}}/>
-          S04 · Deploy
+      <div style={{maxWidth:1320,margin:"0 auto",width:"100%",position:"relative",zIndex:1}}>
+        {/* Header */}
+        <div data-morph style={{display:wide?"grid":"block",
+          gridTemplateColumns:wide?"180px 1fr 240px":"1fr",gap:0,marginBottom:wide?28:22}}>
+          <div style={{paddingRight:wide?28:0,marginBottom:wide?0:18}}>
+            <div style={{fontFamily:"'JetBrains Mono', monospace",fontSize:10.5,
+              color:PHOSPHOR,letterSpacing:"2.5px",fontWeight:600,
+              textTransform:"uppercase"}}>S04</div>
+            <div style={{fontFamily:"'JetBrains Mono', monospace",fontSize:9.5,
+              color:TERM_FG_DIM,letterSpacing:"1.5px",fontWeight:500,
+              marginTop:6,textTransform:"uppercase"}}>Calibration</div>
+          </div>
+          <div style={{padding:wide?"0 56px":"0"}}>
+            <h2 style={{fontFamily:"'Onest', sans-serif",
+              fontSize:"clamp(28px,3.6vw,48px)",fontWeight:600,
+              lineHeight:1.02,letterSpacing:"-.025em",
+              color:TERM_FG,margin:"0 0 12px"}}>
+              Inputs wired to <br/>
+              <span style={{color:PHOSPHOR}}>live market data.</span>
+            </h2>
+            <p style={{fontFamily:"'Onest', sans-serif",fontSize:14,lineHeight:1.5,
+              color:TERM_FG_DIM,maxWidth:520,margin:0}}>
+              Every workbook ships with the current calibration set. Cap rates, growth and WACC are reconciled against CBRE Research every quarter, and the next refresh is dated below.
+            </p>
+          </div>
         </div>
 
-        <h2 data-morph style={{fontFamily:"'Onest', sans-serif",
-          fontSize:"clamp(30px,4vw,56px)",fontWeight:600,
-          lineHeight:.98,letterSpacing:"-.032em",
-          color:TERM_FG,margin:"0 0 16px",maxWidth:900}}>
-          Deploy a workbook<br/>
-          to your <span style={{color:PHOSPHOR}}>next valuation</span>.
-        </h2>
+        {/* Calibration table */}
+        <div data-morph style={{background:TERM_PANEL_S,border:`1px solid ${TERM_BORDER}`,
+          position:"relative",overflow:"hidden"}}>
+          <ScanLines opacity={.4}/>
 
-        <p data-morph style={{fontFamily:"'Onest', sans-serif",fontSize:15,lineHeight:1.5,
-          color:TERM_FG_DIM,maxWidth:560,margin:"0 0 26px"}}>
-          Hold the command bar below to initiate. The library opens — free, current, traceable to CBRE source data.
-        </p>
+          {/* Column headers */}
+          <div style={{
+            display:"grid",
+            gridTemplateColumns:wide?"1.4fr 1fr 1fr 1fr 1fr 90px":"1.3fr 1fr 1fr 70px",
+            background:"rgba(0,200,150,.04)",
+            borderBottom:`1px solid ${TERM_BORDER}`,
+            fontFamily:"'JetBrains Mono', monospace",fontSize:9.5,
+            color:TERM_FG_MUTE,letterSpacing:"2px",fontWeight:600,
+            textTransform:"uppercase",position:"relative",zIndex:1}}>
+            {(wide
+              ? ["Asset · Segment","Cap Rate","NOI g","WACC","Refreshed","Status"]
+              : ["Asset","Cap","WACC","Stat"]
+            ).map((h,i,a)=>(
+              <div key={h} style={{
+                padding:"12px 14px",
+                textAlign:i===0?"left":"right",
+                borderRight:i<a.length-1?`1px solid ${TERM_BORDER}`:"none"}}>{h}</div>
+            ))}
+          </div>
 
-        <div data-morph>
-          <ExecuteBar onComplete={onEnter} command="initiate --library --region=MY" width={640}/>
+          {/* Rows */}
+          {CALIB_ROWS.map((r,ri)=>{
+            const live=r.status==="live";
+            const statCol=live?SIG_UP:AMBER;
+            const cells=wide
+              ? [
+                  <div key="a" style={{display:"flex",flexDirection:"column",gap:2}}>
+                    <span style={{fontFamily:"'Onest',sans-serif",fontSize:13,color:TERM_FG,fontWeight:600,letterSpacing:"-.005em"}}>{r.asset}</span>
+                    <span style={{fontFamily:"'JetBrains Mono', monospace",fontSize:9.5,color:TERM_FG_MUTE,letterSpacing:"1px",textTransform:"uppercase"}}>{r.seg}</span>
+                  </div>,
+                  <span key="c" style={{fontFamily:"'JetBrains Mono', monospace",fontSize:13,color:PHOSPHOR,fontWeight:600,fontVariantNumeric:"tabular-nums",letterSpacing:"-.3px"}}>{r.cap.toFixed(2)}%</span>,
+                  <span key="g" style={{fontFamily:"'JetBrains Mono', monospace",fontSize:13,color:TERM_FG,fontWeight:600,fontVariantNumeric:"tabular-nums",letterSpacing:"-.3px"}}>+{r.growth.toFixed(1)}%</span>,
+                  <span key="w" style={{fontFamily:"'JetBrains Mono', monospace",fontSize:13,color:AMBER,fontWeight:600,fontVariantNumeric:"tabular-nums",letterSpacing:"-.3px"}}>{r.wacc.toFixed(2)}%</span>,
+                  <span key="d" style={{fontFamily:"'JetBrains Mono', monospace",fontSize:11,color:TERM_FG_DIM,letterSpacing:".5px",textTransform:"uppercase"}}>{r.date}</span>,
+                  <span key="s" style={{display:"inline-flex",alignItems:"center",gap:6,
+                    fontFamily:"'JetBrains Mono', monospace",fontSize:9.5,
+                    color:statCol,letterSpacing:"1.5px",textTransform:"uppercase",fontWeight:600}}>
+                    <span style={{width:6,height:6,background:statCol,
+                      boxShadow:`0 0 5px ${statCol}`,
+                      animation:live?"phosphorPulse 1.6s ease infinite":"none"}}/>
+                    {r.status}
+                  </span>,
+                ]
+              : [
+                  <span key="a" style={{fontFamily:"'Onest',sans-serif",fontSize:12,color:TERM_FG,fontWeight:600}}>{r.asset}</span>,
+                  <span key="c" style={{fontFamily:"'JetBrains Mono', monospace",fontSize:12,color:PHOSPHOR,fontWeight:600,fontVariantNumeric:"tabular-nums"}}>{r.cap.toFixed(2)}%</span>,
+                  <span key="w" style={{fontFamily:"'JetBrains Mono', monospace",fontSize:12,color:AMBER,fontWeight:600,fontVariantNumeric:"tabular-nums"}}>{r.wacc.toFixed(2)}%</span>,
+                  <span key="s" style={{width:8,height:8,background:statCol,
+                    boxShadow:`0 0 5px ${statCol}`,marginLeft:"auto",
+                    animation:live?"phosphorPulse 1.6s ease infinite":"none"}}/>,
+                ];
+            return(
+              <div key={ri} className="lp-dcf-row" style={{
+                display:"grid",
+                gridTemplateColumns:wide?"1.4fr 1fr 1fr 1fr 1fr 90px":"1.3fr 1fr 1fr 70px",
+                borderBottom:ri<CALIB_ROWS.length-1?`1px solid ${TERM_BORDER}`:"none",
+                opacity:v?1:0,transform:v?"translateY(0)":"translateY(8px)",
+                transition:`opacity .5s ease ${.1+ri*.06}s,transform .5s cubic-bezier(.22,1,.36,1) ${.1+ri*.06}s,background .15s ease`,
+                position:"relative",zIndex:1}}>
+                {cells.map((c,ci,arr)=>(
+                  <div key={ci} style={{
+                    padding:"14px 14px",
+                    textAlign:ci===0?"left":"right",
+                    display:"flex",alignItems:"center",
+                    justifyContent:ci===0?"flex-start":"flex-end",
+                    borderRight:ci<arr.length-1?`1px solid ${TERM_BORDER}`:"none"}}>
+                    {c}
+                  </div>
+                ))}
+              </div>
+            );
+          })}
         </div>
 
-        {/* System metadata strip */}
-        <div data-morph style={{marginTop:28,paddingTop:18,borderTop:`1px solid ${TERM_BORDER}`,
-          display:"grid",gridTemplateColumns:wide?"repeat(5,1fr)":"repeat(2,1fr)",gap:0,
+        {/* Footer */}
+        <div data-morph style={{marginTop:14,display:"flex",justifyContent:"space-between",
+          flexWrap:"wrap",gap:14,
           fontFamily:"'JetBrains Mono', monospace",fontSize:9.5,
-          letterSpacing:"1.8px",textTransform:"uppercase",fontWeight:500}}>
-          {[
-            ["SYS","OK","up"],
-            ["ENV","PROD","up"],
-            ["BLD","01.4",""],
-            ["SRC","CBRE.RES",""],
-            ["HOST","VAL.MY",""],
-          ].map(([k,v,t],i,a)=>(
-            <div key={k} className="lp-sys-pill" style={{
-              padding:wide?"12px 18px":"12px 12px",
-              borderRight:wide?(i<a.length-1?`1px solid ${TERM_BORDER}`:"none"):(i%2===0?`1px solid ${TERM_BORDER}`:"none"),
-              borderBottom:!wide&&i<a.length-2?`1px solid ${TERM_BORDER}`:"none",
-              display:"flex",alignItems:"baseline",gap:10}}>
-              <span style={{color:TERM_FG_MUTE}}>{k}</span>
-              <span className="lp-sys-val" style={{color:t==="up"?SIG_UP:TERM_FG,fontWeight:600,
-                transition:"text-shadow .2s ease"}}>{v}</span>
-              {t==="up"&&<span style={{
-                width:5,height:5,background:SIG_UP,
-                boxShadow:`0 0 4px ${SIG_UP}`,
-                animation:"phosphorPulse 1.6s ease infinite",
-                marginLeft:"auto"}}/>}
-            </div>
-          ))}
+          color:TERM_FG_MUTE,letterSpacing:"1.5px",fontWeight:500,
+          textTransform:"uppercase"}}>
+          <span>↳ Refresh cycle · Quarterly · Source CBRE Research MY</span>
+          <span style={{color:TERM_FG_DIM}}>
+            Next refresh <span style={{color:PHOSPHOR,fontWeight:600}}>Q3 · 2026</span>
+          </span>
         </div>
       </div>
     </section>
@@ -1880,7 +1947,7 @@ const LP_SECTIONS=[
   {id:"lp-sec-1",num:"S01",label:"MECHANICS"},
   {id:"lp-sec-2",num:"S02",label:"INDEX"},
   {id:"lp-sec-3",num:"S03",label:"METHOD"},
-  {id:"lp-sec-4",num:"S04",label:"DEPLOY"},
+  {id:"lp-sec-4",num:"S04",label:"CALIBRATION"},
 ];
 const SCATTER_DUR=520;
 const ASSEMBLE_DUR=620;
@@ -2027,7 +2094,7 @@ function LandingPage({onEnter,scrollRef,active}){
       <div id="lp-sec-1" className="lp-fit"><WaterfallSection/></div>
       <div id="lp-sec-2" className="lp-fit"><IndexSection/></div>
       <div id="lp-sec-3" className="lp-fit"><MethodologySection/></div>
-      <div id="lp-sec-4" className="lp-fit"><DeploySection onEnter={onEnter}/></div>
+      <div id="lp-sec-4" className="lp-fit"><DeploySection/></div>
 
       {/* spacebar affordance */}
       {active&&hint&&(
