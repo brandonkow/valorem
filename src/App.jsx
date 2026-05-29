@@ -29,10 +29,7 @@ const CSS = `
   @keyframes bootFlicker{0%,100%{opacity:1}48%{opacity:1}49%{opacity:.4}50%{opacity:1}92%{opacity:1}93%{opacity:.6}94%{opacity:1}}
   @keyframes bootCoreThrob{0%,100%{transform:scale(1);box-shadow:0 0 24px rgba(0,200,150,.4)}50%{transform:scale(1.08);box-shadow:0 0 44px rgba(0,200,150,.7)}}
   @keyframes bootScan{0%{transform:translateY(0)}100%{transform:translateY(100%)}}
-  @keyframes glideIn{from{opacity:0}to{opacity:1}}
-  @keyframes glideOut{from{opacity:1}to{opacity:0}}
-  @keyframes glideHudIn{0%{opacity:0;transform:translateY(10px) scale(.985);filter:blur(2px)}100%{opacity:1;transform:translateY(0) scale(1);filter:blur(0)}}
-  @keyframes glideBar{from{width:0%}to{width:100%}}
+  @keyframes sectionLand{0%{transform:translateY(16px);opacity:.45;filter:brightness(1.5)}60%{filter:brightness(1.12)}100%{transform:translateY(0);opacity:1;filter:brightness(1)}}
   @keyframes hintFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(3px)}}
   body{margin:0;font-family:'Onest',sans-serif;font-feature-settings:"ss01","cv11";color:#E5E9E7;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;background:#0B0F0D}
   .btn-p{transition:all .15s ease;cursor:pointer;border:none;font-family:inherit}
@@ -1873,7 +1870,7 @@ function DeploySection({onEnter}){
   );
 }
 
-/* ── SectionGlide — smooth eased section-jump overlay ── */
+/* ── Section morph-jump · the whole page cross-zooms between sections ── */
 const LP_SECTIONS=[
   {id:"lp-sec-0",num:"§00",label:"ACCESS"},
   {id:"lp-sec-1",num:"§01",label:"MECHANICS"},
@@ -1881,94 +1878,23 @@ const LP_SECTIONS=[
   {id:"lp-sec-3",num:"§03",label:"METHOD"},
   {id:"lp-sec-4",num:"§04",label:"DEPLOY"},
 ];
-
-const GLIDE_DUR=820;
-function smoothScrollTo(cont,top,dur,onDone){
-  const start=cont.scrollTop;
-  const delta=top-start;
-  if(Math.abs(delta)<1){onDone&&onDone();return;}
-  const t0=performance.now();
-  const ease=x=>x<0.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2; // easeInOutCubic
-  const step=now=>{
-    const p=Math.min(1,(now-t0)/dur);
-    cont.scrollTop=start+delta*ease(p);
-    if(p<1)requestAnimationFrame(step);
-    else onDone&&onDone();
-  };
-  requestAnimationFrame(step);
-}
-
-function SectionGlide({glide}){
-  if(!glide)return null;
-  const{num,label,index,phase}=glide;
-  const total=LP_SECTIONS.length;
-  return(
-    <div aria-hidden style={{position:"fixed",inset:0,zIndex:8000,pointerEvents:"none",
-      display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden",
-      background:"radial-gradient(ellipse 70% 70% at 50% 50%,rgba(11,15,13,.52),rgba(11,15,13,.8))",
-      backdropFilter:"blur(2px)",WebkitBackdropFilter:"blur(2px)",
-      fontFamily:"'JetBrains Mono', monospace",
-      animation:`${phase==="leave"?"glideOut .36s ease forwards":"glideIn .28s ease both"}`}}>
-      <ScanLines opacity={.4}/>
-
-      <div style={{position:"relative",zIndex:1,textAlign:"center",
-        animation:"glideHudIn .5s cubic-bezier(.22,1,.36,1) both"}}>
-        <div style={{fontSize:10,letterSpacing:"4px",color:PHOSPHOR,fontWeight:600,
-          textTransform:"uppercase",marginBottom:20,
-          display:"flex",alignItems:"center",justifyContent:"center",gap:10}}>
-          <span style={{width:5,height:5,background:PHOSPHOR,borderRadius:"50%",
-            boxShadow:`0 0 8px ${PHOSPHOR}`,animation:"phosphorPulse 1.4s ease infinite"}}/>
-          <span>GLIDE</span>
-          <span style={{color:TERM_FG_MUTE}}>·</span>
-          <span style={{color:TERM_FG_DIM}}>SECTION {String(index+1).padStart(2,"0")} / {String(total).padStart(2,"0")}</span>
-        </div>
-
-        <div style={{display:"flex",alignItems:"baseline",justifyContent:"center",gap:18,marginBottom:6}}>
-          <span style={{fontFamily:"'JetBrains Mono', monospace",fontSize:"clamp(30px,4.4vw,50px)",
-            fontWeight:700,color:PHOSPHOR,letterSpacing:"-1px",lineHeight:1,
-            textShadow:`0 0 22px rgba(0,200,150,.55)`}}>{num}</span>
-          <span style={{fontFamily:"'Onest', sans-serif",fontSize:"clamp(40px,7vw,84px)",
-            fontWeight:700,color:TERM_FG,letterSpacing:"-.03em",lineHeight:.9}}>{label}</span>
-        </div>
-
-        {/* steady progress line — tracks the glide duration */}
-        <div style={{width:"min(280px,60vw)",height:2,margin:"24px auto 0",
-          background:TERM_BORDER,position:"relative",overflow:"hidden"}}>
-          <div style={{height:"100%",
-            background:`linear-gradient(90deg,${PHOSPHOR_DIM},${PHOSPHOR})`,
-            boxShadow:`0 0 10px rgba(0,200,150,.5)`,
-            animation:phase==="leave"?"none":`glideBar ${GLIDE_DUR}ms cubic-bezier(.45,0,.25,1) forwards`,
-            width:phase==="leave"?"100%":"0%"}}/>
-        </div>
-
-        {/* segment indicator */}
-        <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8,marginTop:22}}>
-          {LP_SECTIONS.map((s,i)=>{
-            const on=i===index;
-            return(
-              <span key={s.id} style={{width:on?22:8,height:3,
-                background:on?PHOSPHOR:TERM_BORDER,
-                boxShadow:on?`0 0 10px ${PHOSPHOR}`:"none",
-                transition:"all .3s ease"}}/>
-            );
-          })}
-        </div>
-      </div>
-    </div>
-  );
-}
+const MORPH_DUR=900;
 
 function LandingPage({onEnter,scrollRef,active}){
   const[pinned,setPinned]=useState(null);
-  const[glide,setGlide]=useState(null);
   const[hint,setHint]=useState(true);
+  const stageRef=useRef(null);
+  const labelRef=useRef(null);
   const busyRef=useRef(false);
+  const rafRef=useRef(0);
 
   const jump=useCallback(dir=>{
     if(busyRef.current)return;
-    const cont=scrollRef?.current;if(!cont)return;
+    const cont=scrollRef?.current;
+    const stage=stageRef.current;
+    if(!cont||!stage)return;
     const cTop=cont.getBoundingClientRect().top;
-    // find current section (last one whose top sits at/above the fold)
+    // current section = last one whose top sits at/above the fold
     let cur=0;
     LP_SECTIONS.forEach((s,i)=>{
       const el=document.getElementById(s.id);
@@ -1979,16 +1905,54 @@ function LandingPage({onEnter,scrollRef,active}){
     const el=document.getElementById(target.id);
     if(!el)return;
     const dest=next===0?0
-      :(el.getBoundingClientRect().top-cont.getBoundingClientRect().top+cont.scrollTop-54);
+      :(el.getBoundingClientRect().top-cTop+cont.scrollTop-54);
+
     busyRef.current=true;
     setHint(false);
-    setGlide({...target,index:next,dir,phase:"enter"});
-    // smooth eased glide — the page visibly travels to the section
-    smoothScrollTo(cont,dest,GLIDE_DUR,()=>{
-      setGlide(g=>g?{...g,phase:"leave"}:null);
-      setTimeout(()=>{setGlide(null);busyRef.current=false;},360);
-    });
+
+    // floating section label (plain glowing text, fades in only at morph peak)
+    const lbl=labelRef.current;
+    if(lbl){
+      const span=lbl.querySelector("[data-mlbl]");
+      if(span)span.textContent=`${target.num} · ${target.label}`;
+    }
+
+    const start=cont.scrollTop;
+    const delta=dest-start;
+    const vh=cont.clientHeight;
+    const t0=performance.now();
+    const easeIO=x=>x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2;
+    stage.style.willChange="transform,filter,opacity";
+
+    const run=now=>{
+      const p=Math.min(1,(now-t0)/MORPH_DUR);
+      const e=easeIO(p);
+      const top=start+delta*e;
+      cont.scrollTop=top;
+      const m=Math.sin(p*Math.PI);               // 0 → 1 → 0  (morph intensity)
+      stage.style.transformOrigin=`50% ${(top+vh/2).toFixed(1)}px`;
+      stage.style.transform=`scale(${(1-0.06*m).toFixed(4)})`;
+      stage.style.filter=`blur(${(6*m).toFixed(2)}px)`;
+      stage.style.opacity=`${(1-0.5*m).toFixed(3)}`;
+      if(lbl)lbl.style.opacity=(m*0.92).toFixed(3);
+      if(p<1){rafRef.current=requestAnimationFrame(run);}
+      else{
+        // reset the page
+        stage.style.transform="none";
+        stage.style.filter="none";
+        stage.style.opacity="1";
+        stage.style.transformOrigin="";
+        stage.style.willChange="";
+        if(lbl)lbl.style.opacity="0";
+        // the destination section "drops into place" — its elements settle
+        el.style.animation="sectionLand .6s cubic-bezier(.22,1,.36,1)";
+        setTimeout(()=>{el.style.animation="";busyRef.current=false;},620);
+      }
+    };
+    rafRef.current=requestAnimationFrame(run);
   },[scrollRef]);
+
+  useEffect(()=>()=>{ if(rafRef.current)cancelAnimationFrame(rafRef.current); },[]);
 
   useEffect(()=>{
     if(!active)return;
@@ -2005,19 +1969,30 @@ function LandingPage({onEnter,scrollRef,active}){
 
   return(
     <div style={{background:TERM_BG}}>
-      <div aria-hidden style={{height:56,background:TERM_BG}}/>
-      <LiveYieldTicker pinnedCode={pinned?.code} onPin={setPinned}/>
-      {pinned&&<PinnedTickerPanel item={pinned} onClose={()=>setPinned(null)}/>}
-      <div id="lp-sec-0"><Hero onEnter={onEnter}/></div>
-      <div id="lp-sec-1"><WaterfallSection/></div>
-      <div id="lp-sec-2"><IndexSection/></div>
-      <div id="lp-sec-3"><MethodologySection/></div>
-      <div id="lp-sec-4"><DeploySection onEnter={onEnter}/></div>
+      {/* stage — the whole page content; this is what morphs */}
+      <div ref={stageRef}>
+        <div aria-hidden style={{height:56,background:TERM_BG}}/>
+        <LiveYieldTicker pinnedCode={pinned?.code} onPin={setPinned}/>
+        {pinned&&<PinnedTickerPanel item={pinned} onClose={()=>setPinned(null)}/>}
+        <div id="lp-sec-0"><Hero onEnter={onEnter}/></div>
+        <div id="lp-sec-1"><WaterfallSection/></div>
+        <div id="lp-sec-2"><IndexSection/></div>
+        <div id="lp-sec-3"><MethodologySection/></div>
+        <div id="lp-sec-4"><DeploySection onEnter={onEnter}/></div>
+      </div>
 
-      <SectionGlide glide={glide}/>
+      {/* floating section label — outside the stage so it stays crisp */}
+      <div ref={labelRef} aria-hidden style={{position:"fixed",inset:0,zIndex:290,
+        display:"flex",alignItems:"center",justifyContent:"center",
+        pointerEvents:"none",opacity:0}}>
+        <span data-mlbl style={{fontFamily:"'JetBrains Mono', monospace",
+          fontSize:"clamp(22px,3.4vw,40px)",fontWeight:700,color:PHOSPHOR,
+          letterSpacing:"4px",textTransform:"uppercase",
+          textShadow:`0 0 28px rgba(0,200,150,.7),0 0 6px rgba(0,200,150,.5)`}}/>
+      </div>
 
       {/* spacebar affordance */}
-      {active&&!glide&&hint&&(
+      {active&&hint&&(
         <div style={{position:"fixed",bottom:22,left:"50%",transform:"translateX(-50%)",
           zIndex:280,pointerEvents:"none",
           display:"flex",alignItems:"center",gap:12,
@@ -2030,7 +2005,7 @@ function LandingPage({onEnter,scrollRef,active}){
             boxShadow:`0 0 6px ${PHOSPHOR}`,animation:"phosphorPulse 1.6s ease infinite"}}/>
           <span style={{color:TERM_FG,fontWeight:600,
             border:`1px solid ${TERM_BORDER}`,padding:"2px 7px"}}>SPACE</span>
-          <span>jump section</span>
+          <span>morph section</span>
           <span style={{color:TERM_FG_MUTE}}>·</span>
           <span style={{color:TERM_FG,fontWeight:600,
             border:`1px solid ${TERM_BORDER}`,padding:"2px 7px"}}>⇧ SPACE</span>
