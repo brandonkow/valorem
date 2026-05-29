@@ -21,6 +21,14 @@ const CSS = `
   @keyframes numberTick{0%{opacity:.45;transform:translateY(-2px)}45%{opacity:1;transform:translateY(0)}100%{opacity:1;transform:translateY(0)}}
   @keyframes barRise{from{transform:scaleY(0)}to{transform:scaleY(1)}}
   @keyframes dotJitter{0%,100%{transform:translate(0,0)}25%{transform:translate(1px,-1px)}50%{transform:translate(0,1px)}75%{transform:translate(-1px,0)}}
+  @keyframes bootLineIn{0%{opacity:0;transform:translateX(-6px)}100%{opacity:1;transform:translateX(0)}}
+  @keyframes bootFadeOut{0%{opacity:1;visibility:visible}100%{opacity:0;visibility:hidden}}
+  @keyframes bootGlowSweep{0%{transform:translateX(-120%)}100%{transform:translateX(420%)}}
+  @keyframes bootRingSpin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+  @keyframes bootRingSpinR{from{transform:rotate(0deg)}to{transform:rotate(-360deg)}}
+  @keyframes bootFlicker{0%,100%{opacity:1}48%{opacity:1}49%{opacity:.4}50%{opacity:1}92%{opacity:1}93%{opacity:.6}94%{opacity:1}}
+  @keyframes bootCoreThrob{0%,100%{transform:scale(1);box-shadow:0 0 24px rgba(0,200,150,.4)}50%{transform:scale(1.08);box-shadow:0 0 44px rgba(0,200,150,.7)}}
+  @keyframes bootScan{0%{transform:translateY(0)}100%{transform:translateY(100%)}}
   body{margin:0;font-family:'Onest',sans-serif;font-feature-settings:"ss01","cv11";color:#E5E9E7;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;background:#0B0F0D}
   .btn-p{transition:all .15s ease;cursor:pointer;border:none;font-family:inherit}
   .btn-p:hover{filter:brightness(1.1)}
@@ -2167,8 +2175,197 @@ function Dashboard({onDownload,downloading,uploads,stats}){
   );
 }
 
+/* ── BootScreen — themed terminal boot sequence ── */
+const BOOT_SEQ=[
+  ["INIT","kernel · valorem.core","OK"],
+  ["CHK","system integrity","VERIFIED"],
+  ["NET","uplink · cbre.res","ONLINE"],
+  ["MKT","yield feed · kl / pj / jb","CONNECTED"],
+  ["DCF","valuation engine · v01.4","LOADED"],
+  ["IDX","29 workbooks · 4 classes","INDEXED"],
+  ["GFX","terminal renderer","OK"],
+  ["AUTH","session · guest","GRANTED"],
+];
+
+function BootScreen({onDone}){
+  const[revealed,setRevealed]=useState(0);
+  const[pct,setPct]=useState(0);
+  const[leaving,setLeaving]=useState(false);
+  const finishedRef=useRef(false);
+  const rafRef=useRef(0);
+  const targetRef=useRef(0);
+
+  const finish=useCallback(()=>{
+    if(finishedRef.current)return;
+    finishedRef.current=true;
+    setRevealed(BOOT_SEQ.length);
+    targetRef.current=100;
+    setLeaving(true);
+    setTimeout(onDone,640);
+  },[onDone]);
+
+  // Reveal log lines one at a time
+  useEffect(()=>{
+    if(finishedRef.current)return;
+    let i=0;
+    const id=setInterval(()=>{
+      if(finishedRef.current){clearInterval(id);return;}
+      i++;
+      setRevealed(i);
+      targetRef.current=(i/BOOT_SEQ.length)*100;
+      if(i>=BOOT_SEQ.length){
+        clearInterval(id);
+        setTimeout(finish,480);
+      }
+    },265);
+    return()=>clearInterval(id);
+  },[finish]);
+
+  // Smoothly ease the progress bar toward target
+  useEffect(()=>{
+    const tick=()=>{
+      setPct(p=>{
+        const t=targetRef.current;
+        const np=p+(t-p)*0.12;
+        return Math.abs(t-np)<0.4?t:np;
+      });
+      rafRef.current=requestAnimationFrame(tick);
+    };
+    rafRef.current=requestAnimationFrame(tick);
+    return()=>cancelAnimationFrame(rafRef.current);
+  },[]);
+
+  // Skip on key
+  useEffect(()=>{
+    const onKey=()=>finish();
+    window.addEventListener("keydown",onKey);
+    return()=>window.removeEventListener("keydown",onKey);
+  },[finish]);
+
+  const shown=Math.floor(pct);
+
+  return(
+    <div onClick={finish}
+      style={{position:"fixed",inset:0,zIndex:9000,background:TERM_BG,
+        display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",
+        cursor:"pointer",overflow:"hidden",
+        fontFamily:"'JetBrains Mono', monospace",
+        animation:leaving?"bootFadeOut .6s ease forwards":"none"}}>
+
+      {/* grid backdrop */}
+      <div aria-hidden style={{position:"absolute",inset:0,zIndex:0,
+        backgroundImage:`linear-gradient(${TERM_GRID} 1px,transparent 1px),linear-gradient(90deg,${TERM_GRID} 1px,transparent 1px)`,
+        backgroundSize:"56px 56px",
+        maskImage:"radial-gradient(ellipse 55% 60% at 50% 50%,#000 0%,transparent 72%)",
+        WebkitMaskImage:"radial-gradient(ellipse 55% 60% at 50% 50%,#000 0%,transparent 72%)",
+        opacity:.5,pointerEvents:"none"}}/>
+      <ScanLines opacity={.5}/>
+      {/* travelling scan band */}
+      <div aria-hidden style={{position:"absolute",left:0,right:0,height:"38%",zIndex:0,
+        background:"linear-gradient(180deg,transparent,rgba(0,200,150,.04),transparent)",
+        animation:"bootScan 3.2s linear infinite",pointerEvents:"none"}}/>
+
+      {/* Core emblem — concentric rings + throbbing V */}
+      <div style={{position:"relative",width:132,height:132,marginBottom:40,zIndex:1,
+        display:"flex",alignItems:"center",justifyContent:"center"}}>
+        <div style={{position:"absolute",inset:0,borderRadius:"50%",
+          border:`1px solid ${TERM_BORDER}`,
+          borderTopColor:PHOSPHOR,borderRightColor:"rgba(0,200,150,.35)",
+          animation:"bootRingSpin 2.4s linear infinite"}}/>
+        <div style={{position:"absolute",inset:16,borderRadius:"50%",
+          border:`1px solid ${TERM_BORDER}`,
+          borderBottomColor:PHOSPHOR,borderLeftColor:"rgba(0,200,150,.3)",
+          animation:"bootRingSpinR 3.1s linear infinite"}}/>
+        <div style={{position:"absolute",inset:33,borderRadius:"50%",
+          border:`1px dashed rgba(0,200,150,.25)`,
+          animation:"bootRingSpin 5s linear infinite"}}/>
+        <div style={{width:52,height:52,borderRadius:"50%",
+          background:"radial-gradient(circle at 38% 34%,#0F5239,#08130E)",
+          border:`1px solid ${PHOSPHOR}`,
+          display:"flex",alignItems:"center",justifyContent:"center",
+          animation:"bootCoreThrob 1.9s ease-in-out infinite"}}>
+          <span style={{fontFamily:"'Onest', sans-serif",fontSize:26,fontWeight:800,
+            color:PHOSPHOR,letterSpacing:"-1px",lineHeight:1,
+            textShadow:`0 0 12px rgba(0,200,150,.7)`}}>V</span>
+        </div>
+      </div>
+
+      {/* Wordmark */}
+      <div style={{zIndex:1,textAlign:"center",marginBottom:30,
+        animation:"bootFlicker 4s linear infinite"}}>
+        <div style={{fontSize:15,letterSpacing:"7px",color:TERM_FG,fontWeight:700,
+          textTransform:"uppercase",marginBottom:7,paddingLeft:7}}>
+          VALOREM
+        </div>
+        <div style={{fontSize:9,letterSpacing:"3px",color:TERM_FG_MUTE,fontWeight:500,
+          textTransform:"uppercase"}}>
+          DCF Terminal · CBRE Malaysia
+        </div>
+      </div>
+
+      {/* Boot log */}
+      <div style={{zIndex:1,width:"min(420px,86vw)",minHeight:150,marginBottom:24}}>
+        {BOOT_SEQ.slice(0,revealed).map(([tag,label,status],i)=>(
+          <div key={tag} style={{display:"flex",alignItems:"baseline",gap:10,
+            padding:"4px 0",fontSize:11,letterSpacing:".5px",
+            animation:"bootLineIn .28s ease both"}}>
+            <span style={{color:PHOSPHOR,fontWeight:600,width:34,flexShrink:0}}>{tag}</span>
+            <span style={{color:TERM_FG_DIM,whiteSpace:"nowrap",overflow:"hidden",
+              textOverflow:"ellipsis"}}>{label}</span>
+            <span style={{flex:1,borderBottom:`1px dotted ${TERM_BORDER}`,
+              transform:"translateY(-3px)",minWidth:14}}/>
+            <span style={{color:PHOSPHOR,fontWeight:600,flexShrink:0,
+              display:"flex",alignItems:"center",gap:6}}>
+              <span style={{width:5,height:5,background:PHOSPHOR,
+                boxShadow:`0 0 6px ${PHOSPHOR}`}}/>
+              {status}
+            </span>
+          </div>
+        ))}
+      </div>
+
+      {/* Progress bar */}
+      <div style={{zIndex:1,width:"min(420px,86vw)"}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",
+          marginBottom:8,fontSize:9.5,letterSpacing:"2px",
+          color:TERM_FG_MUTE,textTransform:"uppercase",fontWeight:500}}>
+          <span>{leaving?"BOOT COMPLETE":"INITIALISING"}</span>
+          <span style={{color:TERM_FG,fontWeight:600,fontVariantNumeric:"tabular-nums"}}>
+            {String(shown).padStart(3," ")}%
+          </span>
+        </div>
+        <div style={{height:6,background:TERM_PANEL_S,border:`1px solid ${TERM_BORDER}`,
+          position:"relative",overflow:"hidden"}}>
+          <div style={{height:"100%",width:`${pct}%`,
+            background:`linear-gradient(90deg,${PHOSPHOR_DIM},${PHOSPHOR})`,
+            boxShadow:`0 0 12px rgba(0,200,150,.5)`,
+            transition:"width .08s linear",position:"relative",overflow:"hidden"}}>
+            <div style={{position:"absolute",top:0,bottom:0,width:40,
+              background:"linear-gradient(90deg,transparent,rgba(255,255,255,.55),transparent)",
+              animation:"bootGlowSweep 1.1s linear infinite"}}/>
+          </div>
+        </div>
+      </div>
+
+      {/* Skip hint */}
+      <div style={{zIndex:1,marginTop:30,fontSize:9,letterSpacing:"2.5px",
+        color:TERM_FG_MUTE,textTransform:"uppercase",fontWeight:500,
+        display:"flex",alignItems:"center",gap:8,opacity:leaving?0:.8,
+        transition:"opacity .3s ease"}}>
+        <span style={{width:5,height:5,background:AMBER,
+          animation:"phosphorPulse 1.4s ease infinite"}}/>
+        Click or press any key to skip
+      </div>
+    </div>
+  );
+}
+
 export default function App(){
   const scrollRef=useRef(null);
+  const[booting,setBooting]=useState(()=>{
+    if(typeof sessionStorage==="undefined")return true;
+    return sessionStorage.getItem("vlrm_booted")!=="1";
+  });
   const[scrollY,setSY]=useState(0);
   const[mouse,setMouse]=useState({x:0,y:0});
   const[page,setPage]=useState("landing");
@@ -2224,6 +2421,10 @@ export default function App(){
         background:TERM_BG,
         fontFamily:"'Onest',sans-serif"}}>
       <style>{CSS}</style>
+      {booting&&<BootScreen onDone={()=>{
+        try{sessionStorage.setItem("vlrm_booted","1");}catch{}
+        setBooting(false);
+      }}/>}
       <ProgressBar scrollRef={scrollRef}/>
       <Nav page={page} onBack={()=>go("landing")} onAdminClick={()=>setShowLogin(true)}/>
       {page==="landing"&&<LandingPage onEnter={()=>go("dashboard")}/>}
