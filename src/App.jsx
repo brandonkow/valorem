@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, Fragment } from "react";
 import { upload } from "@vercel/blob/client";
 
 const CSS = `
@@ -1796,18 +1796,53 @@ function MethodologySection(){
   );
 }
 
-/* ── S04 Calibration — live market inputs wired into the workbooks ── */
-const CALIB_ROWS=[
-  {asset:"Office",seg:"Georgetown · CBD",cap:6.75,growth:2.6,wacc:8.90,date:"12 May 26",status:"live"},
-  {asset:"Office",seg:"Bayan Lepas",cap:7.20,growth:3.4,wacc:9.10,date:"12 May 26",status:"live"},
-  {asset:"Retail",seg:"Gurney · Queensbay",cap:7.40,growth:2.2,wacc:9.60,date:"28 Apr 26",status:"live"},
-  {asset:"Residential",seg:"Strata · Georgetown",cap:4.95,growth:3.7,wacc:8.10,date:"12 May 26",status:"live"},
-  {asset:"Industrial",seg:"Bayan Lepas · FIZ",cap:7.10,growth:5.8,wacc:8.90,date:"05 May 26",status:"live"},
-  {asset:"Hotel",seg:"Batu Ferringhi · 4★",cap:8.20,growth:3.2,wacc:10.10,date:"18 Apr 26",status:"stale"},
-];
+/* ── S04 Sensitivity — interactive WACC × Terminal-growth heatmap ── */
+const SENS_NOI=[1000,1050,1100,1155,1212];      // RM '000 · 5-year forecast
+const SENS_WACC=[7.0,7.5,8.0,8.5,9.0,9.5,10.0]; // % discount rate axis
+const SENS_G   =[1.0,2.0,3.0,4.0,5.0];          // % terminal-growth axis
+const SENS_BASE={wacc:8.5,g:3.0};
+
+function sensCompute(waccPct,gPct){
+  const wacc=waccPct/100,g=gPct/100;
+  let opPv=0;
+  for(let i=0;i<SENS_NOI.length;i++) opPv+=SENS_NOI[i]/Math.pow(1+wacc,i+1);
+  const noi6=SENS_NOI[SENS_NOI.length-1]*(1+g);
+  const tv=noi6/Math.max(wacc-g,0.0001);
+  const tvPv=tv/Math.pow(1+wacc,SENS_NOI.length);
+  return{opPv,tvPv,total:opPv+tvPv};
+}
+
 function DeploySection(){
   const wide=useIsWide(900);
   const[ref,v]=useInView(.12);
+  const[sel,setSel]=useState(SENS_BASE);
+  const[hover,setHover]=useState(null);
+
+  const grid=SENS_G.map(g=>SENS_WACC.map(w=>({w,g,...sensCompute(w,g)})));
+  const flat=grid.flat();
+  const min=Math.min(...flat.map(c=>c.total));
+  const max=Math.max(...flat.map(c=>c.total));
+  const base=sensCompute(SENS_BASE.wacc,SENS_BASE.g);
+  const selR=sensCompute(sel.wacc,sel.g);
+  const delta=((selR.total-base.total)/base.total)*100;
+
+  const cellFor=(w,g)=>grid[SENS_G.indexOf(g)][SENS_WACC.indexOf(w)];
+  const cellBg=(npv)=>{
+    const t=(npv-min)/(max-min||1);
+    if(t<.5){
+      const k=t/.5;
+      return `rgba(255,198,64,${0.05+(1-k)*0.18})`;
+    }
+    const k=(t-.5)/.5;
+    return `rgba(0,200,150,${0.06+k*0.32})`;
+  };
+  const cellFg=(npv)=>{
+    const t=(npv-min)/(max-min||1);
+    if(t<.35)return AMBER;
+    if(t>.7)return PHOSPHOR;
+    return TERM_FG;
+  };
+
   return(
     <section ref={ref} style={{background:TERM_BG,padding:wide?"40px 36px":"32px 24px",
       borderTop:`1px solid ${TERM_BORDER}`,position:"relative",overflow:"hidden"}}>
@@ -1822,119 +1857,214 @@ function DeploySection(){
       <div style={{maxWidth:1320,margin:"0 auto",width:"100%",position:"relative",zIndex:1}}>
         {/* Header */}
         <div data-morph style={{display:wide?"grid":"block",
-          gridTemplateColumns:wide?"180px 1fr 240px":"1fr",gap:0,marginBottom:wide?28:22}}>
+          gridTemplateColumns:wide?"180px 1fr 240px":"1fr",gap:0,marginBottom:wide?22:18}}>
           <div style={{paddingRight:wide?28:0,marginBottom:wide?0:18}}>
             <div style={{fontFamily:"'JetBrains Mono', monospace",fontSize:10.5,
               color:PHOSPHOR,letterSpacing:"2.5px",fontWeight:600,
               textTransform:"uppercase"}}>S04</div>
             <div style={{fontFamily:"'JetBrains Mono', monospace",fontSize:9.5,
               color:TERM_FG_DIM,letterSpacing:"1.5px",fontWeight:500,
-              marginTop:6,textTransform:"uppercase"}}>Calibration · <span style={{color:PHOSPHOR}}>Penang</span></div>
+              marginTop:6,textTransform:"uppercase"}}>Sensitivity · <span style={{color:PHOSPHOR}}>Tap a cell</span></div>
           </div>
           <div style={{padding:wide?"0 56px":"0"}}>
             <h2 style={{fontFamily:"'Onest', sans-serif",
               fontSize:"clamp(28px,3.6vw,48px)",fontWeight:600,
               lineHeight:1.02,letterSpacing:"-.025em",
-              color:TERM_FG,margin:"0 0 12px"}}>
-              Wired to the <br/>
-              <span style={{color:PHOSPHOR}}>Penang property market.</span>
+              color:TERM_FG,margin:"0 0 10px"}}>
+              WACC × Terminal g, <br/>
+              <span style={{color:PHOSPHOR}}>see the swing.</span>
             </h2>
-            <p style={{fontFamily:"'Onest', sans-serif",fontSize:14,lineHeight:1.5,
+            <p style={{fontFamily:"'Onest', sans-serif",fontSize:13.5,lineHeight:1.5,
               color:TERM_FG_DIM,maxWidth:520,margin:0}}>
-              Every workbook ships with the current Penang calibration set — Georgetown CBD, Bayan Lepas, Gurney and Batu Ferringhi reconciled against CBRE Research every quarter. The next refresh is dated below.
+              The same 5-year NOI forecast across every discount rate and terminal-growth assumption. Pick a cell to lock the scenario and watch operating PV and terminal PV recompose.
             </p>
           </div>
         </div>
 
-        {/* Calibration table */}
-        <div data-morph style={{background:TERM_PANEL_S,border:`1px solid ${TERM_BORDER}`,
-          position:"relative",overflow:"hidden"}}>
-          <ScanLines opacity={.4}/>
+        {/* Heatmap + detail */}
+        <div data-morph style={{display:"grid",
+          gridTemplateColumns:wide?"1fr 280px":"1fr",gap:wide?20:14,
+          alignItems:"start"}}>
 
-          {/* Column headers */}
-          <div style={{
-            display:"grid",
-            gridTemplateColumns:wide?"1.4fr 1fr 1fr 1fr 1fr 90px":"1.3fr 1fr 1fr 70px",
-            background:"rgba(0,200,150,.04)",
-            borderBottom:`1px solid ${TERM_BORDER}`,
-            fontFamily:"'JetBrains Mono', monospace",fontSize:9.5,
-            color:TERM_FG_MUTE,letterSpacing:"2px",fontWeight:600,
-            textTransform:"uppercase",position:"relative",zIndex:1}}>
-            {(wide
-              ? ["Asset · Segment","Cap Rate","NOI g","WACC","Refreshed","Status"]
-              : ["Asset","Cap","WACC","Stat"]
-            ).map((h,i,a)=>(
-              <div key={h} style={{
-                padding:"12px 14px",
-                textAlign:i===0?"left":"right",
-                borderRight:i<a.length-1?`1px solid ${TERM_BORDER}`:"none"}}>{h}</div>
-            ))}
-          </div>
+          {/* Heatmap panel */}
+          <div style={{background:TERM_PANEL_S,border:`1px solid ${TERM_BORDER}`,
+            padding:wide?"18px 18px 14px":"14px 12px 10px",position:"relative",overflow:"hidden"}}>
+            <ScanLines opacity={.45}/>
 
-          {/* Rows */}
-          {CALIB_ROWS.map((r,ri)=>{
-            const live=r.status==="live";
-            const statCol=live?SIG_UP:AMBER;
-            const cells=wide
-              ? [
-                  <div key="a" style={{display:"flex",flexDirection:"column",gap:2}}>
-                    <span style={{fontFamily:"'Onest',sans-serif",fontSize:13,color:TERM_FG,fontWeight:600,letterSpacing:"-.005em"}}>{r.asset}</span>
-                    <span style={{fontFamily:"'JetBrains Mono', monospace",fontSize:9.5,color:TERM_FG_MUTE,letterSpacing:"1px",textTransform:"uppercase"}}>{r.seg}</span>
-                  </div>,
-                  <span key="c" style={{fontFamily:"'JetBrains Mono', monospace",fontSize:13,color:PHOSPHOR,fontWeight:600,fontVariantNumeric:"tabular-nums",letterSpacing:"-.3px"}}>{r.cap.toFixed(2)}%</span>,
-                  <span key="g" style={{fontFamily:"'JetBrains Mono', monospace",fontSize:13,color:TERM_FG,fontWeight:600,fontVariantNumeric:"tabular-nums",letterSpacing:"-.3px"}}>+{r.growth.toFixed(1)}%</span>,
-                  <span key="w" style={{fontFamily:"'JetBrains Mono', monospace",fontSize:13,color:AMBER,fontWeight:600,fontVariantNumeric:"tabular-nums",letterSpacing:"-.3px"}}>{r.wacc.toFixed(2)}%</span>,
-                  <span key="d" style={{fontFamily:"'JetBrains Mono', monospace",fontSize:11,color:TERM_FG_DIM,letterSpacing:".5px",textTransform:"uppercase"}}>{r.date}</span>,
-                  <span key="s" style={{display:"inline-flex",alignItems:"center",gap:6,
-                    fontFamily:"'JetBrains Mono', monospace",fontSize:9.5,
-                    color:statCol,letterSpacing:"1.5px",textTransform:"uppercase",fontWeight:600}}>
-                    <span style={{width:6,height:6,background:statCol,
-                      boxShadow:`0 0 5px ${statCol}`,
-                      animation:live?"phosphorPulse 1.6s ease infinite":"none"}}/>
-                    {r.status}
-                  </span>,
-                ]
-              : [
-                  <span key="a" style={{fontFamily:"'Onest',sans-serif",fontSize:12,color:TERM_FG,fontWeight:600}}>{r.asset}</span>,
-                  <span key="c" style={{fontFamily:"'JetBrains Mono', monospace",fontSize:12,color:PHOSPHOR,fontWeight:600,fontVariantNumeric:"tabular-nums"}}>{r.cap.toFixed(2)}%</span>,
-                  <span key="w" style={{fontFamily:"'JetBrains Mono', monospace",fontSize:12,color:AMBER,fontWeight:600,fontVariantNumeric:"tabular-nums"}}>{r.wacc.toFixed(2)}%</span>,
-                  <span key="s" style={{width:8,height:8,background:statCol,
-                    boxShadow:`0 0 5px ${statCol}`,marginLeft:"auto",
-                    animation:live?"phosphorPulse 1.6s ease infinite":"none"}}/>,
-                ];
-            return(
-              <div key={ri} className="lp-dcf-row" style={{
-                display:"grid",
-                gridTemplateColumns:wide?"1.4fr 1fr 1fr 1fr 1fr 90px":"1.3fr 1fr 1fr 70px",
-                borderBottom:ri<CALIB_ROWS.length-1?`1px solid ${TERM_BORDER}`:"none",
-                opacity:v?1:0,transform:v?"translateY(0)":"translateY(8px)",
-                transition:`opacity .5s ease ${.1+ri*.06}s,transform .5s cubic-bezier(.22,1,.36,1) ${.1+ri*.06}s,background .15s ease`,
-                position:"relative",zIndex:1}}>
-                {cells.map((c,ci,arr)=>(
-                  <div key={ci} style={{
-                    padding:"14px 14px",
-                    textAlign:ci===0?"left":"right",
-                    display:"flex",alignItems:"center",
-                    justifyContent:ci===0?"flex-start":"flex-end",
-                    borderRight:ci<arr.length-1?`1px solid ${TERM_BORDER}`:"none"}}>
-                    {c}
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",
+              marginBottom:14,position:"relative",zIndex:1,
+              fontFamily:"'JetBrains Mono', monospace",fontSize:9.5,
+              color:TERM_FG_MUTE,letterSpacing:"1.8px",textTransform:"uppercase",fontWeight:500,
+              flexWrap:"wrap",gap:8}}>
+              <span>↓ Terminal g · → WACC discount</span>
+              <span>NPV · RM '000 · Σ 5-yr + TV</span>
+            </div>
+
+            <div style={{position:"relative",zIndex:1,overflowX:"auto"}}>
+              <div style={{display:"grid",
+                gridTemplateColumns:`56px repeat(${SENS_WACC.length},minmax(0,1fr))`,
+                gap:2,minWidth:wide?"auto":520}}>
+
+                <div/>
+                {SENS_WACC.map(w=>(
+                  <div key={w} style={{textAlign:"center",padding:"6px 0 8px",
+                    fontFamily:"'JetBrains Mono', monospace",fontSize:10,
+                    color:hover?.w===w||sel.wacc===w?PHOSPHOR:TERM_FG_DIM,
+                    letterSpacing:"1px",fontWeight:600,fontVariantNumeric:"tabular-nums",
+                    transition:"color .15s ease,text-shadow .15s ease",
+                    textShadow:sel.wacc===w?`0 0 6px ${PHOSPHOR}`:"none"}}>
+                    {w.toFixed(1)}%
                   </div>
                 ))}
+
+                {SENS_G.map(g=>(
+                  <Fragment key={g}>
+                    <div style={{textAlign:"right",padding:"0 10px 0 0",
+                      display:"flex",alignItems:"center",justifyContent:"flex-end",
+                      fontFamily:"'JetBrains Mono', monospace",fontSize:10,
+                      color:hover?.g===g||sel.g===g?PHOSPHOR:TERM_FG_DIM,
+                      letterSpacing:"1px",fontWeight:600,fontVariantNumeric:"tabular-nums",
+                      transition:"color .15s ease,text-shadow .15s ease",
+                      textShadow:sel.g===g?`0 0 6px ${PHOSPHOR}`:"none"}}>
+                      g {g.toFixed(1)}%
+                    </div>
+                    {SENS_WACC.map(w=>{
+                      const c=cellFor(w,g);
+                      const isSel=sel.wacc===w&&sel.g===g;
+                      const isHov=hover?.w===w&&hover?.g===g;
+                      return(
+                        <button key={w} type="button"
+                          onClick={()=>setSel({wacc:w,g})}
+                          onMouseEnter={()=>setHover({w,g})}
+                          onMouseLeave={()=>setHover(null)}
+                          style={{
+                            background:cellBg(c.total),
+                            border:isSel?`1px solid ${PHOSPHOR}`:`1px solid ${TERM_BORDER}`,
+                            padding:"10px 4px",cursor:"pointer",
+                            fontFamily:"'JetBrains Mono', monospace",fontSize:11.5,
+                            color:cellFg(c.total),
+                            fontWeight:isSel?700:500,fontVariantNumeric:"tabular-nums",
+                            letterSpacing:"-.2px",
+                            outline:"none",
+                            transition:"background .15s ease,border-color .15s ease,transform .12s ease,box-shadow .15s ease",
+                            transform:isHov?"scale(1.04)":"scale(1)",
+                            boxShadow:isSel?`inset 0 0 0 1px ${PHOSPHOR}, 0 0 14px rgba(0,200,150,.35)`:isHov?`0 0 10px rgba(0,200,150,.18)`:"none",
+                            zIndex:isSel?2:isHov?1:0,
+                            position:"relative"}}>
+                          {Math.round(c.total).toLocaleString()}
+                        </button>
+                      );
+                    })}
+                  </Fragment>
+                ))}
               </div>
-            );
-          })}
+            </div>
+
+            <div style={{marginTop:14,paddingTop:10,borderTop:`1px solid ${TERM_BORDER}`,
+              display:"flex",justifyContent:"space-between",alignItems:"center",
+              flexWrap:"wrap",gap:10,position:"relative",zIndex:1,
+              fontFamily:"'JetBrains Mono', monospace",fontSize:9,
+              color:TERM_FG_MUTE,letterSpacing:"1.5px",textTransform:"uppercase",fontWeight:500}}>
+              <span>Lower NPV</span>
+              <div style={{flex:1,maxWidth:280,height:6,
+                background:`linear-gradient(90deg,rgba(255,198,64,.5),rgba(40,49,41,.5),rgba(0,200,150,.55))`,
+                border:`1px solid ${TERM_BORDER}`}}/>
+              <span style={{color:PHOSPHOR}}>Higher NPV</span>
+            </div>
+          </div>
+
+          {/* Selected scenario panel */}
+          <div style={{background:TERM_PANEL_S,border:`1px solid ${TERM_BORDER}`,
+            padding:wide?"18px 18px":"16px 16px",position:"relative",overflow:"hidden"}}>
+            <ScanLines opacity={.45}/>
+            <div style={{position:"relative",zIndex:1}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",
+                marginBottom:14,paddingBottom:10,borderBottom:`1px solid ${TERM_BORDER}`,
+                fontFamily:"'JetBrains Mono', monospace",fontSize:9.5,
+                color:TERM_FG_MUTE,letterSpacing:"2px",textTransform:"uppercase",fontWeight:600}}>
+                <span style={{color:PHOSPHOR}}>Selected</span>
+                <span>SCN · {String(SENS_G.indexOf(sel.g)*SENS_WACC.length+SENS_WACC.indexOf(sel.wacc)+1).padStart(2,"0")}</span>
+              </div>
+
+              <div style={{display:"flex",gap:18,marginBottom:16,
+                fontFamily:"'JetBrains Mono', monospace"}}>
+                <div>
+                  <div style={{fontSize:9,color:TERM_FG_MUTE,letterSpacing:"1.8px",
+                    textTransform:"uppercase",fontWeight:600,marginBottom:4}}>WACC</div>
+                  <div style={{fontSize:20,color:PHOSPHOR,fontWeight:600,
+                    fontVariantNumeric:"tabular-nums",letterSpacing:"-.5px"}}>
+                    {sel.wacc.toFixed(1)}%
+                  </div>
+                </div>
+                <div style={{width:1,background:TERM_BORDER}}/>
+                <div>
+                  <div style={{fontSize:9,color:TERM_FG_MUTE,letterSpacing:"1.8px",
+                    textTransform:"uppercase",fontWeight:600,marginBottom:4}}>Term · g</div>
+                  <div style={{fontSize:20,color:AMBER,fontWeight:600,
+                    fontVariantNumeric:"tabular-nums",letterSpacing:"-.5px"}}>
+                    {sel.g.toFixed(1)}%
+                  </div>
+                </div>
+              </div>
+
+              {[
+                ["5-yr Op PV",selR.opPv,TERM_FG],
+                ["Terminal PV",selR.tvPv,AMBER],
+              ].map(([k,val,col])=>(
+                <div key={k} style={{display:"flex",justifyContent:"space-between",
+                  alignItems:"baseline",padding:"7px 0",
+                  borderBottom:`1px solid ${TERM_GRID}`,
+                  fontFamily:"'JetBrains Mono', monospace"}}>
+                  <span style={{fontSize:10,color:TERM_FG_DIM,letterSpacing:"1.5px",
+                    textTransform:"uppercase",fontWeight:500}}>{k}</span>
+                  <span style={{fontSize:13,color:col,fontWeight:600,
+                    fontVariantNumeric:"tabular-nums",letterSpacing:"-.3px"}}>
+                    {Math.round(val).toLocaleString()}
+                  </span>
+                </div>
+              ))}
+
+              <div style={{marginTop:14,padding:"12px 12px",
+                background:"rgba(0,200,150,.06)",
+                border:`1px solid ${PHOSPHOR_DIM}`}}>
+                <div style={{display:"flex",justifyContent:"space-between",
+                  alignItems:"baseline",marginBottom:6,
+                  fontFamily:"'JetBrains Mono', monospace",fontSize:9.5,
+                  color:PHOSPHOR,letterSpacing:"2px",textTransform:"uppercase",fontWeight:600}}>
+                  <span>NPV →</span>
+                  <span style={{color:TERM_FG_MUTE,fontWeight:500}}>RM '000</span>
+                </div>
+                <div style={{fontFamily:"'JetBrains Mono', monospace",fontSize:28,
+                  color:PHOSPHOR,fontWeight:600,fontVariantNumeric:"tabular-nums",
+                  letterSpacing:"-.8px",lineHeight:1,
+                  textShadow:`0 0 18px rgba(0,200,150,.4)`}}>
+                  {Math.round(selR.total).toLocaleString()}
+                </div>
+              </div>
+
+              <div style={{marginTop:10,display:"flex",justifyContent:"space-between",
+                alignItems:"baseline",
+                fontFamily:"'JetBrains Mono', monospace",fontSize:10,
+                color:TERM_FG_MUTE,letterSpacing:"1.5px",textTransform:"uppercase",fontWeight:500}}>
+                <span>vs base ({SENS_BASE.wacc.toFixed(1)} · {SENS_BASE.g.toFixed(1)})</span>
+                <span style={{color:delta>=0?SIG_UP:SIG_DOWN,fontWeight:600,
+                  fontVariantNumeric:"tabular-nums",fontSize:12}}>
+                  {delta>=0?"+":""}{delta.toFixed(1)}%
+                </span>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Footer */}
-        <div data-morph style={{marginTop:14,display:"flex",justifyContent:"space-between",
-          flexWrap:"wrap",gap:14,
+        <div data-morph style={{marginTop:12,display:"flex",justifyContent:"space-between",
+          flexWrap:"wrap",gap:14,opacity:v?1:0,
+          transition:"opacity .5s ease .25s",
           fontFamily:"'JetBrains Mono', monospace",fontSize:9.5,
           color:TERM_FG_MUTE,letterSpacing:"1.5px",fontWeight:500,
           textTransform:"uppercase"}}>
-          <span>↳ Refresh cycle · Quarterly · Source CBRE Research · Penang Desk</span>
-          <span style={{color:TERM_FG_DIM}}>
-            Next refresh <span style={{color:PHOSPHOR,fontWeight:600}}>Q3 · 2026</span>
-          </span>
+          <span>↳ Σ Operating-PV + Terminal-PV · 5-yr horizon · Gordon-growth TV</span>
+          <span>P · 04</span>
         </div>
       </div>
     </section>
@@ -1947,7 +2077,7 @@ const LP_SECTIONS=[
   {id:"lp-sec-1",num:"S01",label:"MECHANICS"},
   {id:"lp-sec-2",num:"S02",label:"INDEX"},
   {id:"lp-sec-3",num:"S03",label:"METHOD"},
-  {id:"lp-sec-4",num:"S04",label:"PENANG"},
+  {id:"lp-sec-4",num:"S04",label:"SENSITIVITY"},
 ];
 const SCATTER_DUR=520;
 const ASSEMBLE_DUR=620;
