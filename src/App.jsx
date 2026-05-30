@@ -110,7 +110,7 @@ const CSS = `
 const BG="#0B0F0D";
 const D="#003F2D",M="#006A4D",BR="#1DB87B",PL="#EEF6F2",PLR="#F7FBF9",W="#FFF",MU="#587066",BD="rgba(0,63,45,.1)";
 const TERM_BG="#0B0F0D",TERM_PANEL="#10161300",TERM_PANEL_S="#101613",TERM_GRID="#1B221E",TERM_BORDER="#283129",TERM_FG="#E5E9E7",TERM_FG_DIM="#7C8881",TERM_FG_MUTE="#4B5450",PHOSPHOR="#00C896",PHOSPHOR_DIM="#0F5239",SIG_UP="#38EFA6",SIG_DOWN="#E66660",AMBER="#FFC640";
-const ADMIN_USER="admin", ADMIN_PASS="cbre";
+const ADMIN_USER="admin", ADMIN_PASS="valorem";
 
 const computeCatStats=(catId,stats)=>{
   const dl=Object.entries(stats?.downloads||{})
@@ -224,7 +224,7 @@ function Nav({page,onBack,onAdminClick}){
             animation:"phosphorPulse 1.8s ease infinite"}}/>
           <div style={{fontFamily:"'JetBrains Mono', monospace",fontWeight:600,
             fontSize:13,letterSpacing:"2.5px",color:TERM_FG,textTransform:"uppercase"}}>
-            VALOREM<span style={{color:PHOSPHOR,margin:"0 6px"}}>·</span><span style={{color:TERM_FG_DIM,fontWeight:500}}>CBRE.MY</span>
+            VALOREM<span style={{color:PHOSPHOR,margin:"0 6px"}}>·</span><span style={{color:TERM_FG_DIM,fontWeight:500}}>VAL.MY</span>
           </div>
         </div>
         <div style={{display:"flex",alignItems:"center",gap:18,
@@ -329,7 +329,7 @@ function AdminLoginModal({onClose,onSuccess}){
             Sign in to <span style={{color:PHOSPHOR}}>admin</span>
           </h2>
           <p style={{color:TERM_FG_DIM,fontSize:13,margin:0,lineHeight:1.5}}>
-            Restricted access · CBRE administrators only.
+            Restricted access · administrators only.
           </p>
         </div>
 
@@ -1236,7 +1236,7 @@ function DCFViewport(){
             opacity:tickN%2?.4:1,transition:"opacity .2s"}}/>
           ↳ TAP WACC · g · ASSET TO ADJUST
         </span>
-        <span>SRC · CBRE.RES</span>
+        <span>SRC · VAL.RES</span>
         <span>VAL.MY/{asset.wkb}</span>
       </div>
     </div>
@@ -1302,7 +1302,7 @@ function Hero({onEnter}){
           <p data-morph style={{fontFamily:"'Onest', sans-serif",
             fontSize:15,lineHeight:1.5,color:TERM_FG_DIM,
             maxWidth:520,margin:"0 0 26px",fontWeight:400}}>
-            A precision library of pre-built DCF workbooks for the Malaysian property market. Wired by practicing valuers, calibrated against current CBRE research, deployed by you.
+            A precision library of pre-built DCF workbooks for the Malaysian property market. Wired by practicing valuers, calibrated against current market research, deployed by you.
           </p>
 
           {/* ExecuteBar CTA */}
@@ -1788,7 +1788,7 @@ function MethodologySection(){
           fontFamily:"'JetBrains Mono', monospace",fontSize:9.5,
           color:TERM_FG_MUTE,letterSpacing:"1.5px",fontWeight:500,
           textTransform:"uppercase",flexWrap:"wrap",gap:8}}>
-          <span>↳ References · Damodaran 2024 · CBRE Research · RICS</span>
+          <span>↳ References · Damodaran 2024 · RICS · JPPH</span>
           <span>P · 03</span>
         </div>
       </div>
@@ -2470,7 +2470,7 @@ function Dashboard({onDownload,downloading,uploads,stats}){
         </h1>
         <p style={{color:TERM_FG_DIM,fontSize:15.5,marginBottom:32,
           maxWidth:620,lineHeight:1.6}}>
-          Pick a property category, drill down to your asset type, and download the workbook. Each entry is calibrated against current CBRE Research data.
+          Pick a property category, drill down to your asset type, and download the workbook. Each entry is calibrated against current Malaysian market data.
         </p>
 
         {/* Filter bar — terminal command + tabs */}
@@ -2534,8 +2534,8 @@ function Dashboard({onDownload,downloading,uploads,stats}){
         fontFamily:"'JetBrains Mono',monospace",fontSize:9.5,
         color:TERM_FG_MUTE,letterSpacing:"1.5px",
         textTransform:"uppercase",fontWeight:500}}>
-        <span>↳ VALOREM · CBRE Malaysia · MMXXVI</span>
-        <span style={{color:PHOSPHOR}}>SYS:OK · SRC:CBRE.RES</span>
+        <span>↳ VALOREM · KUALA LUMPUR · MMXXVI</span>
+        <span style={{color:PHOSPHOR}}>SYS:OK · SRC:VAL.RES</span>
         <span>For professional property valuation use</span>
       </footer>
     </div>
@@ -2546,7 +2546,7 @@ function Dashboard({onDownload,downloading,uploads,stats}){
 const BOOT_SEQ=[
   ["INIT","kernel · valorem.core","OK"],
   ["CHK","system integrity","VERIFIED"],
-  ["NET","uplink · cbre.res","ONLINE"],
+  ["NET","uplink · val.res","ONLINE"],
   ["MKT","yield feed · kl / pj / jb","CONNECTED"],
   ["DCF","valuation engine · v01.4","LOADED"],
   ["IDX","29 workbooks · 4 classes","INDEXED"],
@@ -2666,7 +2666,7 @@ function BootScreen({onDone}){
         </div>
         <div style={{fontSize:9,letterSpacing:"3px",color:TERM_FG_MUTE,fontWeight:500,
           textTransform:"uppercase"}}>
-          DCF Terminal · CBRE Malaysia
+          DCF Terminal · Malaysia
         </div>
       </div>
 
