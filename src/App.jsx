@@ -207,7 +207,8 @@ function Nav({page,onBack,onAdminClick}){
   const onLanding = page==="landing";
   const onDash    = page==="dashboard";
   const onAdmin   = page==="admin";
-  const path      = onLanding?"/":onDash?"/dashboard":"/admin";
+  const onTool    = ["irr","rentroll","scenario"].includes(page);
+  const path      = onLanding?"/":onDash?"/library":onAdmin?"/admin":onTool?`/${page}`:"/";
 
   return(
     <nav style={{
@@ -237,13 +238,13 @@ function Nav({page,onBack,onAdminClick}){
         </div>
       </div>
       <div style={{display:"flex",alignItems:"center",gap:10}}>
-        {(onDash||onAdmin)&&(
+        {(onDash||onAdmin||onTool)&&(
           <button className="btn-o" onClick={onBack}
             style={{background:"transparent",color:TERM_FG,
               border:`1px solid ${TERM_BORDER}`,fontFamily:"'JetBrains Mono', monospace",
               padding:"7px 16px",borderRadius:0,fontWeight:500,fontSize:10,
               cursor:"pointer",letterSpacing:"2.5px",textTransform:"uppercase"}}>
-            ← [Home]
+            {onTool?"← [Library]":"← [Home]"}
           </button>
         )}
         {onLanding&&(
@@ -2071,6 +2072,32 @@ function DeploySection(){
   );
 }
 
+/* ── Apex Flow · financial calculation helpers ── */
+function calcNPV(cashflows,ratePct){
+  const r=ratePct/100;
+  return cashflows.reduce((s,cf,t)=>s+cf/Math.pow(1+r,t),0);
+}
+function calcIRR(cashflows,guess=0.1,tol=1e-7,maxIter=200){
+  let r=guess;
+  for(let i=0;i<maxIter;i++){
+    let npv=0,dnpv=0;
+    for(let t=0;t<cashflows.length;t++){
+      const disc=Math.pow(1+r,t);
+      npv+=cashflows[t]/disc;
+      if(t>0)dnpv-=t*cashflows[t]/Math.pow(1+r,t+1);
+    }
+    if(Math.abs(dnpv)<1e-12)break;
+    const nr=r-npv/dnpv;
+    if(Math.abs(nr-r)<tol)return nr;
+    r=nr;
+  }
+  return r;
+}
+function fmtNum(n,dp=1){
+  if(!isFinite(n))return"—";
+  return n.toLocaleString("en-MY",{minimumFractionDigits:dp,maximumFractionDigits:dp});
+}
+
 /* ── Section morph — elements within each section morph in/out per piece ── */
 const LP_SECTIONS=[
   {id:"lp-sec-0",num:"S00",label:"ACCESS"},
@@ -2403,7 +2430,7 @@ function TemplateCard({t,onDownload,downloading,uploads,stats,idx=0}){
   );
 }
 
-function Dashboard({onDownload,downloading,uploads,stats}){
+function Dashboard({onDownload,downloading,uploads,stats,onTool}){
   const[search,setSrc]=useState("");
   const[filter,setFilter]=useState("all");
   const filters=["all","residential","commercial","industrial","land"];
@@ -2451,6 +2478,55 @@ function Dashboard({onDownload,downloading,uploads,stats}){
 
       <div style={{maxWidth:1280,margin:"0 auto",padding:"56px 32px 40px",
         position:"relative",zIndex:1}}>
+        {/* Tools hub */}
+        <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:20,
+          fontFamily:"'JetBrains Mono',monospace",fontSize:10,
+          color:PHOSPHOR,letterSpacing:"2.5px",fontWeight:600,textTransform:"uppercase"}}>
+          <span>[</span><span>APEX FLOW · TOOLS</span><span>]</span>
+          <span style={{flex:1,height:1,background:TERM_BORDER}}/>
+          <span style={{color:TERM_FG_MUTE}}>03 modules</span>
+        </div>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(280px,1fr))",
+          gap:12,marginBottom:48}}>
+          {[
+            {id:"irr",num:"01",code:"CALC",name:"IRR / NPV Calculator",
+             desc:"Solve for IRR and NPV from multi-year cash flow inputs.",
+             tag:"Yield Analysis"},
+            {id:"rentroll",num:"02",code:"BUILD",name:"Rent Roll Builder",
+             desc:"Schedule multi-tenant leases and compute WALE and GRI.",
+             tag:"Income Modelling"},
+            {id:"scenario",num:"03",code:"MODEL",name:"Scenario Manager",
+             desc:"Compare Bull · Base · Bear investment scenarios side-by-side.",
+             tag:"Risk Analysis"},
+          ].map(tool=>(
+            <div key={tool.id}
+              onClick={()=>onTool&&onTool(tool.id)}
+              className="vf-card"
+              style={{background:TERM_PANEL_S,border:`1px solid ${TERM_BORDER}`,
+                padding:"20px 22px",cursor:"pointer",position:"relative",overflow:"hidden"}}>
+              <ScanLines opacity={.35}/>
+              <div style={{position:"relative",zIndex:1}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",
+                  fontFamily:"'JetBrains Mono',monospace",fontSize:9.5,
+                  color:PHOSPHOR,letterSpacing:"2.5px",fontWeight:600,
+                  textTransform:"uppercase",marginBottom:12}}>
+                  <span>{tool.num} · [{tool.code}]</span>
+                  <span style={{color:TERM_FG_MUTE,fontSize:9}}>{tool.tag}</span>
+                </div>
+                <div style={{fontFamily:"'Onest',sans-serif",fontSize:17,fontWeight:600,
+                  color:TERM_FG,letterSpacing:"-.02em",marginBottom:6}}>{tool.name}</div>
+                <div style={{fontFamily:"'Onest',sans-serif",fontSize:12.5,
+                  color:TERM_FG_DIM,lineHeight:1.55,marginBottom:14}}>{tool.desc}</div>
+                <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:9.5,
+                  color:PHOSPHOR,letterSpacing:"2px",fontWeight:600,
+                  textTransform:"uppercase",display:"flex",alignItems:"center",gap:6}}>
+                  Open module <span style={{fontSize:11}}>→</span>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
         {/* Section eyebrow */}
         <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:24,
           fontFamily:"'JetBrains Mono',monospace",fontSize:10,
@@ -2538,6 +2614,611 @@ function Dashboard({onDownload,downloading,uploads,stats}){
         <span style={{color:PHOSPHOR}}>SYS:OK · SRC:VAL.RES</span>
         <span>For professional property valuation use</span>
       </footer>
+    </div>
+  );
+}
+
+/* ── IrrNpvPage — Internal Rate of Return / NPV Calculator ── */
+function IrrNpvPage(){
+  const[wacc,setWacc]=useState("8.5");
+  const[invest,setInvest]=useState("5000");
+  const[cfs,setCfs]=useState(["500","650","750","850","950"]);
+
+  const wR=parseFloat(wacc)||0;
+  const iR=parseFloat(invest)||0;
+  const cfR=cfs.map(v=>parseFloat(v)||0);
+  const allCFs=[-iR,...cfR];
+  const npv=iR>0?calcNPV(allCFs,wR):0;
+  const irr=(iR>0&&cfR.some(v=>v!==0))?calcIRR(allCFs)*100:null;
+  const totalReturn=cfR.reduce((s,v)=>s+v,0);
+  const eqMult=iR>0?totalReturn/iR:0;
+
+  let payback=null,cum=-iR;
+  for(let i=0;i<cfR.length;i++){
+    const prev=cum;cum+=cfR[i];
+    if(cum>=0&&payback===null){payback=cfR[i]>0?i+(-prev/cfR[i]):i+1;}
+  }
+
+  const pvBkd=cfR.map((cf,i)=>({year:i+1,cf,pv:cf/Math.pow(1+wR/100,i+1)}));
+  const sumPV=pvBkd.reduce((s,{pv})=>s+pv,0);
+  const npvPos=npv>=0;
+  const irrValid=irr!=null&&isFinite(irr)&&irr>-99;
+
+  return(
+    <div style={{background:TERM_BG,minHeight:"100vh",paddingTop:56,position:"relative",
+      fontFamily:"'Onest',sans-serif"}}>
+      <ScanLines opacity={.35}/>
+      <div style={{maxWidth:1280,margin:"0 auto",padding:"36px 32px 60px",
+        position:"relative",zIndex:1}}>
+        <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:8,
+          fontFamily:"'JetBrains Mono',monospace",fontSize:10,
+          color:PHOSPHOR,letterSpacing:"2.5px",fontWeight:600,textTransform:"uppercase"}}>
+          <span>[</span><span>APEX FLOW · 01</span><span>]</span>
+          <span style={{flex:1,height:1,background:TERM_BORDER}}/>
+          <span style={{color:AMBER}}>CALC</span>
+        </div>
+        <h1 style={{fontFamily:"'Onest',sans-serif",fontSize:"clamp(28px,3.8vw,44px)",
+          fontWeight:600,letterSpacing:"-.03em",color:TERM_FG,margin:"0 0 8px",lineHeight:1.02}}>
+          IRR / NPV <span style={{color:PHOSPHOR}}>Calculator</span>
+        </h1>
+        <p style={{color:TERM_FG_DIM,fontSize:14,marginBottom:32,
+          maxWidth:520,lineHeight:1.6}}>
+          Enter initial investment, annual cash flows, and WACC. IRR and NPV update in real time.
+        </p>
+
+        <div style={{display:"grid",gridTemplateColumns:"minmax(0,1fr) minmax(0,1fr)",
+          gap:18,alignItems:"start"}}>
+
+          {/* LEFT: Inputs */}
+          <div style={{background:TERM_PANEL_S,border:`1px solid ${TERM_BORDER}`,padding:"24px"}}>
+            <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:9.5,color:PHOSPHOR,
+              letterSpacing:"2.5px",fontWeight:600,textTransform:"uppercase",
+              marginBottom:20,display:"flex",alignItems:"center",gap:8}}>
+              <span style={{width:6,height:6,background:PHOSPHOR,
+                boxShadow:`0 0 4px ${PHOSPHOR}`,flexShrink:0}}/>INPUTS
+            </div>
+
+            {[
+              ["DISCOUNT RATE (WACC)",wacc,setWacc,"%",null],
+              ["INITIAL INVESTMENT (I₀)",invest,setInvest,null,"RM '000"],
+            ].map(([label,val,set,suffix,prefix])=>(
+              <div key={label} style={{marginBottom:16}}>
+                <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:8.5,
+                  color:TERM_FG_DIM,letterSpacing:"2px",textTransform:"uppercase",
+                  fontWeight:600,marginBottom:7}}>—— {label}</div>
+                <div style={{display:"flex",alignItems:"center",gap:8}}>
+                  {prefix&&<span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:11,
+                    color:TERM_FG_DIM,fontWeight:600,flexShrink:0}}>{prefix}</span>}
+                  <input value={val} onChange={e=>set(e.target.value)}
+                    style={{flex:1,background:TERM_BG,border:`1px solid ${TERM_BORDER}`,
+                      padding:"10px 12px",color:TERM_FG,fontSize:14,
+                      fontFamily:"'JetBrains Mono',monospace",letterSpacing:".5px",
+                      borderRadius:0,boxSizing:"border-box"}}/>
+                  {suffix&&<span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:13,
+                    color:TERM_FG_DIM,fontWeight:600,flexShrink:0}}>{suffix}</span>}
+                </div>
+              </div>
+            ))}
+
+            <div style={{height:1,background:TERM_BORDER,margin:"6px 0 18px"}}/>
+            <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:8.5,color:TERM_FG_DIM,
+              letterSpacing:"2px",textTransform:"uppercase",fontWeight:600,marginBottom:12}}>
+              —— ANNUAL CASH FLOWS (RM '000)
+            </div>
+
+            {cfs.map((cf,i)=>(
+              <div key={i} style={{display:"flex",alignItems:"center",gap:8,marginBottom:7}}>
+                <span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:10,
+                  color:TERM_FG_MUTE,letterSpacing:"1px",width:28,flexShrink:0,
+                  textAlign:"right"}}>Y{i+1}</span>
+                <input value={cf}
+                  onChange={e=>{const n=[...cfs];n[i]=e.target.value;setCfs(n);}}
+                  style={{flex:1,background:TERM_BG,border:`1px solid ${TERM_BORDER}`,
+                    padding:"8px 10px",color:TERM_FG,fontSize:13,
+                    fontFamily:"'JetBrains Mono',monospace",letterSpacing:".5px",
+                    borderRadius:0,boxSizing:"border-box"}}/>
+                <span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:9.5,
+                  color:PHOSPHOR,width:76,flexShrink:0,textAlign:"right",
+                  letterSpacing:".5px"}}>
+                  {pvBkd[i]?`PV ${fmtNum(pvBkd[i].pv)}`:"-"}
+                </span>
+                {cfs.length>1&&(
+                  <span onClick={()=>setCfs(c=>c.filter((_,j)=>j!==i))}
+                    style={{color:TERM_FG_MUTE,cursor:"pointer",fontSize:14,
+                      fontFamily:"'JetBrains Mono',monospace",flexShrink:0,
+                      padding:"0 2px",transition:"color .12s ease"}}
+                    onMouseOver={e=>e.target.style.color=SIG_DOWN}
+                    onMouseOut={e=>e.target.style.color=TERM_FG_MUTE}>×</span>
+                )}
+              </div>
+            ))}
+
+            <button onClick={()=>setCfs(c=>[...c,"0"])}
+              style={{marginTop:10,background:"transparent",
+                border:`1px dashed ${TERM_BORDER}`,padding:"9px 16px",
+                color:TERM_FG_DIM,cursor:"pointer",width:"100%",
+                fontFamily:"'JetBrains Mono',monospace",fontSize:10,
+                letterSpacing:"2px",textTransform:"uppercase",fontWeight:600,
+                transition:"all .15s ease",borderRadius:0}}
+              onMouseOver={e=>{e.currentTarget.style.borderColor=PHOSPHOR;e.currentTarget.style.color=PHOSPHOR;}}
+              onMouseOut={e=>{e.currentTarget.style.borderColor=TERM_BORDER;e.currentTarget.style.color=TERM_FG_DIM;}}>
+              + Add Year
+            </button>
+          </div>
+
+          {/* RIGHT: Results */}
+          <div style={{display:"flex",flexDirection:"column",gap:14}}>
+
+            {/* NPV */}
+            <div style={{background:TERM_PANEL_S,
+              border:`1px solid ${npvPos?"rgba(56,239,166,.4)":SIG_DOWN}`,
+              padding:"22px 24px",position:"relative",overflow:"hidden"}}>
+              <ScanLines opacity={.3}/>
+              <div style={{position:"relative",zIndex:1}}>
+                <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:9.5,
+                  color:npvPos?PHOSPHOR:SIG_DOWN,letterSpacing:"2.5px",fontWeight:600,
+                  textTransform:"uppercase",marginBottom:10}}>Net Present Value</div>
+                <div style={{fontFamily:"'JetBrains Mono',monospace",
+                  fontSize:38,fontWeight:700,lineHeight:1,
+                  color:npvPos?SIG_UP:SIG_DOWN,fontVariantNumeric:"tabular-nums",
+                  textShadow:`0 0 22px ${npvPos?"rgba(56,239,166,.45)":"rgba(230,102,96,.45)"}`}}>
+                  {iR>0?`${npvPos?"+":""} RM ${fmtNum(npv)}`:"—"}
+                </div>
+                <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:9,
+                  color:TERM_FG_MUTE,letterSpacing:"1.5px",marginTop:8}}>
+                  {iR>0?(npvPos?"▲ Value-additive at current WACC":"▼ Destroys value at current WACC"):"Enter investment to compute"}
+                </div>
+              </div>
+            </div>
+
+            {/* IRR */}
+            <div style={{background:TERM_PANEL_S,border:`1px solid ${TERM_BORDER}`,
+              padding:"22px 24px",position:"relative",overflow:"hidden"}}>
+              <ScanLines opacity={.3}/>
+              <div style={{position:"relative",zIndex:1}}>
+                <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:9.5,
+                  color:PHOSPHOR,letterSpacing:"2.5px",fontWeight:600,
+                  textTransform:"uppercase",marginBottom:10}}>Internal Rate of Return</div>
+                <div style={{fontFamily:"'JetBrains Mono',monospace",
+                  fontSize:38,fontWeight:700,lineHeight:1,fontVariantNumeric:"tabular-nums",
+                  color:irrValid?(irr>wR?SIG_UP:SIG_DOWN):TERM_FG_DIM}}>
+                  {irrValid?`${irr.toFixed(2)}%`:"—"}
+                </div>
+                <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:9,
+                  color:TERM_FG_MUTE,letterSpacing:"1.5px",marginTop:8}}>
+                  {irrValid?(irr>wR?`▲ Exceeds WACC by ${fmtNum(irr-wR)}pp`:`▼ Below WACC by ${fmtNum(wR-irr)}pp`):""}
+                </div>
+              </div>
+            </div>
+
+            {/* Quick stats */}
+            <div style={{background:TERM_PANEL_S,border:`1px solid ${TERM_BORDER}`,
+              padding:"16px 24px",
+              display:"grid",gridTemplateColumns:"1fr 1fr",gap:16}}>
+              {[
+                ["Payback Period",payback!=null?`${fmtNum(payback)} yrs`:"—"],
+                ["Equity Multiple",eqMult>0?`${eqMult.toFixed(2)}×`:"—"],
+                ["Sum of CFs",`RM ${fmtNum(totalReturn)}`],
+                ["PV of Income CFs",`RM ${fmtNum(sumPV)}`],
+              ].map(([l,v])=>(
+                <div key={l}>
+                  <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:8.5,
+                    color:TERM_FG_MUTE,letterSpacing:"1.8px",fontWeight:600,
+                    textTransform:"uppercase",marginBottom:5}}>{l}</div>
+                  <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:17,
+                    color:TERM_FG,fontWeight:600,fontVariantNumeric:"tabular-nums"}}>{v}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* PV breakdown */}
+            <div style={{background:TERM_PANEL_S,border:`1px solid ${TERM_BORDER}`,
+              padding:"18px 24px"}}>
+              <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:9.5,
+                color:PHOSPHOR,letterSpacing:"2.5px",fontWeight:600,
+                textTransform:"uppercase",marginBottom:14,
+                display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                <span>PV BREAKDOWN</span>
+                <span style={{color:TERM_FG_MUTE,fontSize:9}}>RM '000</span>
+              </div>
+              {pvBkd.map(({year,pv},i)=>{
+                const barW=sumPV>0?Math.max(0,pv/sumPV*100):0;
+                return(
+                  <div key={i} style={{display:"flex",alignItems:"center",gap:10,
+                    padding:"5px 0",borderBottom:`1px solid rgba(40,49,41,.5)`}}>
+                    <span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:9.5,
+                      color:TERM_FG_DIM,width:22,flexShrink:0}}>Y{year}</span>
+                    <div style={{flex:1,height:3,background:TERM_BORDER,position:"relative"}}>
+                      <div style={{position:"absolute",left:0,top:0,height:"100%",
+                        width:`${barW}%`,background:PHOSPHOR,
+                        boxShadow:`0 0 4px rgba(0,200,150,.45)`}}/>
+                    </div>
+                    <span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:10,
+                      color:TERM_FG,fontVariantNumeric:"tabular-nums",
+                      width:72,textAlign:"right"}}>{fmtNum(pv)}</span>
+                    <span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:9,
+                      color:TERM_FG_MUTE,width:40,textAlign:"right"}}>
+                      {sumPV>0?`${(pv/sumPV*100).toFixed(1)}%`:"—"}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── RentRollPage — Multi-tenant lease scheduler with WALE ── */
+let rrNextId=5;
+const RR_DEFAULT=[
+  {id:1,unit:"L1-01",tenant:"Anchor Retailer",nla:"3200",rentPsf:"8.50",start:"2024-01",end:"2027-12"},
+  {id:2,unit:"L1-02",tenant:"F&B Operator",nla:"1800",rentPsf:"9.00",start:"2024-06",end:"2027-05"},
+  {id:3,unit:"L2-01",tenant:"Fashion Retail",nla:"2400",rentPsf:"7.80",start:"2023-09",end:"2026-08"},
+  {id:4,unit:"L2-02",tenant:"",nla:"1600",rentPsf:"",start:"",end:""},
+];
+function RentRollPage(){
+  const[tenants,setTenants]=useState(RR_DEFAULT);
+  const today=new Date("2026-05-30");
+
+  const update=(id,field,val)=>setTenants(ts=>ts.map(t=>t.id===id?{...t,[field]:val}:t));
+  const addRow=()=>{
+    setTenants(ts=>[...ts,{id:rrNextId++,unit:"",tenant:"",nla:"",rentPsf:"",start:"",end:""}]);
+  };
+  const delRow=id=>setTenants(ts=>ts.filter(t=>t.id!==id));
+
+  const rows=tenants.map(t=>{
+    const nla=parseFloat(t.nla)||0;
+    const psf=parseFloat(t.rentPsf)||0;
+    const monthly=nla*psf;
+    const annual=monthly*12;
+    const occupied=t.tenant&&nla>0&&psf>0;
+    let yearsLeft=0;
+    if(t.end){
+      const exp=new Date(t.end+"-01");
+      yearsLeft=Math.max(0,(exp-today)/(365.25*24*3600*1000));
+    }
+    return{...t,nla,psf,monthly,annual,occupied,yearsLeft};
+  });
+
+  const totalNLA=rows.reduce((s,r)=>s+r.nla,0);
+  const occNLA=rows.filter(r=>r.occupied).reduce((s,r)=>s+r.nla,0);
+  const occRate=totalNLA>0?occNLA/totalNLA*100:0;
+  const waleD=rows.filter(r=>r.occupied).reduce((s,r)=>s+r.nla,0);
+  const waleN=rows.filter(r=>r.occupied).reduce((s,r)=>s+r.nla*r.yearsLeft,0);
+  const wale=waleD>0?waleN/waleD:0;
+  const totalMonthly=rows.filter(r=>r.occupied).reduce((s,r)=>s+r.monthly,0);
+  const totalAnnual=totalMonthly*12;
+  const noi=totalAnnual*0.8;
+
+  const COL=[
+    {key:"unit",label:"Unit",w:"80px"},
+    {key:"tenant",label:"Tenant",w:"1fr"},
+    {key:"nla",label:"NLA (sqft)",w:"100px"},
+    {key:"rentPsf",label:"Rent PSF",w:"90px"},
+    {key:"start",label:"Start",w:"90px"},
+    {key:"end",label:"Expiry",w:"90px"},
+  ];
+
+  return(
+    <div style={{background:TERM_BG,minHeight:"100vh",paddingTop:56,position:"relative",
+      fontFamily:"'Onest',sans-serif"}}>
+      <ScanLines opacity={.35}/>
+      <div style={{maxWidth:1280,margin:"0 auto",padding:"36px 32px 60px",
+        position:"relative",zIndex:1}}>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",
+          marginBottom:8,flexWrap:"wrap",gap:12}}>
+          <div style={{display:"flex",alignItems:"center",gap:12,
+            fontFamily:"'JetBrains Mono',monospace",fontSize:10,
+            color:PHOSPHOR,letterSpacing:"2.5px",fontWeight:600,textTransform:"uppercase"}}>
+            <span>[</span><span>APEX FLOW · 02</span><span>]</span>
+            <span style={{width:1,height:12,background:TERM_BORDER}}/>
+            <span style={{color:AMBER}}>BUILD</span>
+          </div>
+          <button onClick={addRow}
+            style={{background:"transparent",border:`1px solid ${PHOSPHOR}`,
+              padding:"7px 16px",color:PHOSPHOR,cursor:"pointer",
+              fontFamily:"'JetBrains Mono',monospace",fontSize:10,
+              letterSpacing:"2px",textTransform:"uppercase",fontWeight:600,
+              transition:"all .15s ease",borderRadius:0}}
+            onMouseOver={e=>{e.currentTarget.style.background="rgba(0,200,150,.1)";}}
+            onMouseOut={e=>{e.currentTarget.style.background="transparent";}}>
+            + Add Tenant
+          </button>
+        </div>
+        <h1 style={{fontFamily:"'Onest',sans-serif",fontSize:"clamp(28px,3.8vw,44px)",
+          fontWeight:600,letterSpacing:"-.03em",color:TERM_FG,margin:"0 0 30px",lineHeight:1.02}}>
+          Rent Roll <span style={{color:PHOSPHOR}}>Builder</span>
+        </h1>
+
+        {/* Table */}
+        <div style={{border:`1px solid ${TERM_BORDER}`,overflow:"auto",marginBottom:20}}>
+          {/* Header */}
+          <div style={{display:"grid",
+            gridTemplateColumns:`${COL.map(c=>c.w).join(" ")} 32px`,
+            background:"rgba(0,200,150,.04)",
+            borderBottom:`1px solid ${TERM_BORDER}`}}>
+            {COL.map(c=>(
+              <div key={c.key} style={{padding:"10px 12px",
+                fontFamily:"'JetBrains Mono',monospace",fontSize:9,
+                color:TERM_FG_MUTE,letterSpacing:"2px",fontWeight:600,
+                textTransform:"uppercase"}}>{c.label}</div>
+            ))}
+            <div/>
+          </div>
+          {/* Rows */}
+          {rows.map((row,ri)=>(
+            <div key={row.id}
+              style={{display:"grid",
+                gridTemplateColumns:`${COL.map(c=>c.w).join(" ")} 32px`,
+                borderBottom:ri<rows.length-1?`1px solid ${TERM_BORDER}`:"none",
+                background:row.occupied?"rgba(0,200,150,.02)":"transparent",
+                transition:"background .15s ease"}}>
+              {COL.map(c=>(
+                <div key={c.key} style={{padding:"4px 8px"}}>
+                  <input value={row[c.key]} onChange={e=>update(row.id,c.key,e.target.value)}
+                    style={{width:"100%",background:"transparent",border:"none",
+                      padding:"6px 4px",color:TERM_FG,fontSize:12.5,
+                      fontFamily:"'JetBrains Mono',monospace",letterSpacing:".3px",
+                      boxSizing:"border-box",
+                      borderBottom:`1px solid transparent`,
+                      transition:"border-color .12s ease"}}
+                    onFocus={e=>e.target.style.borderBottomColor=PHOSPHOR}
+                    onBlur={e=>e.target.style.borderBottomColor="transparent"}/>
+                </div>
+              ))}
+              <div style={{display:"flex",alignItems:"center",justifyContent:"center"}}>
+                <span onClick={()=>delRow(row.id)}
+                  style={{color:TERM_FG_MUTE,cursor:"pointer",fontSize:13,
+                    fontFamily:"'JetBrains Mono',monospace",lineHeight:1,
+                    transition:"color .12s ease"}}
+                  onMouseOver={e=>e.target.style.color=SIG_DOWN}
+                  onMouseOut={e=>e.target.style.color=TERM_FG_MUTE}>×</span>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Computed columns legend */}
+        <div style={{display:"grid",
+          gridTemplateColumns:"repeat(auto-fit,minmax(200px,1fr))",
+          gap:8,marginBottom:28}}>
+          {rows.filter(r=>r.occupied).slice(0,6).map(r=>(
+            <div key={r.id} style={{background:TERM_PANEL_S,
+              border:`1px solid ${TERM_BORDER}`,padding:"10px 14px",
+              display:"flex",justifyContent:"space-between",alignItems:"baseline",gap:8}}>
+              <span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:9.5,
+                color:TERM_FG_DIM,overflow:"hidden",textOverflow:"ellipsis",
+                whiteSpace:"nowrap",flex:1}}>{r.tenant||r.unit}</span>
+              <div style={{textAlign:"right",flexShrink:0}}>
+                <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:11,
+                  color:TERM_FG,fontWeight:600,fontVariantNumeric:"tabular-nums"}}>
+                  RM {r.monthly.toLocaleString("en-MY",{minimumFractionDigits:0,maximumFractionDigits:0})} /mo
+                </div>
+                <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:8.5,
+                  color:TERM_FG_MUTE,letterSpacing:".5px"}}>
+                  {r.yearsLeft>0?`${r.yearsLeft.toFixed(1)} yrs left`:"expired"}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Summary panel */}
+        <div style={{background:TERM_PANEL_S,border:`1px solid ${PHOSPHOR}`,
+          padding:"22px 28px",position:"relative",overflow:"hidden"}}>
+          <ScanLines opacity={.3}/>
+          <div style={{position:"relative",zIndex:1}}>
+            <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:9.5,
+              color:PHOSPHOR,letterSpacing:"2.5px",fontWeight:600,
+              textTransform:"uppercase",marginBottom:16,
+              display:"flex",alignItems:"center",gap:8}}>
+              <span style={{width:6,height:6,background:PHOSPHOR,
+                boxShadow:`0 0 6px ${PHOSPHOR}`,animation:"phosphorPulse 1.8s ease infinite"}}/>
+              PORTFOLIO SUMMARY
+            </div>
+            <div style={{display:"grid",
+              gridTemplateColumns:"repeat(auto-fit,minmax(160px,1fr))",gap:18}}>
+              {[
+                ["Total NLA",`${totalNLA.toLocaleString("en-MY")} sqft`],
+                ["Occupancy",`${occRate.toFixed(1)} %`],
+                ["WALE",`${wale.toFixed(2)} yrs`],
+                ["Monthly GRI",`RM ${totalMonthly.toLocaleString("en-MY",{maximumFractionDigits:0})}`],
+                ["Annual GRI",`RM ${(totalAnnual/1000).toFixed(1)} k`],
+                ["NOI (80%)",`RM ${(noi/1000).toFixed(1)} k`],
+              ].map(([l,v])=>(
+                <div key={l}>
+                  <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:8.5,
+                    color:TERM_FG_MUTE,letterSpacing:"2px",fontWeight:600,
+                    textTransform:"uppercase",marginBottom:5}}>{l}</div>
+                  <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:18,
+                    color:TERM_FG,fontWeight:700,fontVariantNumeric:"tabular-nums",
+                    letterSpacing:"-.3px"}}>{v}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── ScenarioPage — Bull / Base / Bear comparison manager ── */
+const SCENARIO_DEFS=[
+  {label:"BULL",color:SIG_UP,borderCol:"rgba(56,239,166,.45)",
+   noi:"1300",g:"5.5",wacc:"7.5",termG:"3.5",hold:"7",pp:"16000"},
+  {label:"BASE",color:AMBER,borderCol:"rgba(255,198,64,.35)",
+   noi:"1000",g:"3.0",wacc:"8.5",termG:"2.5",hold:"5",pp:"12000"},
+  {label:"BEAR",color:SIG_DOWN,borderCol:"rgba(230,102,96,.35)",
+   noi:"700", g:"0.5",wacc:"10.5",termG:"1.0",hold:"5",pp:"9000"},
+];
+function computeScenario(s){
+  const noi=parseFloat(s.noi)||0;
+  const g=parseFloat(s.g)/100;
+  const r=parseFloat(s.wacc)/100;
+  const tg=parseFloat(s.termG)/100;
+  const hold=Math.max(1,parseInt(s.hold)||5);
+  const pp=parseFloat(s.pp)||0;
+  if(pp<=0||noi<=0||r<=tg)return{npv:null,irr:null,tv:null,eqMult:null};
+  const annualNOI=Array.from({length:hold},(_,i)=>noi*Math.pow(1+g,i+1));
+  const tv=annualNOI[hold-1]*(1+tg)/(r-tg);
+  const cfs=[-pp,...annualNOI.slice(0,-1),annualNOI[hold-1]+tv];
+  const npv=calcNPV(cfs,parseFloat(s.wacc));
+  const irr=calcIRR(cfs)*100;
+  const eqMult=cfs.slice(1).reduce((a,v)=>a+v,0)/pp;
+  return{npv,irr:isFinite(irr)?irr:null,tv,eqMult};
+}
+const SCEN_FIELDS=[
+  {key:"noi",   label:"NOI Year 1",   suffix:"RM '000"},
+  {key:"g",     label:"NOI Growth",   suffix:"%"},
+  {key:"wacc",  label:"WACC",         suffix:"%"},
+  {key:"termG", label:"Terminal Growth",suffix:"%"},
+  {key:"hold",  label:"Hold Period",  suffix:"yrs"},
+  {key:"pp",    label:"Purchase Price",suffix:"RM '000"},
+];
+function ScenarioPage(){
+  const[scenarios,setScenarios]=useState(SCENARIO_DEFS);
+  const update=(i,field,val)=>setScenarios(ss=>ss.map((s,j)=>j===i?{...s,[field]:val}:s));
+  const results=scenarios.map(computeScenario);
+
+  return(
+    <div style={{background:TERM_BG,minHeight:"100vh",paddingTop:56,position:"relative",
+      fontFamily:"'Onest',sans-serif"}}>
+      <ScanLines opacity={.35}/>
+      <div style={{maxWidth:1280,margin:"0 auto",padding:"36px 32px 60px",
+        position:"relative",zIndex:1}}>
+        <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:8,
+          fontFamily:"'JetBrains Mono',monospace",fontSize:10,
+          color:PHOSPHOR,letterSpacing:"2.5px",fontWeight:600,textTransform:"uppercase"}}>
+          <span>[</span><span>APEX FLOW · 03</span><span>]</span>
+          <span style={{flex:1,height:1,background:TERM_BORDER}}/>
+          <span style={{color:AMBER}}>MODEL</span>
+        </div>
+        <h1 style={{fontFamily:"'Onest',sans-serif",fontSize:"clamp(28px,3.8vw,44px)",
+          fontWeight:600,letterSpacing:"-.03em",color:TERM_FG,margin:"0 0 8px",lineHeight:1.02}}>
+          Scenario <span style={{color:PHOSPHOR}}>Manager</span>
+        </h1>
+        <p style={{color:TERM_FG_DIM,fontSize:14,marginBottom:32,
+          maxWidth:520,lineHeight:1.6}}>
+          Compare Bull · Base · Bear assumptions side-by-side. All fields are editable — results update instantly.
+        </p>
+
+        <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:16}}>
+          {scenarios.map((s,si)=>{
+            const res=results[si];
+            const npvPos=res.npv!=null&&res.npv>=0;
+            return(
+              <div key={s.label} style={{background:TERM_PANEL_S,
+                border:`1px solid ${s.borderCol}`,
+                overflow:"hidden",position:"relative"}}>
+                <ScanLines opacity={.3}/>
+                {/* Scenario header */}
+                <div style={{padding:"14px 18px",
+                  background:`linear-gradient(135deg,rgba(${s.label==="BULL"?"56,239,166":s.label==="BASE"?"255,198,64":"230,102,96"},.1) 0%,transparent 70%)`,
+                  borderBottom:`1px solid ${s.borderCol}`,
+                  position:"relative",zIndex:1}}>
+                  <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:11,
+                    color:s.color,letterSpacing:"3px",fontWeight:700,
+                    textTransform:"uppercase",marginBottom:2}}>{s.label}</div>
+                  <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:8.5,
+                    color:TERM_FG_MUTE,letterSpacing:"1.5px",textTransform:"uppercase",fontWeight:500}}>
+                    {s.label==="BULL"?"Optimistic scenario":s.label==="BASE"?"Base case":"Downside scenario"}
+                  </div>
+                </div>
+
+                {/* Inputs */}
+                <div style={{padding:"16px 18px",position:"relative",zIndex:1}}>
+                  {SCEN_FIELDS.map(f=>(
+                    <div key={f.key} style={{display:"flex",alignItems:"center",
+                      justifyContent:"space-between",gap:8,marginBottom:10}}>
+                      <span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:9,
+                        color:TERM_FG_DIM,letterSpacing:"1.5px",textTransform:"uppercase",
+                        fontWeight:600,flex:1}}>{f.label}</span>
+                      <div style={{display:"flex",alignItems:"center",gap:4,flexShrink:0}}>
+                        <input value={s[f.key]} onChange={e=>update(si,f.key,e.target.value)}
+                          style={{width:60,background:TERM_BG,border:`1px solid ${TERM_BORDER}`,
+                            padding:"5px 8px",color:TERM_FG,fontSize:12,
+                            fontFamily:"'JetBrains Mono',monospace",letterSpacing:".5px",
+                            borderRadius:0,boxSizing:"border-box",textAlign:"right"}}/>
+                        <span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:9,
+                          color:TERM_FG_MUTE,width:42,flexShrink:0}}>{f.suffix}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Divider */}
+                <div style={{height:1,background:s.borderCol,margin:"0 18px"}}/>
+
+                {/* Results */}
+                <div style={{padding:"16px 18px",position:"relative",zIndex:1}}>
+                  <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:8.5,
+                    color:TERM_FG_MUTE,letterSpacing:"2px",fontWeight:600,
+                    textTransform:"uppercase",marginBottom:12}}>—— RESULTS</div>
+                  {[
+                    ["NPV",res.npv!=null?`${npvPos?"+":""}RM ${fmtNum(res.npv)} k`:"—",
+                      res.npv!=null?(npvPos?s.color:SIG_DOWN):TERM_FG_DIM],
+                    ["IRR",res.irr!=null?`${res.irr.toFixed(2)} %`:"—",
+                      res.irr!=null?(res.irr>parseFloat(s.wacc)?s.color:SIG_DOWN):TERM_FG_DIM],
+                    ["Terminal Value",res.tv!=null?`RM ${fmtNum(res.tv/1000,1)} M`:"—",TERM_FG],
+                    ["Equity Multiple",res.eqMult!=null?`${res.eqMult.toFixed(2)} ×`:"—",
+                      res.eqMult!=null?(res.eqMult>1?s.color:SIG_DOWN):TERM_FG_DIM],
+                  ].map(([l,v,col])=>(
+                    <div key={l} style={{display:"flex",justifyContent:"space-between",
+                      alignItems:"baseline",gap:8,padding:"5px 0",
+                      borderBottom:`1px solid rgba(40,49,41,.45)`}}>
+                      <span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:9,
+                        color:TERM_FG_DIM,letterSpacing:"1.5px",textTransform:"uppercase",
+                        fontWeight:500}}>{l}</span>
+                      <span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:13,
+                        color:col,fontWeight:700,fontVariantNumeric:"tabular-nums"}}>{v}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Cross-scenario comparison bar */}
+        <div style={{marginTop:20,background:TERM_PANEL_S,
+          border:`1px solid ${TERM_BORDER}`,padding:"20px 24px",position:"relative"}}>
+          <ScanLines opacity={.25}/>
+          <div style={{position:"relative",zIndex:1}}>
+            <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:9.5,
+              color:PHOSPHOR,letterSpacing:"2.5px",fontWeight:600,
+              textTransform:"uppercase",marginBottom:16}}>IRR RANGE</div>
+            <div style={{display:"flex",alignItems:"center",gap:10,height:22}}>
+              {scenarios.map((s,si)=>{
+                const res=results[si];
+                if(res.irr==null)return null;
+                const maxIrr=Math.max(...results.filter(r=>r.irr!=null).map(r=>r.irr),1);
+                const barW=(res.irr/maxIrr)*100;
+                return(
+                  <div key={s.label} style={{flex:1,display:"flex",flexDirection:"column",gap:4}}>
+                    <div style={{display:"flex",justifyContent:"space-between",
+                      fontFamily:"'JetBrains Mono',monospace",fontSize:9,
+                      color:TERM_FG_DIM,letterSpacing:"1px"}}>
+                      <span style={{color:s.color,fontWeight:700}}>{s.label}</span>
+                      <span style={{color:s.color,fontWeight:600}}>{res.irr.toFixed(1)}%</span>
+                    </div>
+                    <div style={{height:6,background:TERM_BORDER,position:"relative",overflow:"hidden"}}>
+                      <div style={{position:"absolute",left:0,top:0,height:"100%",
+                        width:`${barW}%`,
+                        background:s.color,
+                        boxShadow:`0 0 8px ${s.color}44`,
+                        transition:"width .4s ease"}}/>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -2793,10 +3474,13 @@ export default function App(){
         setBooting(false);
       }}/>}
       <ProgressBar scrollRef={scrollRef}/>
-      <Nav page={page} onBack={()=>go("landing")} onAdminClick={()=>setShowLogin(true)}/>
+      <Nav page={page} onBack={()=>go(["irr","rentroll","scenario"].includes(page)?"dashboard":"landing")} onAdminClick={()=>setShowLogin(true)}/>
       {page==="landing"&&<LandingPage onEnter={()=>go("dashboard")} scrollRef={scrollRef} active={!booting}/>}
-      {page==="dashboard"&&<Dashboard onDownload={handleDL} downloading={downloading} uploads={uploads} stats={stats}/>}
+      {page==="dashboard"&&<Dashboard onDownload={handleDL} downloading={downloading} uploads={uploads} stats={stats} onTool={go}/>}
       {page==="admin"&&<AdminPanel onLogout={()=>go("landing")} uploads={uploads} setUploads={setUploads} setStats={setStats}/>}
+      {page==="irr"&&<IrrNpvPage/>}
+      {page==="rentroll"&&<RentRollPage/>}
+      {page==="scenario"&&<ScenarioPage/>}
       {showLogin&&(
         <AdminLoginModal onClose={()=>setShowLogin(false)} onSuccess={()=>{setShowLogin(false);go("admin");}}/>
       )}
