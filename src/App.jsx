@@ -100,15 +100,8 @@ const CSS = `
   .lp-pin-panel{animation:pinSlide .35s cubic-bezier(.22,1,.36,1)}
   @keyframes pinSlide{from{opacity:0;transform:translateY(-12px);max-height:0}to{opacity:1;transform:translateY(0);max-height:400px}}
   .lp-fit{height:calc(100vh - 94px);max-height:calc(100vh - 94px);display:flex;flex-direction:column;overflow:hidden}
-  .lp-fit > section{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;justify-content:center;width:100%;box-sizing:border-box;padding-top:clamp(18px,2.6vh,40px)!important;padding-bottom:clamp(18px,2.6vh,40px)!important}
-  .lp-fit h1{font-size:clamp(28px,4.4vw,56px)!important;line-height:.96!important}
-  .lp-fit h2{font-size:clamp(22px,3vw,40px)!important;line-height:1.02!important}
+  .lp-fit > section{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;justify-content:flex-start;width:100%;box-sizing:border-box;padding-top:clamp(18px,2.8vh,36px)!important;padding-bottom:clamp(18px,2.8vh,36px)!important}
   .lp-fit > section > *{flex:0 1 auto;min-height:0}
-  @media (max-height:780px){
-    .lp-fit > section{padding-top:14px!important;padding-bottom:14px!important;justify-content:flex-start!important;gap:0!important}
-    .lp-fit h1{font-size:clamp(24px,3.6vw,42px)!important;line-height:.98!important}
-    .lp-fit h2{font-size:clamp(20px,2.6vw,32px)!important}
-  }
   ::-webkit-scrollbar{width:6px}
   ::-webkit-scrollbar-track{background:#0F1411}
   ::-webkit-scrollbar-thumb{background:#283129;border-radius:0}
@@ -1268,18 +1261,19 @@ function Hero({onEnter}){
         opacity:.55,pointerEvents:"none"}}/>
 
       <div style={{maxWidth:1480,margin:"0 auto",width:"100%",
-        padding:wide?"40px 36px":"32px 24px",
+        padding:wide?"clamp(18px,2.8vh,36px) 36px":"28px 24px",
+        boxSizing:"border-box",
         position:"relative",zIndex:1,
         display:"grid",
         gridTemplateColumns:wide?"minmax(0,1fr) minmax(0,1fr)":"1fr",
-        gap:wide?56:28,alignItems:"center"}}>
+        gap:wide?40:28,alignItems:"center"}}>
 
         {/* LEFT — command pane */}
         <div>
           {/* Breadcrumb / system path */}
           <div data-morph style={{fontFamily:"'JetBrains Mono', monospace",fontSize:10,
             color:TERM_FG_DIM,letterSpacing:"2.2px",fontWeight:500,
-            marginBottom:"clamp(12px,1.8vh,20px)",display:"flex",alignItems:"center",gap:10,
+            marginBottom:20,display:"flex",alignItems:"center",gap:10,
             textTransform:"uppercase"}}>
             <span style={{color:PHOSPHOR}}>[</span>
             <span style={{color:PHOSPHOR,fontWeight:600}}>DCF/04</span>
@@ -1292,10 +1286,10 @@ function Hero({onEnter}){
 
           <h1 data-morph style={{
             fontFamily:"'Onest', sans-serif",
-            fontSize:"clamp(32px,4.6vw,58px)",
+            fontSize:"clamp(38px,5.2vw,68px)",
             fontWeight:600,
             lineHeight:.98,letterSpacing:"-.035em",
-            color:TERM_FG,margin:"0 0 clamp(12px,1.8vh,18px)"}}>
+            color:TERM_FG,margin:"0 0 18px"}}>
             Discounted<br/>
             Cash Flow,<br/>
             <span style={{color:PHOSPHOR,position:"relative"}}>
@@ -1309,8 +1303,8 @@ function Hero({onEnter}){
           </h1>
 
           <p data-morph style={{fontFamily:"'Onest', sans-serif",
-            fontSize:"clamp(13px,1.5vh,15px)",lineHeight:1.5,color:TERM_FG_DIM,
-            maxWidth:520,margin:"0 0 clamp(16px,2.2vh,26px)",fontWeight:400}}>
+            fontSize:15,lineHeight:1.5,color:TERM_FG_DIM,
+            maxWidth:520,margin:"0 0 26px",fontWeight:400}}>
             A precision library of pre-built DCF workbooks for the Malaysian property market. Wired by practicing valuers, calibrated against current market research, deployed by you.
           </p>
 
@@ -1324,7 +1318,7 @@ function Hero({onEnter}){
           </div>
 
           {/* Stats row */}
-          <div data-morph style={{marginTop:"clamp(14px,2vh,24px)",paddingTop:"clamp(12px,1.6vh,18px)",borderTop:`1px solid ${TERM_BORDER}`,
+          <div data-morph style={{marginTop:24,paddingTop:18,borderTop:`1px solid ${TERM_BORDER}`,
             display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:0}}>
             {[
               ["Categories","04"],
@@ -1389,9 +1383,11 @@ function WaterfallSection(){
 
   return(
     <section ref={ref} style={{background:TERM_BG,padding:wide?"40px 36px":"32px 24px",
-      position:"relative",borderBottom:`1px solid ${TERM_BORDER}`,overflow:"hidden"}}>
+      position:"relative",borderBottom:`1px solid ${TERM_BORDER}`,overflow:"hidden",
+      display:"flex",flexDirection:"column"}}>
       <ScanLines/>
-      <div style={{maxWidth:1320,margin:"0 auto",width:"100%",position:"relative",zIndex:1}}>
+      <div style={{maxWidth:1320,margin:"0 auto",width:"100%",position:"relative",zIndex:1,
+        flex:1,display:"flex",flexDirection:"column"}}>
         {/* Section header */}
         <div data-morph style={{display:wide?"grid":"block",
           gridTemplateColumns:wide?"180px 1fr 240px":"1fr",
@@ -1422,7 +1418,8 @@ function WaterfallSection(){
 
         {/* Waterfall chart panel */}
         <div data-morph style={{background:TERM_PANEL_S,border:`1px solid ${TERM_BORDER}`,
-          padding:wide?"24px 28px 22px":"20px 16px 20px",position:"relative"}}>
+          padding:wide?"24px 28px 22px":"20px 16px 20px",position:"relative",
+          flex:1,display:"flex",flexDirection:"column"}}>
           <ScanLines opacity={.5}/>
 
           {/* Legend */}
@@ -1443,7 +1440,7 @@ function WaterfallSection(){
 
           {/* Bar chart */}
           <div style={{display:"grid",gridTemplateColumns:"repeat(6,1fr)",gap:wide?16:6,
-            alignItems:"flex-end",height:wide?"clamp(140px,24vh,220px)":140,position:"relative",zIndex:1}}>
+            alignItems:"flex-end",flex:1,minHeight:120,position:"relative",zIndex:1}}>
             {years.map((y,i)=>{
               const noiH=(y.noi/maxNOI)*100;
               const pvH=(y.pv/maxNOI)*100;
@@ -1559,9 +1556,11 @@ function IndexSection(){
   const[opened,setOpened]=useState(null);
   return(
     <section ref={ref} style={{background:TERM_BG,padding:wide?"40px 36px":"32px 24px",
-      borderBottom:`1px solid ${TERM_BORDER}`,position:"relative",overflow:"hidden"}}>
+      borderBottom:`1px solid ${TERM_BORDER}`,position:"relative",overflow:"hidden",
+      display:"flex",flexDirection:"column"}}>
       <ScanLines/>
-      <div style={{maxWidth:1320,margin:"0 auto",width:"100%",position:"relative",zIndex:1}}>
+      <div style={{maxWidth:1320,margin:"0 auto",width:"100%",position:"relative",zIndex:1,
+        flex:1,display:"flex",flexDirection:"column"}}>
         <div data-morph style={{display:wide?"grid":"block",
           gridTemplateColumns:wide?"180px 1fr 240px":"1fr",gap:0,marginBottom:wide?"clamp(16px,2.4vh,28px)":18}}>
           <div style={{paddingRight:wide?28:0,marginBottom:wide?0:18}}>
@@ -1585,7 +1584,8 @@ function IndexSection(){
 
         <div style={{display:"grid",
           gridTemplateColumns:wide?"repeat(2,1fr)":"1fr",gap:0,
-          border:`1px solid ${TERM_BORDER}`,background:TERM_PANEL_S}}>
+          border:`1px solid ${TERM_BORDER}`,background:TERM_PANEL_S,
+          flex:1,alignContent:"stretch"}}>
           {CATEGORIES.map((c,i)=>{
             const isOpen=opened===c.code;
             const fullTypes=(TMPLS.find(t=>t.id===c.id)?.types)||[];
@@ -1713,9 +1713,11 @@ function MethodologySection(){
   const[ref,v]=useInView(.1);
   return(
     <section ref={ref} style={{background:"#080B0A",padding:wide?"40px 36px":"32px 24px",
-      borderBottom:`1px solid ${TERM_BORDER}`,position:"relative",overflow:"hidden"}}>
+      borderBottom:`1px solid ${TERM_BORDER}`,position:"relative",overflow:"hidden",
+      display:"flex",flexDirection:"column"}}>
       <ScanLines/>
-      <div style={{maxWidth:1320,margin:"0 auto",width:"100%",position:"relative",zIndex:1}}>
+      <div style={{maxWidth:1320,margin:"0 auto",width:"100%",position:"relative",zIndex:1,
+        flex:1,display:"flex",flexDirection:"column"}}>
         <div data-morph style={{display:wide?"grid":"block",
           gridTemplateColumns:wide?"180px 1fr 240px":"1fr",gap:0,marginBottom:wide?"clamp(14px,2vh,24px)":16}}>
           <div style={{paddingRight:wide?28:0,marginBottom:wide?0:18}}>
@@ -1739,7 +1741,8 @@ function MethodologySection(){
 
         <div style={{display:"grid",
           gridTemplateColumns:wide?"repeat(3,1fr)":"1fr",gap:0,
-          border:`1px solid ${TERM_BORDER}`,background:TERM_PANEL_S}}>
+          border:`1px solid ${TERM_BORDER}`,background:TERM_PANEL_S,
+          flex:1}}>
           {FORMULAS.map((f,i)=>(
             <div key={f.key} className="lp-formula" data-morph style={{
               padding:wide?"clamp(14px,2vh,22px) clamp(16px,2vw,22px)":"18px 16px",
@@ -1854,7 +1857,8 @@ function DeploySection(){
 
   return(
     <section ref={ref} style={{background:TERM_BG,padding:wide?"40px 36px":"32px 24px",
-      borderTop:`1px solid ${TERM_BORDER}`,position:"relative",overflow:"hidden"}}>
+      borderTop:`1px solid ${TERM_BORDER}`,position:"relative",overflow:"hidden",
+      display:"flex",flexDirection:"column"}}>
       <ScanLines/>
       <div aria-hidden style={{position:"absolute",inset:0,zIndex:0,
         backgroundImage:`linear-gradient(${TERM_GRID} 1px,transparent 1px),linear-gradient(90deg,${TERM_GRID} 1px,transparent 1px)`,
@@ -1863,7 +1867,8 @@ function DeploySection(){
         WebkitMaskImage:"radial-gradient(ellipse 55% 65% at 50% 50%,#000 0%,transparent 75%)",
         opacity:.7,pointerEvents:"none"}}/>
 
-      <div style={{maxWidth:1320,margin:"0 auto",width:"100%",position:"relative",zIndex:1}}>
+      <div style={{maxWidth:1320,margin:"0 auto",width:"100%",position:"relative",zIndex:1,
+        flex:1,display:"flex",flexDirection:"column"}}>
         {/* Header */}
         <div data-morph style={{display:wide?"grid":"block",
           gridTemplateColumns:wide?"180px 1fr 240px":"1fr",gap:0,marginBottom:wide?"clamp(14px,2vh,22px)":16}}>
@@ -1893,7 +1898,7 @@ function DeploySection(){
         {/* Heatmap + detail */}
         <div data-morph style={{display:"grid",
           gridTemplateColumns:wide?"1fr 280px":"1fr",gap:wide?20:14,
-          alignItems:"start"}}>
+          alignItems:"stretch",flex:1,minHeight:0}}>
 
           {/* Heatmap panel */}
           <div style={{background:TERM_PANEL_S,border:`1px solid ${TERM_BORDER}`,
