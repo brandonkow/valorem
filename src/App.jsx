@@ -99,7 +99,8 @@ const CSS = `
   .lp-pin-item.is-pinned{background:rgba(0,200,150,.16)!important;outline:1px solid #00C896}
   .lp-pin-panel{animation:pinSlide .35s cubic-bezier(.22,1,.36,1)}
   @keyframes pinSlide{from{opacity:0;transform:translateY(-12px);max-height:0}to{opacity:1;transform:translateY(0);max-height:400px}}
-  .lp-fit{height:calc(100vh - 94px);max-height:calc(100vh - 94px);display:flex;flex-direction:column;overflow:hidden}
+  .lp-fit{height:calc(100vh - 54px);max-height:calc(100vh - 54px);display:flex;flex-direction:column;overflow:hidden}
+  #lp-sec-0{height:calc(100vh - 94px);max-height:calc(100vh - 94px)}
   .lp-fit > section{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;justify-content:flex-start;width:100%;box-sizing:border-box;padding-top:clamp(18px,2.8vh,36px)!important;padding-bottom:clamp(18px,2.8vh,36px)!important}
   .lp-fit > section > *{flex:0 1 auto;min-height:0}
   ::-webkit-scrollbar{width:6px}
