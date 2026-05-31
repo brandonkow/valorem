@@ -99,8 +99,16 @@ const CSS = `
   .lp-pin-item.is-pinned{background:rgba(0,200,150,.16)!important;outline:1px solid #00C896}
   .lp-pin-panel{animation:pinSlide .35s cubic-bezier(.22,1,.36,1)}
   @keyframes pinSlide{from{opacity:0;transform:translateY(-12px);max-height:0}to{opacity:1;transform:translateY(0);max-height:400px}}
-  .lp-fit{min-height:calc(100vh - 94px);display:flex;flex-direction:column}
-  .lp-fit > section{flex:1 0 auto;display:flex;flex-direction:column;justify-content:center;width:100%}
+  .lp-fit{height:calc(100vh - 94px);max-height:calc(100vh - 94px);display:flex;flex-direction:column;overflow:hidden}
+  .lp-fit > section{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;justify-content:center;width:100%;box-sizing:border-box;padding-top:clamp(18px,2.6vh,40px)!important;padding-bottom:clamp(18px,2.6vh,40px)!important}
+  .lp-fit h1{font-size:clamp(28px,4.4vw,56px)!important;line-height:.96!important}
+  .lp-fit h2{font-size:clamp(22px,3vw,40px)!important;line-height:1.02!important}
+  .lp-fit > section > *{flex:0 1 auto;min-height:0}
+  @media (max-height:780px){
+    .lp-fit > section{padding-top:14px!important;padding-bottom:14px!important;justify-content:flex-start!important;gap:0!important}
+    .lp-fit h1{font-size:clamp(24px,3.6vw,42px)!important;line-height:.98!important}
+    .lp-fit h2{font-size:clamp(20px,2.6vw,32px)!important}
+  }
   ::-webkit-scrollbar{width:6px}
   ::-webkit-scrollbar-track{background:#0F1411}
   ::-webkit-scrollbar-thumb{background:#283129;border-radius:0}
@@ -1271,7 +1279,7 @@ function Hero({onEnter}){
           {/* Breadcrumb / system path */}
           <div data-morph style={{fontFamily:"'JetBrains Mono', monospace",fontSize:10,
             color:TERM_FG_DIM,letterSpacing:"2.2px",fontWeight:500,
-            marginBottom:20,display:"flex",alignItems:"center",gap:10,
+            marginBottom:"clamp(12px,1.8vh,20px)",display:"flex",alignItems:"center",gap:10,
             textTransform:"uppercase"}}>
             <span style={{color:PHOSPHOR}}>[</span>
             <span style={{color:PHOSPHOR,fontWeight:600}}>DCF/04</span>
@@ -1284,10 +1292,10 @@ function Hero({onEnter}){
 
           <h1 data-morph style={{
             fontFamily:"'Onest', sans-serif",
-            fontSize:"clamp(38px,5.2vw,68px)",
+            fontSize:"clamp(32px,4.6vw,58px)",
             fontWeight:600,
             lineHeight:.98,letterSpacing:"-.035em",
-            color:TERM_FG,margin:"0 0 18px"}}>
+            color:TERM_FG,margin:"0 0 clamp(12px,1.8vh,18px)"}}>
             Discounted<br/>
             Cash Flow,<br/>
             <span style={{color:PHOSPHOR,position:"relative"}}>
@@ -1301,8 +1309,8 @@ function Hero({onEnter}){
           </h1>
 
           <p data-morph style={{fontFamily:"'Onest', sans-serif",
-            fontSize:15,lineHeight:1.5,color:TERM_FG_DIM,
-            maxWidth:520,margin:"0 0 26px",fontWeight:400}}>
+            fontSize:"clamp(13px,1.5vh,15px)",lineHeight:1.5,color:TERM_FG_DIM,
+            maxWidth:520,margin:"0 0 clamp(16px,2.2vh,26px)",fontWeight:400}}>
             A precision library of pre-built DCF workbooks for the Malaysian property market. Wired by practicing valuers, calibrated against current market research, deployed by you.
           </p>
 
@@ -1316,7 +1324,7 @@ function Hero({onEnter}){
           </div>
 
           {/* Stats row */}
-          <div data-morph style={{marginTop:24,paddingTop:18,borderTop:`1px solid ${TERM_BORDER}`,
+          <div data-morph style={{marginTop:"clamp(14px,2vh,24px)",paddingTop:"clamp(12px,1.6vh,18px)",borderTop:`1px solid ${TERM_BORDER}`,
             display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:0}}>
             {[
               ["Categories","04"],
@@ -1387,7 +1395,7 @@ function WaterfallSection(){
         {/* Section header */}
         <div data-morph style={{display:wide?"grid":"block",
           gridTemplateColumns:wide?"180px 1fr 240px":"1fr",
-          gap:0,marginBottom:wide?28:22}}>
+          gap:0,marginBottom:wide?"clamp(16px,2.4vh,28px)":18}}>
           <div style={{paddingRight:wide?28:0,marginBottom:wide?0:18}}>
             <div style={{fontFamily:"'JetBrains Mono', monospace",fontSize:10.5,
               color:PHOSPHOR,letterSpacing:"2.5px",fontWeight:600,
@@ -1435,7 +1443,7 @@ function WaterfallSection(){
 
           {/* Bar chart */}
           <div style={{display:"grid",gridTemplateColumns:"repeat(6,1fr)",gap:wide?16:6,
-            alignItems:"flex-end",height:wide?"min(32vh,250px)":160,position:"relative",zIndex:1}}>
+            alignItems:"flex-end",height:wide?"clamp(140px,24vh,220px)":140,position:"relative",zIndex:1}}>
             {years.map((y,i)=>{
               const noiH=(y.noi/maxNOI)*100;
               const pvH=(y.pv/maxNOI)*100;
@@ -1518,7 +1526,7 @@ function WaterfallSection(){
           </div>
 
           {/* Result */}
-          <div style={{marginTop:16,paddingTop:16,borderTop:`1px solid ${TERM_BORDER}`,
+          <div style={{marginTop:"clamp(10px,1.6vh,16px)",paddingTop:"clamp(10px,1.6vh,16px)",borderTop:`1px solid ${TERM_BORDER}`,
             display:"flex",justifyContent:"space-between",alignItems:"baseline",
             flexWrap:"wrap",gap:18,position:"relative",zIndex:1}}>
             <div style={{fontFamily:"'JetBrains Mono', monospace",fontSize:10,
@@ -1555,7 +1563,7 @@ function IndexSection(){
       <ScanLines/>
       <div style={{maxWidth:1320,margin:"0 auto",width:"100%",position:"relative",zIndex:1}}>
         <div data-morph style={{display:wide?"grid":"block",
-          gridTemplateColumns:wide?"180px 1fr 240px":"1fr",gap:0,marginBottom:wide?28:22}}>
+          gridTemplateColumns:wide?"180px 1fr 240px":"1fr",gap:0,marginBottom:wide?"clamp(16px,2.4vh,28px)":18}}>
           <div style={{paddingRight:wide?28:0,marginBottom:wide?0:18}}>
             <div style={{fontFamily:"'JetBrains Mono', monospace",fontSize:10.5,
               color:PHOSPHOR,letterSpacing:"2.5px",fontWeight:600,
@@ -1585,7 +1593,7 @@ function IndexSection(){
             <div key={c.code} className="lp-card" data-morph
               onClick={e=>{e.stopPropagation();setOpened(isOpen?null:c.code);}}
               style={{
-                padding:wide?"24px 28px":"20px 18px",
+                padding:wide?"clamp(14px,2vh,24px) clamp(20px,2.4vw,28px)":"18px 18px",
                 borderRight:wide&&i%2===0?`1px solid ${TERM_BORDER}`:"none",
                 borderBottom:wide?(i<CATEGORIES.length-2?`1px solid ${TERM_BORDER}`:"none"):(i<CATEGORIES.length-1?`1px solid ${TERM_BORDER}`:"none"),
                 position:"relative",cursor:"pointer",
@@ -1709,7 +1717,7 @@ function MethodologySection(){
       <ScanLines/>
       <div style={{maxWidth:1320,margin:"0 auto",width:"100%",position:"relative",zIndex:1}}>
         <div data-morph style={{display:wide?"grid":"block",
-          gridTemplateColumns:wide?"180px 1fr 240px":"1fr",gap:0,marginBottom:wide?24:20}}>
+          gridTemplateColumns:wide?"180px 1fr 240px":"1fr",gap:0,marginBottom:wide?"clamp(14px,2vh,24px)":16}}>
           <div style={{paddingRight:wide?28:0,marginBottom:wide?0:18}}>
             <div style={{fontFamily:"'JetBrains Mono', monospace",fontSize:10.5,
               color:PHOSPHOR,letterSpacing:"2.5px",fontWeight:600,
@@ -1734,7 +1742,7 @@ function MethodologySection(){
           border:`1px solid ${TERM_BORDER}`,background:TERM_PANEL_S}}>
           {FORMULAS.map((f,i)=>(
             <div key={f.key} className="lp-formula" data-morph style={{
-              padding:wide?"22px 22px":"20px 16px",
+              padding:wide?"clamp(14px,2vh,22px) clamp(16px,2vw,22px)":"18px 16px",
               borderRight:wide&&i<FORMULAS.length-1?`1px solid ${TERM_BORDER}`:"none",
               borderBottom:!wide&&i<FORMULAS.length-1?`1px solid ${TERM_BORDER}`:"none",
               opacity:v?1:0,transform:v?"translateY(0)":"translateY(12px)",
@@ -1755,8 +1763,8 @@ function MethodologySection(){
                 fontWeight:600,letterSpacing:"-.015em",
                 color:TERM_FG,margin:"0 0 12px"}}>{f.label}</h3>
 
-              <div className="lp-formula-eq" style={{padding:"12px 14px",background:TERM_BG,
-                border:`1px solid ${TERM_BORDER}`,marginBottom:12,
+              <div className="lp-formula-eq" style={{padding:"10px 14px",background:TERM_BG,
+                border:`1px solid ${TERM_BORDER}`,marginBottom:10,
                 fontFamily:"'JetBrains Mono', monospace",fontSize:13,
                 color:TERM_FG,letterSpacing:".3px",fontWeight:500,
                 wordBreak:"break-word",lineHeight:1.55,
@@ -1858,7 +1866,7 @@ function DeploySection(){
       <div style={{maxWidth:1320,margin:"0 auto",width:"100%",position:"relative",zIndex:1}}>
         {/* Header */}
         <div data-morph style={{display:wide?"grid":"block",
-          gridTemplateColumns:wide?"180px 1fr 240px":"1fr",gap:0,marginBottom:wide?22:18}}>
+          gridTemplateColumns:wide?"180px 1fr 240px":"1fr",gap:0,marginBottom:wide?"clamp(14px,2vh,22px)":16}}>
           <div style={{paddingRight:wide?28:0,marginBottom:wide?0:18}}>
             <div style={{fontFamily:"'JetBrains Mono', monospace",fontSize:10.5,
               color:PHOSPHOR,letterSpacing:"2.5px",fontWeight:600,
@@ -1941,7 +1949,7 @@ function DeploySection(){
                           style={{
                             background:cellBg(c.total),
                             border:isSel?`1px solid ${PHOSPHOR}`:`1px solid ${TERM_BORDER}`,
-                            padding:"10px 4px",cursor:"pointer",
+                            padding:"clamp(6px,1.1vh,10px) 4px",cursor:"pointer",
                             fontFamily:"'JetBrains Mono', monospace",fontSize:11.5,
                             color:cellFg(c.total),
                             fontWeight:isSel?700:500,fontVariantNumeric:"tabular-nums",
